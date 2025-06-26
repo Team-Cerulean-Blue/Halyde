@@ -1,11 +1,7 @@
 local loadfile = ...
 local filesystem = loadfile("/halyde/lib/filesystem.lua")(loadfile)
 
-<<<<<<< HEAD
 _G._OSVERSION = "Halyde 1.11.1"
-=======
-_G._OSVERSION = "Halyde 1.11.0"
->>>>>>> mikethe223-patch-1
 _G._OSLOGO = ""
 local handle, tmpdata = filesystem.open("/halyde/config/oslogo.ans", "r"), nil
 repeat
