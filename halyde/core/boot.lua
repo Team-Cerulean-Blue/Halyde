@@ -1,7 +1,7 @@
 local loadfile = ...
 local filesystem = loadfile("/halyde/lib/filesystem.lua")(loadfile)
 
-_G._OSVERSION = "Halyde 1.11.1"
+_G._OSVERSION = "Halyde 1.12.0"
 _G._OSLOGO = ""
 local handle, tmpdata = filesystem.open("/halyde/config/oslogo.ans", "r"), nil
 repeat
@@ -47,6 +47,8 @@ local function preload(module)
   _G[module] = nil
 end
 
+import("/halyde/core/drvload.lua")
+
 preload("component")
 preload("computer")
 
@@ -87,12 +89,12 @@ gpu.setResolution(gpu.maxResolution())
 --handle:close()
 
 local fs = import("filesystem")
-if not fs.exists("/halyde/config/shell.json") then
+if not fs.exists("/halyde/config/shell.json") then -- Auto-generate configs
   fs.copy("/halyde/config/generate/shell.json", "/halyde/config/shell.json")
 end
 if not fs.exists("/halyde/config/startupapps.json") then
   fs.copy("/halyde/config/generate/startupapps.json", "/halyde/config/startupapps.json")
 end
 fs = nil
-  
+
 import("/halyde/core/cormgr.lua")
