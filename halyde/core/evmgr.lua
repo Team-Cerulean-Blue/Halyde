@@ -6,6 +6,7 @@ local computer = import("computer")
 
 keyboard.ctrlDown = false
 keyboard.altDown = false
+keyboard.shiftDown = false
 
 --local ocelot = component.proxy(component.list("ocelot")())
 
@@ -23,6 +24,8 @@ while true do
             keyboard.ctrlDown = true
           elseif key == "lmenu" then
             keyboard.altDown = true
+          elseif key == "lshift" then
+            keyboard.shiftDown = true
           elseif key == "c" and keyboard.ctrlDown and keyboard.altDown then
             if print then
               print("\n\27[91mCoroutine "..tostring(#cormgr.corList).." killed.")
@@ -36,6 +39,8 @@ while true do
             keyboard.ctrlDown = false
           elseif key == "lmenu" then
             keyboard.altDown = false
+          elseif key == "lshift" then
+            keyboard.shiftDown = true
           end
         end
       end
