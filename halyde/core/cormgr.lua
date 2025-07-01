@@ -2,16 +2,15 @@ _G.cormgr = {}
 _G.cormgr.corList = {}
 _G.cormgr.labelList = {}
 
---local ocelot = component.proxy(component.list("ocelot")())
-
 local component = import("component")
 local filesystem = import("filesystem")
 local json = import("json")
 local gpu = component.gpu
+--local ocelot = component.ocelot
 
 function _G.cormgr.loadCoroutine(path,...)
   local args = {...}
-  local cor = coroutine.create(function()
+  local function corFunction()
     local result, errorMessage = xpcall(function(...)
       import(...)
     end, function(errorMessage)
@@ -26,9 +25,22 @@ function _G.cormgr.loadCoroutine(path,...)
       end
     end
     --import(path, table.unpack(args))
-  end)
-  table.insert(_G.cormgr.labelList, string.match(tostring(path), "([^/]+)%.lua$"))
-  table.insert(_G.cormgr.corList, cor)
+  end
+  cormgr.addCoroutine(corFunction, string.match(tostring(path), "([^/]+)%.lua$"))
+end
+
+function _G.cormgr.addCoroutine(func, name)
+  local cor = coroutine.create(func)
+  table.insert(cormgr.corList, cor)
+  table.insert(cormgr.labelList, name)
+  return cor
+end
+
+function _G.cormgr.removeCoroutine(name)
+  local index = table.find(cormgr.labelList, cor)
+  table.remove(cormgr.corList, index)
+  table.remove(cormgr.labelList, index)
+  coroutine.close(cor)
 end
 
 function handleError(errormsg)
@@ -49,6 +61,8 @@ local function runCoroutines()
         end
         if coroutine.status(cormgr.corList[i]) == "dead" then
           table.remove(cormgr.corList, i)
+          table.remove(cormgr.labelList, i)
+          --ocelot.log("Removed coroutine")
           i = i - 1
         end
         --computer.pullSignal(0)
