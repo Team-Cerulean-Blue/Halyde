@@ -10,7 +10,7 @@ local cursorWhite = true
 local changesMade = false
 local renderBuffer = gpu.allocateBuffer()
 local scrollSpeed = 5
---local ocelot = component.proxy(component.list("ocelot")())
+local ocelot = component.ocelot
 
 local function rawset(x, y, text)
   termlib.cursorPosX = x
@@ -54,11 +54,12 @@ end
 local function render()
   gpu.setActiveBuffer(renderBuffer)
   clear()
-  local realCursorX = math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY]) - scrollPosX + 2)
+  ocelot.log(tostring(scrollPosY))
+  local realCursorX = math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 2)
   if realCursorX < 1 then
     scrollPosX = scrollPosX + realCursorX - 1
     cursorPosX = 1
-    realCursorX = math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY]) - scrollPosX + 2)
+    realCursorX = math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 2)
   end
   for i = scrollPosY, height + scrollPosY - 3 do
     rawset(1, i - scrollPosY + 1, (tmpdata[i] or ""):sub(scrollPosX))
@@ -90,7 +91,7 @@ local function scrollUp()
     renderFlag = false
     scrollPosY = 1
   end
-  if math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY]) - scrollPosX + 2) < 1 then
+  if math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 2) < 1 then
     renderFlag = true
   end
 end
@@ -108,7 +109,7 @@ local function scrollDown()
     scrollPosY = scrollPosY + 1
     cursorPosY = height - 2
   end
-  if math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY]) - scrollPosX + 2) < 1 then
+  if math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 2) < 1 then
     renderFlag = true
   end
 end
@@ -117,16 +118,16 @@ local function scrollLeft()
   cursorRenderFlag = true
   cursorWhite = true
   if cursorPosX > 1 then
-    if cursorPosX <= unicode.wlen(tmpdata[cursorPosY]) - scrollPosX + 2 then
+    if cursorPosX <= unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 2 then
       cursorPosX = cursorPosX - 1
-    elseif unicode.wlen(tmpdata[cursorPosY]) - scrollPosX + 1 > 1 then
-      cursorPosX = unicode.wlen(tmpdata[cursorPosY]) - scrollPosX + 1
+    elseif unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 1 > 1 then
+      cursorPosX = unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 1
     end
   elseif scrollPosX > 1 then
     scrollPosX = scrollPosX - 1
     renderFlag = true
   end
-  if math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY]) - scrollPosX + 2) < 1 then
+  if math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 2) < 1 then
     renderFlag = true
   end
 end
@@ -134,7 +135,7 @@ end
 local function scrollRight()
   cursorRenderFlag = true
   cursorWhite = true
-  if cursorPosX <= unicode.wlen(tmpdata[cursorPosY]) - scrollPosX + 1 then
+  if cursorPosX <= unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 1 then
     cursorPosX = cursorPosX + 1
   end
   if cursorPosX > width then
@@ -168,8 +169,8 @@ local function processEvent(args)
       changesMade = true
       renderFlag = true
       cursorWhite = true
-      table.insert(tmpdata, cursorPosY + 1, tmpdata[cursorPosY]:sub(cursorPosX))
-      tmpdata[cursorPosY] = tmpdata[cursorPosY]:sub(1, cursorPosX - 1)
+      table.insert(tmpdata, cursorPosY + 1, tmpdata[cursorPosY + scrollPosY - 1]:sub(cursorPosX))
+      tmpdata[cursorPosY + scrollPosY - 1] = tmpdata[cursorPosY + scrollPosY - 1]:sub(1, cursorPosX - 1)
       cursorPosX = 1
       cursorPosY = cursorPosY + 1
       scrollPosX = 1
@@ -191,23 +192,23 @@ local function processEvent(args)
         if scrollPosY < 1 then
           scrollPosY = 1
         end
-        cursorPosX = unicode.wlen(tmpdata[cursorPosY]) - scrollPosX + 2
+        cursorPosX = unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 2
         if cursorPosX > width then
           scrollPosX = cursorPosX - width + 1
           cursorPosX = width
         end
-        tmpdata[cursorPosY] = tmpdata[cursorPosY] .. tmpdata[cursorPosY + 1]
+        tmpdata[cursorPosY + scrollPosY - 1] = tmpdata[cursorPosY + scrollPosY - 1] .. tmpdata[cursorPosY + 1]
         table.remove(tmpdata, cursorPosY + 1)
         renderFlag = true
       else
-        tmpdata[cursorPosY] = tmpdata[cursorPosY]:sub(1, cursorPosX + scrollPosX - 3) .. tmpdata[cursorPosY]:sub(cursorPosX + scrollPosX - 1)
-        cursorPosX = math.min(cursorPosX - 1, unicode.wlen(tmpdata[cursorPosY]) + 1)
+        tmpdata[cursorPosY + scrollPosY - 1] = tmpdata[cursorPosY + scrollPosY - 1]:sub(1, cursorPosX + scrollPosX - 3) .. tmpdata[cursorPosY + scrollPosY - 1]:sub(cursorPosX + scrollPosX - 1)
+        cursorPosX = math.min(cursorPosX - 1, unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) + 1)
         if cursorPosX < 1 then
           cursorPosX = 1
           scrollPosX = scrollPosX - 1
           renderFlag = true
         else
-          rawset(1, cursorPosY - scrollPosY + 1, tmpdata[cursorPosY]:sub(scrollPosX) .. " ")
+          rawset(1, cursorPosY, tmpdata[cursorPosY + scrollPosY - 1]:sub(scrollPosX) .. " ")
         end
       end
     end
@@ -215,15 +216,15 @@ local function processEvent(args)
       changesMade = true
       cursorRenderFlag = true
       cursorWhite = true
-      tmpdata[cursorPosY] = tmpdata[cursorPosY]:sub(1, cursorPosX + scrollPosX - 2) .. unicode.char(args[3]) .. tmpdata[cursorPosY]:sub(cursorPosX + scrollPosX - 1)
-      cursorPosX = math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY])) + 1
+      tmpdata[cursorPosY + scrollPosY - 1] = tmpdata[cursorPosY + scrollPosY - 1]:sub(1, cursorPosX + scrollPosX - 2) .. unicode.char(args[3]) .. tmpdata[cursorPosY + scrollPosY - 1]:sub(cursorPosX + scrollPosX - 1)
+      cursorPosX = math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1])) + 1
       --ocelot.log(tostring(cursorPosX))
       if cursorPosX > width then
         cursorPosX = width
         scrollPosX = scrollPosX + 1
         renderFlag = true
       else
-        rawset(1, cursorPosY - scrollPosY + 1, tmpdata[cursorPosY]:sub(scrollPosX))
+        rawset(1, cursorPosY, tmpdata[cursorPosY + scrollPosY - 1]:sub(scrollPosX))
       end
     end
   elseif args[1] == "scroll" then
@@ -272,7 +273,7 @@ render()
 while true do
   local args = {event.pull(0.5)}
   local renderFlag, cursorRenderFlag, specialKey = false, false, nil
-  local previousCursorX, previousCursorY = math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY]) - scrollPosX + 2), cursorPosY
+  local previousCursorX, previousCursorY = math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 2), cursorPosY
   if args and args[1] then
     cursorWhite = true
     renderFlag, cursorRenderFlag, specialKey = processEvent(args)
@@ -305,11 +306,11 @@ while true do
   if cursorRenderFlag then
     local char = gpu.get(previousCursorX, previousCursorY)
     rawset(previousCursorX, previousCursorY, char)
-    local realCursorX = math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY]) - scrollPosX + 2)
+    local realCursorX = math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 2)
     if realCursorX < 1 then
       scrollPosX = scrollPosX + realCursorX - 1
       cursorPosX = 1
-      realCursorX = math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY]) - scrollPosX + 2)
+      realCursorX = math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 2)
     end
     local char = gpu.get(realCursorX, cursorPosY)
     if cursorWhite then
