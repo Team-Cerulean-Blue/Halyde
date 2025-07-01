@@ -1,6 +1,8 @@
 local computer = import("computer")
 local event = {}
 
+local bufferTime = 0.05 -- A little bit of buffer time so event's won't be skipped by accident.
+
 --local ocelot = component.proxy(component.list("ocelot")())
 function event.pull(...)
   local args = {...}
@@ -27,7 +29,7 @@ function event.pull(...)
           end
         end
       else
-        if evmgr.eventQueue[i][1] >= startTime then
+        if evmgr.eventQueue[i][1] >= startTime - bufferTime then
           foundevent = true
         end
       end
