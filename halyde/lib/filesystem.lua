@@ -235,8 +235,7 @@ function filesystem.rename(fromPath, toPath)
   if fromAddress == toAddress then
     return component.invoke(fromAddress, "rename", fromAbsPath, toAbsPath)
   else
-    local handle = component.invoke(fromAddress, "open", fromAbsPath, "r")
-    local data, tmpdata
+    local handle, data, tmpdata = component.invoke(fromAddress, "open", fromAbsPath, "r"), "", nil
     repeat
       tmpdata = component.invoke(fromAddress, "read", handle, math.huge or math.maxinteger)
       data = data .. (tmpdata or "")
