@@ -1,7 +1,7 @@
 local loadfile = ...
 local filesystem = loadfile("/halyde/lib/filesystem.lua")(loadfile)
 
-_G._OSVERSION = "Halyde 1.12.2"
+_G._OSVERSION = "Halyde 1.12.3"
 _G._OSLOGO = ""
 local handle, tmpdata = filesystem.open("/halyde/config/oslogo.ans", "r"), nil
 repeat
@@ -46,8 +46,6 @@ local function preload(module)
   package.preloaded[module] = assert(load(data, "="..module))()
   _G[module] = nil
 end
-
-import("/halyde/core/drvload.lua")
 
 preload("component")
 preload("computer")
