@@ -10,7 +10,8 @@ local cursorWhite = true
 local changesMade = false
 local renderBuffer = gpu.allocateBuffer()
 local scrollSpeed = 5
-local ocelot = component.ocelot
+local tab = "  "
+--local ocelot = component.ocelot
 
 local function rawset(x, y, text)
   termlib.cursorPosX = x
@@ -54,7 +55,7 @@ end
 local function render()
   gpu.setActiveBuffer(renderBuffer)
   clear()
-  ocelot.log(tostring(scrollPosY))
+  --ocelot.log(tostring(scrollPosY))
   local realCursorX = math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 2)
   if realCursorX < 1 then
     scrollPosX = scrollPosX + realCursorX - 1
@@ -210,6 +211,20 @@ local function processEvent(args)
         else
           rawset(1, cursorPosY, tmpdata[cursorPosY + scrollPosY - 1]:sub(scrollPosX) .. " ")
         end
+      end
+    end
+    if key == "tab" then
+      changesMade = true
+      cursorRenderFlag = true
+      cursorWhite = true
+      tmpdata[cursorPosY + scrollPosY - 1] = tmpdata[cursorPosY + scrollPosY - 1]:sub(1, cursorPosX + scrollPosX - 2) .. tab .. tmpdata[cursorPosY + scrollPosY - 1]:sub(cursorPosX + scrollPosX - 1)
+      cursorPosX = cursorPosX + unicode.wlen(tab)
+      if cursorPosX > width then
+        scrollPosX = scrollPosX + cursorPosX - width
+        cursorPosX = width
+        renderFlag = true
+      else
+        rawset(1, cursorPosY, tmpdata[cursorPosY + scrollPosY - 1]:sub(scrollPosX))
       end
     end
     if args[3] >= 32 and args[3] <= 126 then
