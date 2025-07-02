@@ -1,0 +1,5 @@
+Usage: reboot
+Reboots the computer.
+
+Examples:
+  reboot   Reboots the computer.
