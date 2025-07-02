@@ -1,0 +1,7 @@
+Usage: download [URL]
+Downloads a file from the internet.
+
+  URL   Specifies the URL from which to download the file from.
+
+Examples:
+  download https://github.com/   Downloads github.com.

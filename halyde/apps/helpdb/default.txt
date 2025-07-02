@@ -4,6 +4,7 @@ All default Halyde shell commands:
   cd         Changes directory.
   clear      Clears the screen.
   cp         Copies a file.
+  download   Downloads a file from the internet.
   echo       Prints a message.
   edit       Opens the text editor.
   fetch      Displays system information.
