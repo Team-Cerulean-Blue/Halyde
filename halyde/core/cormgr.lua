@@ -40,7 +40,7 @@ function _G.cormgr.removeCoroutine(name)
   local index = table.find(cormgr.labelList, cor)
   table.remove(cormgr.corList, index)
   table.remove(cormgr.labelList, index)
-  coroutine.close(cor)
+  --coroutine.close(cor)
 end
 
 function handleError(errormsg)

@@ -123,7 +123,7 @@ function filesystem.open(path, mode, buffered) -- opens a file and returns its h
   if not buffered then
     buffered = true
   end
-  if not (mode == "r" or mode == "w" or mode == "rb" or mode == "wb") then
+  if not (mode == "r" or mode == "w" or mode == "rb" or mode == "wb" or mode == "a" or mode == "ab") then
     return nil, "invalid handle type"
   end
   local address, absPath = filesystem.absolutePath(path)

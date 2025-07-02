@@ -1,7 +1,7 @@
 local computer = import("computer")
 local event = {}
 
-local bufferTime = 0.05 -- A little bit of buffer time so event's won't be skipped by accident.
+local bufferTime = 0.05 -- A little bit of buffer time so events won't be skipped by accident.
 
 --local ocelot = component.proxy(component.list("ocelot")())
 function event.pull(...)
