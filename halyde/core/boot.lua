@@ -1,7 +1,7 @@
 local loadfile = ...
 local filesystem = loadfile("/halyde/lib/filesystem.lua")(loadfile)
 
-_G._OSVERSION = "Halyde 1.14.0"
+_G._OSVERSION = "Halyde 1.14.1"
 _G._OSLOGO = ""
 local handle, tmpdata = filesystem.open("/halyde/config/oslogo.ans", "r"), nil
 repeat
@@ -19,10 +19,8 @@ function _G.import(module, ...)
     return package.preloaded[module]
   end
   local modulepath
-  if module:find("^/") then
-    if filesystem.exists(module) then
-      modulepath = module
-    end
+  if filesystem.exists(module) then
+    modulepath = module
   elseif filesystem.exists("/halyde/lib/"..module..".lua") then
     modulepath = "/halyde/lib/"..module..".lua"
   elseif shell and shell.workingDirectory and filesystem.exists(shell.workingDirectory..module) then
