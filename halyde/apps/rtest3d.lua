@@ -1,3 +1,5 @@
+local component = import("component")
+local computer = import("computer")
 local raster = import("raster")
 local event = import("event")
 
@@ -74,7 +76,8 @@ end
 
 -- Render a single frame
 local function renderFrame()
-    increment = increment + 0.05
+    local time = computer.uptime()*20
+    increment = time*0.05 -- increment + 0.05
     CUBE_SIZE = (math.sin(increment) + 1) * 25
     vertices = {
       {-CUBE_SIZE, -CUBE_SIZE, -CUBE_SIZE}, -- 0: left bottom back
@@ -88,9 +91,9 @@ local function renderFrame()
     }
     -- Update rotation angles
     raster.clear()
-    angleX = angleX + ROTATION_SPEED
-    angleY = angleY + ROTATION_SPEED * 0.7
-    angleZ = angleZ + ROTATION_SPEED * 0.5
+    angleX = time * ROTATION_SPEED       -- angleX
+    angleY = time * ROTATION_SPEED * 0.7 -- angleY
+    angleZ = time * ROTATION_SPEED * 0.5 -- angleZ
     
     -- Project all vertices
     local projectedPoints = {}
@@ -124,6 +127,7 @@ function main()
     -- Main loop (assume this is called repeatedly by the host environment)
     while true do
       renderFrame()
+      coroutine.yield()
       if event.pull("key_down", 0) then
         raster.free()
         break

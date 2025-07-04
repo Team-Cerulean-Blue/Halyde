@@ -5,7 +5,8 @@ local raster = {
   ["displayWidth"]=0,
   ["displayHeight"]=0,
   ["charWidth"]=0,
-  ["charHeight"]=0
+  ["charHeight"]=0,
+  ["backgroundColor"]=0xFFFFFF
 }
 
 local component = import("component")
@@ -34,22 +35,27 @@ function raster.init(width, height, bgcolor)
     width, height = gpu.getResolution()
   end
 
-  for i = 1, width*height do
-    chunksAffected[i] = true
-  end
   raster.charWidth = width
   raster.charHeight = height
 
   width, height = raster.units.charToBraille(width, height)
   
   bgcolor = bgcolor or raster.defaultBackgroundColor
+  if bgcolor~=0 then
+    for i=1,width*height do
+      display[i]=bgcolor
+    end
+  end
 
   raster.displayWidth = width
   raster.displayHeight = height
+  raster.backgroundColor = bgcolor
 
   pcall(function()
     renderBuffer = gpu.allocateBuffer()
   end)
+
+  raster.clear()
 end
 
 function raster.set(x, y, color)
@@ -70,7 +76,7 @@ end
 
 function raster.get(x, y)
   local i = x+y*raster.displayWidth
-  return display[i] or 0
+  return display[i] or raster.backgroundColor
 end
 
 local function stats(arr)
@@ -88,8 +94,14 @@ end
 
 local function getKeys(t)
   local keys = {}
-  for key, _ in pairs(t) do
-    table.insert(keys, key)
+  for k,v in pairs(t) do
+    table.insert(keys,{k,v})
+  end
+  table.sort(keys,function(a,b)
+    return a[2]>b[2]
+  end)
+  for i=1,#keys do
+    keys[i] = keys[i][1]
   end
   return keys
 end
@@ -127,6 +139,7 @@ local function arrayToBraille(arr)
   for i=1,8 do
     codePoint = codePoint | arr[i]<<(i-1)
   end
+  if codePoint==0x2800 then return " " end
   return utf8.char(codePoint)
 end
 
@@ -172,7 +185,10 @@ function raster.clear()
   if renderBuffer~=nil then
     gpu.setActiveBuffer(renderBuffer)
   end
-  clear()
+  -- clear()
+  local bgcolor = raster.backgroundColor
+  gpu.setBackground(bgcolor)
+  gpu.fill(1,1,raster.displayWidth,raster.displayHeight," ")
   display = {}
 end
 
