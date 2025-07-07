@@ -2,6 +2,7 @@ local file = ...
 local fs = import("filesystem")
 local event = import("event")
 local component = import("component")
+local unicode = import("unicode")
 local gpu = component.gpu
 local width, height = gpu.getResolution()
 local scrollPosX, scrollPosY = 1, 1

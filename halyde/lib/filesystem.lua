@@ -2,9 +2,11 @@ local loadfile = ... -- raw loadfile from boot.lua
 local component, computer
 
 if loadfile then
+  unicode = loadfile("/halyde/lib/unicode.lua")(loadfile)
   component = loadfile("/halyde/lib/component.lua")(loadfile)
   computer = _G.computer
 elseif import then
+  unicode = import("unicode")
   component = import("component")
   computer = import("computer")
 end
@@ -44,7 +46,10 @@ function filesystem.absolutePath(path) -- returns the address and absolute path 
   checkArg(1, path, "string")
   path = filesystem.canonical(path)
   local address = nil
-  if path:find("^/mnt/...") then
+  if path:find("^/tmp") then
+    address = computer.tmpAddress()
+    path = path:sub(5)
+  elseif path:find("^/mnt/...") then
      address = component.get(path:sub(6,8))
     if not address then
       address = computer.getBootAddress()
@@ -69,48 +74,36 @@ function filesystem.exists(path) -- check if path exists
   return component.invoke(address, "exists", absPath)
 end
 
-local function readUniChar(readByte)
-    local function inRange(min,max,...)
-        for _,v in ipairs({...}) do
-            if not (v and v>=min and v<max) then return false end
-        end
-        return true
-    end
-    local function readByte0() return readByte() or 0 end
+local function readBytes(self,n)
+  n = n or 1
+  if n==1 then
+    local byte = self:read(1)
+    if byte==nil then return nil end
+    return string.byte(byte)
+  end
+  local bytes, res = {string.byte(self:read(n),1,n)}, 0
+  for i=1,#bytes do
+    res = (res<<8)&0xFFFFFFFF | bytes[i]
+  end
+  return res
+end
 
-    local byte = readByte()
+local function readUnicodeChar(self)
+  return unicode.readChar(function()
+    return self:readBytes(1)
+  end)
+end
 
-    if byte < 0x80 then
-        -- ASCII character (0xxxxxxx)
-        return byte
-    elseif byte < 0xC0 then
-        -- Continuation byte (10xxxxxx), invalid at start position
-        return nil
-    elseif byte < 0xE0 then
-        -- 2-byte sequence (110xxxxx 10xxxxxx)
-        local byte2 = readByte0()
-        if inRange(0x80,0xC0,byte2) then
-            local code_point = ((byte & 0x1F) << 6) | (byte2 & 0x3F)
-            return code_point
-        end
-    elseif byte < 0xF0 then
-        -- 3-byte sequence (1110xxxx 10xxxxxx 10xxxxxx)
-        local byte2, byte3 = readByte0(), readByte0()
-        if inRange(0x80,0xC0,byte2,byte3)then
-            local code_point = ((byte & 0x0F) << 12) | ((byte2 & 0x3F) << 6) | (byte3 & 0x3F)
-            return code_point
-        end
-    elseif byte < 0xF8 then
-        -- 4-byte sequence (11110xxx 10xxxxxx 10xxxxxx 10xxxxxx)
-        local byte2, byte3, byte4 = readByte0(), readByte0(), readByte0()
-        if inRange(0x80,0xC0,byte2,byte3,byte4) then
-            local code_point = ((byte & 0x07) << 18) | ((byte2 & 0x3F) << 12) | ((byte3 & 0x3F) << 6) | (byte4 & 0x3F)
-            return code_point
-        end
-    end
+local function iterateBytes(self)
+  return function()
+    local byte = readBytes(self,1)
+    if byte==nil then self:close() end
+    return byte
+  end
+end
 
-    -- Invalid UTF-8 byte sequence
-    return nil
+local function iterateUnicodeChars(self)
+  return unicode.iterate(iterateBytes(self))
 end
 
 function filesystem.open(path, mode, buffered) -- opens a file and returns its handle
@@ -151,7 +144,6 @@ function filesystem.open(path, mode, buffered) -- opens a file and returns its h
     if buffered then
       local limit = string.len(content)+1
       local out = nil
-      -- error("amount "..amount..", limit "..limit)
       if readcursor<limit then
         if amount==math.huge then
           out = string.sub(content,math.min(readcursor,limit))
@@ -168,20 +160,10 @@ function filesystem.open(path, mode, buffered) -- opens a file and returns its h
       return component.invoke(self.address, "read", self.handle, amount)
     end
   end
-  function properHandle.readBytes(self,n)
-    n = n or 1
-    if n==1 then return string.byte(self:read(1)) end
-    local bytes, res = {string.byte(self:read(n),1,n)}, 0
-    for i=1,#bytes do
-      res = (res<<8)&0xFFFFFFFF | bytes[i]
-    end
-    return res
-  end
-  function properHandle.readUnicodeChar(self)
-    return unicode.char(readUniChar(function()
-      return self:readBytes(1)
-    end))
-  end
+  properHandle.readBytes = readBytes
+  properHandle.readUnicodeChar = readUnicodeChar
+  properHandle.iterateBytes = iterateBytes
+  properHandle.iterateUnicodeChars = iterateUnicodeChars
   function properHandle.write(self, data)
     checkArg(2, data, "string")
     return component.invoke(self.address, "write", self.handle, data)
@@ -202,8 +184,11 @@ function filesystem.list(path)
   if path == "/mnt" then
     -- list drives
     local returnTable = {}
+    local tmpAddress = computer.tmpAddress()
     for address, _ in component.list("filesystem") do
-      table.insert(returnTable, address:sub(1, 3) .. "/")
+      if address~=tmpAddress then
+        table.insert(returnTable, address:sub(1, 3) .. "/")
+      end
     end
     return returnTable
   else
@@ -293,6 +278,49 @@ function filesystem.makeDirectory(path)
     return false
   end
   return component.invoke(address, "makeDirectory", absPath)
+end
+
+local function randomHex(length)
+    local chars = "0123456789abcdef"
+    local result = ""
+    for i = 1, length do
+        local index = math.random(1, #chars)
+        result = result .. string.sub(chars, index, index)
+    end
+    return result
+end
+
+function filesystem.makeReadStream(content)
+  local properHandle = {}
+  local readcursor = 1
+  function properHandle.read(self, amount)
+    checkArg(2, amount, "number")
+    local limit = string.len(content)+1
+    local out = nil
+    if readcursor<limit then
+      if amount==math.huge then
+        out = string.sub(content,math.min(readcursor,limit))
+      else
+        out = string.sub(content,math.min(readcursor,limit),math.min(readcursor+amount-1,limit))
+      end
+    end
+    readcursor=readcursor+amount
+    if out=="" then
+      return nil
+    end
+    return out
+  end
+  properHandle.readBytes = readBytes
+  properHandle.readUnicodeChar = readUnicodeChar
+  properHandle.iterateBytes = iterateBytes
+  properHandle.iterateUnicodeChars = iterateUnicodeChars
+  function properHandle.write()
+    return nil
+  end
+  function properHandle.close()
+    content=nil
+  end
+  return properHandle
 end
 
 return(filesystem)

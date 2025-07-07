@@ -1,3 +1,4 @@
+local unicode = import("unicode")
 local event = import("event")
 --local keyboard = import("keyboard")
 
@@ -86,8 +87,8 @@ function termlib.write(text, textWrap)
   if text:find("\a") then
     computer.beep()
   end
-  text = "\27[0m" .. text:gsub("\t", "  ")
   text = tostring(text)
+  text = "\27[0m" .. text:gsub("\t", "  ")
   readBreak = 0
   -- readBreak is for when, inside the for loop, there normally would have been an increase in the "i" variable because it has read more than one character.
   -- unfortunately, changing the "i" variable would have unpredictable effects, so to not risk anything, this workaround was done.
@@ -187,203 +188,177 @@ function _G.clear()
   termlib.cursorPosX, termlib.cursorPosY = 1, 1
 end
 
--- god i hope this silly claude code works first try
--- Fluxdrive caught vibe coding???
-function _G.read(readHistoryType, prefix, defaultText)
+function _G.read(readHistoryType, prefix, defaultText, maxChars)
   checkArg(1, readHistoryType, "string", "nil")
   checkArg(2, prefix, "string", "nil")
   checkArg(3, defaultText, "string", "nil")
-  local curtext = defaultText or ""
-  local prefix = prefix or ""
-  local textCursorPos = unicode.wlen(curtext) + 1 -- Position within the text (1-based)
+  checkArg(4, maxChars, "number", "nil")
+  maxChars = maxChars or math.huge
 
-  local RHIndex
+  local text = defaultText or ""
+
+  local historyIdx
   if readHistoryType then
     if not termlib.readHistory[readHistoryType] then
-      termlib.readHistory[readHistoryType] = {curtext}
-    elseif termlib.readHistory[readHistoryType][#termlib.readHistory[readHistoryType]] ~= "" then
-      table.insert(termlib.readHistory[readHistoryType], curtext)
+      termlib.readHistory[readHistoryType] = {text}
+    elseif termlib.readHistory[readHistoryType][#termlib.readHistory[readHistoryType] ] ~= "" then
+      table.insert(termlib.readHistory[readHistoryType], text)
     end
-    RHIndex = #termlib.readHistory[readHistoryType]
+    historyIdx = #termlib.readHistory[readHistoryType]
   end
 
-  local cursorPosX, cursorPosY = termlib.cursorPosX, termlib.cursorPosY
-
-  -- Track maximum text length to ensure proper clearing across wrapped lines
-  local maxTextLength = unicode.wlen(prefix .. curtext)
-
-  -- Function to calculate how many lines text will occupy
-  local function calculateLines(text)
-  local totalWidth = unicode.wlen(prefix .. text)
-  local width = gpu.getResolution()
-  return math.ceil(totalWidth / width)
+  local cur = unicode.len(text)+1
+  if prefix then termlib.write(prefix) end
+  local startX, startY = termlib.cursorPosX, termlib.cursorPosY
+  local fg, bg = gpu.getForeground(), gpu.getBackground()
+  local cursorBlink = true
+  local function get(idx)
+    idx=startX+idx-1
+    return gpu.get(idx%width,startY+(idx//width))
   end
-
-  -- Track maximum lines used
-  local maxLinesUsed = calculateLines(curtext)
-
-  -- Function to redraw the input line with cursor
-  local function redrawLine()
-  local startX, startY = cursorPosX, cursorPosY
-
-  -- Calculate current and max lines needed
-  local currentLines = calculateLines(curtext)
-  local linesToClear = math.max(maxLinesUsed, currentLines)
-
-  -- Clear all potentially used lines
-  for i = 0, linesToClear - 1 do
-    termlib.cursorPosX, termlib.cursorPosY = 1, startY + i
-    if startY + i <= height then
-      local width = gpu.getResolution()
-      termlib.write(string.rep(" ", width))
+  local function checkScroll(y)
+    for i=1,y-height do
+      scrollDown()
+      startY=startY-1
+    end
+    return math.min(y,height)
+  end
+  local function set(idx,chr,rev)
+    if chr==nil or chr=="" then return end
+    if rev then
+      gpu.setForeground(bg)
+      gpu.setBackground(fg)
+    else
+      gpu.setForeground(fg)
+      gpu.setBackground(bg)
+    end
+    idx=startX+idx-1
+    local setX, setY = (idx-1)%width+1, startY+((idx-1)//width+1)-1
+    setY = checkScroll(setY)
+    gpu.set(setX,setY,unicode.sub(chr,1,width-setX+1))
+    for i=1,math.ceil((#chr+setX-1)/width)+1 do
+      gpu.set(1,setY+i,unicode.sub(chr,2-setX+i*width,width+i*width-setX))
+      setY = checkScroll(setY)
     end
   end
-
-  -- Reset cursor to start position
-  termlib.cursorPosX, termlib.cursorPosY = startX, startY
-
-  -- Update tracking variables
-  maxTextLength = math.max(maxTextLength, unicode.wlen(prefix .. curtext))
-  maxLinesUsed = math.max(maxLinesUsed, currentLines)
-
-  -- Draw text with cursor positioned correctly
-  local beforeCursor = curtext:sub(1, utf8.offset(curtext, textCursorPos) - 1 or 0)
-  local afterCursor = curtext:sub(utf8.offset(curtext, textCursorPos) or (#curtext + 1))
-
-  termlib.write(prefix .. beforeCursor)
-  termlib.write("\27[30m\27[107m" .. (afterCursor:sub(1, 1) ~= "" and afterCursor:sub(1, 1) or " ") .. "\27[0m") -- HUGE SHOUTOUT TO WAH FOR MAKING THE ESCAPE CODES WORK YEAAAAAAA
-  termlib.write(afterCursor:sub(2))
+  local function strDef(a,b)
+    if #a==0 then return b end
+    return a
   end
+  local function curPos(cur)
+    -- component.ocelot.log(table.concat({cur,unicode.wlen(unicode.sub(text,1,cur)),unicode.len(text)}," "))
+    return unicode.wlen(unicode.sub(text,1,cur-1))+1
+  end
+  local function add(chr)
+    if type(chr)~="string" or #chr==0 then return end
+    if unicode.len(text)>=maxChars then return end
+    if maxChars<math.huge then
+      chr=unicode.sub(chr,1,maxChars-unicode.len(text))
+    end
+    text=unicode.sub(text,1,cur-1)..chr..unicode.sub(text,cur)
+    set(curPos(cur),chr,false)
+    cur=math.min(cur+unicode.len(chr),maxChars+1)
+    set(curPos(cur),strDef(unicode.sub(text,cur,cur)," "),true)
+    cursorBlink = true
+    set(curPos(cur+1),unicode.sub(text,cur+1),false)
+  end
+  local function moveCur(dir)
+    set(curPos(cur),strDef(unicode.sub(text,cur,cur)," "),false)
+    cur=math.max(math.min(cur+dir,unicode.len(text)+1),1)
+    set(curPos(cur),strDef(unicode.sub(text,cur,cur)," "),true)
+    cursorBlink = true
+  end
+  local function isLine(chr)
+    return chr=="\n" or chr=="\r"
+  end
+  --[[ gpu.set(startX,startY,unicode.sub(text,1,width-startX))
+  for i=1,(#text+startX)//width-1 do
+    gpu.set(startX,startY+i,unicode.sub(text,1+i*width,width-startX+i*width))
+  end ]]
+  set(1,text,false)
+  set(curPos(cur)," ",true)
 
-  redrawLine()
-  local cursorWhite = true
+  local function reprint(new)
+    set(1,new..string.rep(" ",unicode.wlen(text)-unicode.wlen(new)+1),false)
+    cur=unicode.len(new)+1
+    text=new
+    set(curPos(cur)," ",true)
+  end
+  local function updateHistory()
+    if not readHistoryType then return end
+    termlib.readHistory[readHistoryType][historyIdx]=text
+  end
 
   while true do
     local args = {event.pull("key_down", "clipboard", 0.5)}
-
-    if args[1] == "key_down" and args[4] then
-      cursorWhite = true
-      local keycode = args[4]
-      local key = keyboard.keys[keycode]
-
-      -- Handle arrow keys
-      if key == "up" and readHistoryType then
-        RHIndex = RHIndex - 1
-        if RHIndex <= 0 then
-          RHIndex = 1
+    if args and args[1] == "key_down" and args[4] then
+      local key = keyboard.keys[args[4]]
+      if key=="up" and readHistoryType then
+        historyIdx=math.max(historyIdx-1,1)
+        reprint(termlib.readHistory[readHistoryType][historyIdx])
+      elseif key=="down" and readHistoryType then
+        historyIdx=math.min(historyIdx+1,#termlib.readHistory[readHistoryType])
+        reprint(termlib.readHistory[readHistoryType][historyIdx])
+      elseif key=="left" then
+        moveCur(-1)
+      elseif key=="right" then
+        moveCur(1)
+      elseif key=="home" then
+        moveCur(-math.huge)
+      elseif key=="end" then
+        moveCur(math.huge)
+      elseif key=="back" and cur>1 then
+        text=unicode.sub(text,1,cur-2)..unicode.sub(text,cur)
+        cur=cur-1
+        set(curPos(cur),strDef(unicode.sub(text,cur,cur)," "),true)
+        cursorBlink = true
+        set(curPos(cur)+1,unicode.sub(text,cur+1).."  ",false)
+        updateHistory()
+      elseif key=="delete" then
+        text = unicode.sub(text,1,cur-1)..unicode.sub(text,cur+1)
+        set(curPos(cur),strDef(unicode.sub(text,cur,cur)," "),true)
+        cursorBlink = true
+        if cur<=unicode.len(text) then
+          set(curPos(cur+1),unicode.sub(text,cur+1).."  ",false)
         end
-        curtext = termlib.readHistory[readHistoryType][RHIndex]
-        textCursorPos = unicode.wlen(curtext) + 1
-        redrawLine()
-
-      elseif key == "down" and readHistoryType then
-        RHIndex = RHIndex + 1
-        if RHIndex > #termlib.readHistory[readHistoryType] then
-          RHIndex = #termlib.readHistory[readHistoryType]
-        end
-        curtext = termlib.readHistory[readHistoryType][RHIndex]
-        textCursorPos = unicode.wlen(curtext) + 1
-        redrawLine()
-
-      elseif key == "left" then
-        -- Move cursor left
-        if textCursorPos > 1 then
-          textCursorPos = textCursorPos - 1
-          redrawLine()
-        end
-
-      elseif key == "right" then
-        -- Move cursor right
-        if textCursorPos <= unicode.wlen(curtext) then
-          textCursorPos = textCursorPos + 1
-          redrawLine()
-        end
-
-      elseif key == "home" then
-        -- Move to beginning of line
-        textCursorPos = 1
-        redrawLine()
-
-      elseif key == "end" then
-        -- Move to end of line
-        textCursorPos = unicode.wlen(curtext) + 1
-        redrawLine()
-
-      elseif key == "back" then
-        -- Backspace - delete character before cursor
-        if textCursorPos > 1 then
-          local beforeCursor = curtext:sub(1, utf8.offset(curtext, textCursorPos - 1) - 1 or 0)
-          local afterCursor = curtext:sub(utf8.offset(curtext, textCursorPos) or (#curtext + 1))
-          curtext = beforeCursor .. afterCursor
-          textCursorPos = textCursorPos - 1
-          if readHistoryType then
-            termlib.readHistory[readHistoryType][RHIndex] = curtext
-          end
-          redrawLine()
-        end
-
-      elseif key == "delete" then
-        -- Delete - delete character at cursor
-        if textCursorPos <= unicode.wlen(curtext) then
-          local beforeCursor = curtext:sub(1, utf8.offset(curtext, textCursorPos) - 1 or 0)
-          local afterCursor = curtext:sub(utf8.offset(curtext, textCursorPos + 1) or (#curtext + 1))
-          curtext = beforeCursor .. afterCursor
-          if readHistoryType then
-            termlib.readHistory[readHistoryType][RHIndex] = curtext
-          end
-          redrawLine()
-        end
-
-      elseif key == "enter" then
-        termlib.cursorPosX, termlib.cursorPosY = cursorPosX, cursorPosY
-        print(prefix .. curtext .. " ")
-        if readHistoryType then
-          while #termlib.readHistory[readHistoryType] > 50 do
-            table.remove(termlib.readHistory[readHistoryType], 1)
-          end
-        end
-        return curtext
-
-
-      elseif args[3] >= 32 and args[3] <= 126 then
-        -- Insert character at cursor position
-        local char = unicode.char(args[3]) or ""
-        local beforeCursor = curtext:sub(1, utf8.offset(curtext, textCursorPos) - 1 or 0)
-        local afterCursor = curtext:sub(utf8.offset(curtext, textCursorPos) or (#curtext + 1))
-        curtext = beforeCursor .. char .. afterCursor
-        textCursorPos = textCursorPos + 1
-        if readHistoryType then
-          termlib.readHistory[readHistoryType][RHIndex] = curtext
-        end
-        redrawLine()
+        updateHistory()
+      elseif key=="enter" then
+        set(curPos(cur),strDef(unicode.sub(text,cur,cur)," "),false)
+        break
+      elseif not (args[3]<32 or (args[3]>0x7F and args[3]<=0x9F)) then
+        add(unicode.char(args[3]) or " ")
+        updateHistory()
       end
-
-    elseif args[1] == "clipboard" then
-      -- Handle clipboard paste
-        local text = args[3] or ""
-        local beforeCursor = curtext:sub(1, utf8.offset(curtext, textCursorPos) - 1 or 0)
-        local afterCursor = curtext:sub(utf8.offset(curtext, textCursorPos) or (#curtext + 1))
-        curtext = beforeCursor .. text .. afterCursor
-        textCursorPos = textCursorPos + #text
-        if readHistoryType then
-          termlib.readHistory[readHistoryType][RHIndex] = curtext
-        end
-        redrawLine()
-
+    elseif args and args[1]=="clipboard" then
+      local clip = args[3]
+      if not args[3] then goto continue end
+      while isLine(unicode.sub(clip,1,1)) do clip=unicode.sub(clip,2) end
+      while isLine(unicode.sub(clip,-1)) do clip=unicode.sub(clip,1,-2) end
+      add(clip)
+      updateHistory()
     else
-      -- Cursor blink timing
-      cursorWhite = not cursorWhite
-      if cursorWhite then
-        redrawLine()
-      else
-        -- Show cursor as normal character or space
-        termlib.cursorPosX, termlib.cursorPosY = cursorPosX, cursorPosY
-        local beforeCursor = curtext:sub(1, utf8.offset(curtext, textCursorPos) - 1 or 0)
-        local afterCursor = curtext:sub(utf8.offset(curtext, textCursorPos) or (#curtext + 1))
-        termlib.write(prefix .. beforeCursor)
-        termlib.write(afterCursor:sub(1, 1) ~= "" and afterCursor:sub(1, 1) or " ")
-        termlib.write(afterCursor:sub(2))
-      end
+      cursorBlink=not cursorBlink
+      set(curPos(cur),strDef(unicode.sub(text,cur,cur)," "),cursorBlink)
+    end
+    ::continue::
+  end
+
+  if readHistoryType then
+    if termlib.readHistory[readHistoryType][#termlib.readHistory[readHistoryType]]=="" then
+      table.remove(termlib.readHistory[readHistoryType],#termlib.readHistory[readHistoryType])
+    end
+    if historyIdx<#termlib.readHistory[readHistoryType] then
+      table.remove(termlib.readHistory[readHistoryType],historyIdx)
+      table.insert(termlib.readHistory[readHistoryType],text)
+    end
+    while #termlib.readHistory[readHistoryType] > 50 do
+      table.remove(termlib.readHistory[readHistoryType], 1)
     end
   end
+
+  termlib.cursorPosX=1
+  termlib.cursorPosY=termlib.cursorPosY+math.ceil((unicode.wlen(text)+startX-1)/width)
+  if termlib.cursorPosY>height then scrollDown() end
+
+  return text
 end
