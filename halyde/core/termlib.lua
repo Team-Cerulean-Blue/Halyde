@@ -246,7 +246,6 @@ function _G.read(readHistoryType, prefix, defaultText, maxChars)
     return a
   end
   local function curPos(cur)
-    -- component.ocelot.log(table.concat({cur,unicode.wlen(unicode.sub(text,1,cur)),unicode.len(text)}," "))
     return unicode.wlen(unicode.sub(text,1,cur-1))+1
   end
   local function add(chr)
@@ -265,6 +264,26 @@ function _G.read(readHistoryType, prefix, defaultText, maxChars)
   local function moveCur(dir)
     set(curPos(cur),strDef(unicode.sub(text,cur,cur)," "),false)
     cur=math.max(math.min(cur+dir,unicode.len(text)+1),1)
+    set(curPos(cur),strDef(unicode.sub(text,cur,cur)," "),true)
+    cursorBlink = true
+  end
+  local function isLetter(chr)
+    return not string.find("\x09 :@-./_~?&=%+#",chr,1,true)
+  end
+  local function nextCur(dir,chr)
+    local next = math.max(math.min(cur+dir,unicode.len(text)+1),1)
+    if chr then return unicode.sub(text,next,next) end
+    return next
+  end
+  local function moveWord(dir)
+    if nextCur(dir)==cur then return end
+    set(curPos(cur),strDef(unicode.sub(text,cur,cur)," "),false)
+    while nextCur(dir)~=cur and isLetter(nextCur(dir,true))==(dir==1) do
+      cur=nextCur(dir)
+    end
+    while nextCur(dir)~=cur and isLetter(nextCur(dir,true))==(dir==-1) do
+      cur=nextCur(dir)
+    end
     set(curPos(cur),strDef(unicode.sub(text,cur,cur)," "),true)
     cursorBlink = true
   end
@@ -299,6 +318,10 @@ function _G.read(readHistoryType, prefix, defaultText, maxChars)
       elseif key=="down" and readHistoryType then
         historyIdx=math.min(historyIdx+1,#termlib.readHistory[readHistoryType])
         reprint(termlib.readHistory[readHistoryType][historyIdx])
+      elseif key=="left" and keyboard.ctrlDown then
+        moveWord(-1)
+      elseif key=="right" and keyboard.ctrlDown then
+        moveWord(1)
       elseif key=="left" then
         moveCur(-1)
       elseif key=="right" then
