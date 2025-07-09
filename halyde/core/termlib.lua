@@ -72,6 +72,29 @@ local function parseCodeNumbers(code)
   return o
 end
 
+local function from8BitColor(num)
+  num=math.floor(num)&255
+  if num<16 then return 0x444444*((num>>3)&1)+(0xBB0000*((num>>2)&1)|0x00BB00*((num>>1)&1)|0x0000BB*(num&1)) end
+  if num>=232 then return 0x10101*(8+(num-232)*10) end
+  num=num-16
+  local palette = {0,95,135,175,215,255}
+  return (palette[(num//36)%6+1]<<16)|(palette[(num//6)%6+1]<<8)|palette[num%6+1]
+end
+
+local function from24BitColor(r,g,b)
+  r,g,b=math.floor(r)&255,math.floor(g)&255,math.floor(b)&255
+  return (r<<16)|(g<<8)|b
+end
+
+local function findCodeEnd(text,i)
+  local function inRange(v,min,max)
+    return v>=min and v<=max
+  end
+  i=i+2
+  while not inRange(text:byte(i),0x40,0x7F) do i=i+1 end
+  return i
+end
+
 function termlib.write(text, textWrap)
   width, height = gpu.getResolution()
 
@@ -130,7 +153,8 @@ function termlib.write(text, textWrap)
       if codeType=="[" then
         -- Control Sequence Introducer
         --ocelot.log("Control Sequence Introducer")
-        codeEndIdx = string.find(text,"m",i)
+        codeEndIdx = findCodeEnd(text,i)
+        -- codeEndIdx = string.find(text,"m",i)
         code = string.sub(text,i,codeEndIdx)
         --ocelot.log("Code: "..code.." ("..i..", "..codeEndIdx..")")
         readBreak = readBreak + #code - 1
@@ -143,11 +167,23 @@ function termlib.write(text, textWrap)
           if nums[1]>=30 and nums[1]<=37 then
             gpu.setForeground(ANSIColorPalette["dark"][nums[1]%10])
           end
+          if nums[1]==38 and nums[2]==5 then
+            gpu.setForeground(from8BitColor(nums[3]))
+          end
+          if nums[1]==38 and nums[2]==2 then
+            gpu.setForeground(from24BitColor(nums[3],nums[4],nums[5]))
+          end
           if nums[1]==39 or nums[1]==0 then
             gpu.setForeground(defaultForegroundColor)
           end
           if nums[1]>=40 and nums[1]<=47 then
             gpu.setBackground(ANSIColorPalette["dark"][nums[1]%10])
+          end
+          if nums[1]==48 and nums[2]==5 then
+            gpu.setBackground(from8BitColor(nums[3]))
+          end
+          if nums[1]==48 and nums[2]==2 then
+            gpu.setBackground(from24BitColor(nums[3],nums[4],nums[5]))
           end
           if nums[1]==49 or nums[1]==0 then
             gpu.setBackground(defaultBackgroundColor)
