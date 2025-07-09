@@ -209,6 +209,50 @@ function filesystem.size(path)
   return component.invoke(address, "size", absPath)
 end
 
+local function getRecursiveList(address,absPath)
+  local list = component.invoke(address,"list",absPath)
+  local dirList = {}
+  local listChanged = true
+  while listChanged do
+    listChanged = false
+    for i=1,#list do
+      if component.invoke(address, "isDirectory", absPath.."/"..list[i]) then
+        listChanged = true
+        local dir = list[i]
+        if dir:sub(-1)=="/" then dir=dir:sub(1,-2) end
+        table.insert(dirList,dir)
+        table.remove(list,i)
+        local subDir = component.invoke(address,"list",absPath.."/"..dir)
+        for j=1,#subDir do table.insert(list,dir.."/"..subDir[j]) end
+      end
+    end
+  end
+  return list,dirList
+end
+
+local function copyRecursive(fromAddress,fromAbsPath,toAddress,toAbsPath)
+  if fromAbsPath:sub(-1)=="/" then fromAbsPath=fromAbsPath:sub(1,-2) end
+  if toAbsPath:sub(-1)=="/" then toAbsPath=toAbsPath:sub(1,-2) end
+  component.invoke(toAddress,"makeDirectory",toAbsPath)
+  local fileList,dirList = getRecursiveList(fromAddress,fromAbsPath)
+  for i=1,#dirList do
+    component.invoke(toAddress,"makeDirectory",toAbsPath.."/"..dirList[i])
+  end
+  for i=1,#fileList do
+    local fromFile, toFile = fromAbsPath.."/"..fileList[i], toAbsPath.."/"..fileList[i]
+    local handle = component.invoke(fromAddress, "open", fromFile, "r")
+    local data, tmpdata = "", nil
+    repeat
+      tmpdata = component.invoke(fromAddress, "read", handle, math.huge or math.maxinteger)
+      data = data .. (tmpdata or "")
+    until not tmpdata
+    tmpdata = component.invoke(fromAddress, "close", handle)
+    local handle = component.invoke(toAddress, "open", toFile, "w")
+    component.invoke(toAddress, "write", handle, data)
+    component.invoke(toAddress, "close", handle)
+  end
+end
+
 function filesystem.rename(fromPath, toPath)
   checkArg(1, fromPath, "string")
   checkArg(2, toPath, "string")
@@ -219,6 +263,9 @@ function filesystem.rename(fromPath, toPath)
   end
   if fromAddress == toAddress then
     return component.invoke(fromAddress, "rename", fromAbsPath, toAbsPath)
+  elseif component.invoke(fromAddress, "isDirectory", fromAbsPath) then
+    copyRecursive(fromAddress,fromAbsPath,toAddress,toAbsPath)
+    component.invoke(fromAddress,"remove", fromAbsPath)
   else
     local handle, data, tmpdata = component.invoke(fromAddress, "open", fromAbsPath, "r"), "", nil
     repeat
@@ -241,16 +288,20 @@ function filesystem.copy(fromPath, toPath)
   if not fromAddress or not toAddress then
     return false
   end
-  local handle = component.invoke(fromAddress, "open", fromAbsPath, "r")
-  local data, tmpdata = "", nil
-  repeat
-    tmpdata = component.invoke(fromAddress, "read", handle, math.huge or math.maxinteger)
-    data = data .. (tmpdata or "")
-  until not tmpdata
-  tmpdata = component.invoke(fromAddress, "close", handle)
-  local handle = component.invoke(toAddress, "open", toAbsPath, "w")
-  component.invoke(toAddress, "write", handle, data)
-  component.invoke(toAddress, "close", handle)
+  if component.invoke(fromAddress, "isDirectory", fromAbsPath) then
+    copyRecursive(fromAddress,fromAbsPath,toAddress,toAbsPath)
+  else
+    local handle = component.invoke(fromAddress, "open", fromAbsPath, "r")
+    local data, tmpdata = "", nil
+    repeat
+      tmpdata = component.invoke(fromAddress, "read", handle, math.huge or math.maxinteger)
+      data = data .. (tmpdata or "")
+    until not tmpdata
+    tmpdata = component.invoke(fromAddress, "close", handle)
+    local handle = component.invoke(toAddress, "open", toAbsPath, "w")
+    component.invoke(toAddress, "write", handle, data)
+    component.invoke(toAddress, "close", handle)
+  end
 end
 
 function filesystem.isDirectory(path)
@@ -278,16 +329,6 @@ function filesystem.makeDirectory(path)
     return false
   end
   return component.invoke(address, "makeDirectory", absPath)
-end
-
-local function randomHex(length)
-    local chars = "0123456789abcdef"
-    local result = ""
-    for i = 1, length do
-        local index = math.random(1, #chars)
-        result = result .. string.sub(chars, index, index)
-    end
-    return result
 end
 
 function filesystem.makeReadStream(content)
