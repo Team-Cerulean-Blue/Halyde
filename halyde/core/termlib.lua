@@ -243,6 +243,11 @@ function _G.read(readHistoryType, prefix, defaultText, maxChars)
     historyIdx = #termlib.readHistory[readHistoryType]
   end
 
+  local function updateHistory()
+    if not readHistoryType then return end
+    termlib.readHistory[readHistoryType][historyIdx]=text
+  end
+
   local cur = unicode.len(text)+1
   if prefix then termlib.write(prefix) end
   local startX, startY = termlib.cursorPosX, termlib.cursorPosY
@@ -306,21 +311,43 @@ function _G.read(readHistoryType, prefix, defaultText, maxChars)
   local function isLetter(chr)
     return not string.find("\x09 :@-./_~?&=%+#",chr,1,true)
   end
-  local function nextCur(dir,chr)
-    local next = math.max(math.min(cur+dir,unicode.len(text)+1),1)
+  local function nextCur(dir,chr,icur)
+    if icur==nil then icur=cur end
+    local next = math.max(math.min(icur+dir,unicode.len(text)+1),1)
     if chr then return unicode.sub(text,next,next) end
     return next
+  end
+  local function curAfterWord(dir)
+    local ncur = cur
+    while nextCur(dir,false,ncur)~=ncur and isLetter(nextCur(dir,true,ncur))==(dir==1) do
+      ncur=nextCur(dir,false,ncur)
+    end
+    while nextCur(dir,false,ncur)~=ncur and isLetter(nextCur(dir,true,ncur))==(dir==-1) do
+      ncur=nextCur(dir,false,ncur)
+    end
+    return ncur
   end
   local function moveWord(dir)
     if nextCur(dir)==cur then return end
     set(curPos(cur),strDef(unicode.sub(text,cur,cur)," "),false)
-    while nextCur(dir)~=cur and isLetter(nextCur(dir,true))==(dir==1) do
-      cur=nextCur(dir)
-    end
-    while nextCur(dir)~=cur and isLetter(nextCur(dir,true))==(dir==-1) do
-      cur=nextCur(dir)
-    end
+    cur=curAfterWord(dir)
     set(curPos(cur),strDef(unicode.sub(text,cur,cur)," "),true)
+    cursorBlink = true
+  end
+  local function deleteWord(dir)
+    local after = curAfterWord(dir)
+    local lenb = unicode.wlen(text)
+    if dir==1 then
+      text=unicode.sub(text,1,cur-1)..unicode.sub(text,after)
+      set(curPos(cur+1),unicode.sub(text,cur+1)..string.rep(" ",lenb-unicode.wlen(text)+1),false)
+      set(curPos(cur),strDef(unicode.sub(text,cur,cur)," "),true)
+    else
+      text = unicode.sub(text,1,after-1)..unicode.sub(text,cur)
+      cur=after
+      set(curPos(cur+1),unicode.sub(text,cur+1)..string.rep(" ",lenb-unicode.wlen(text)+1),false)
+      set(curPos(cur),strDef(unicode.sub(text,cur,cur)," "),true)
+    end
+    updateHistory()
     cursorBlink = true
   end
   local function isLine(chr)
@@ -338,10 +365,6 @@ function _G.read(readHistoryType, prefix, defaultText, maxChars)
     cur=unicode.len(new)+1
     text=new
     set(curPos(cur)," ",true)
-  end
-  local function updateHistory()
-    if not readHistoryType then return end
-    termlib.readHistory[readHistoryType][historyIdx]=text
   end
 
   while true do
@@ -366,6 +389,10 @@ function _G.read(readHistoryType, prefix, defaultText, maxChars)
         moveCur(-math.huge)
       elseif key=="end" then
         moveCur(math.huge)
+      elseif key=="back" and keyboard.ctrlDown then
+        deleteWord(-1)
+      elseif key=="delete" and keyboard.ctrlDown then
+        deleteWord(1)
       elseif key=="back" and cur>1 then
         text=unicode.sub(text,1,cur-2)..unicode.sub(text,cur)
         cur=cur-1
