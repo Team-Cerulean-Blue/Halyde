@@ -91,7 +91,7 @@ local function findCodeEnd(text,i)
     return v>=min and v<=max
   end
   i=i+2
-  while not inRange(text:byte(i),0x40,0x7F) do i=i+1 end
+  while i<=#text and not inRange(text:byte(i),0x40,0x7F) do i=i+1 end
   return i
 end
 

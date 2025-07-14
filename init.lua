@@ -39,10 +39,15 @@ if not result then
     gpu.set(2,i,line)
     i = i + 1
   end
-  gpu.set(2,i+1, "Press any key to restart.")
-  local evname
-  repeat
-    evname = computer.pullSignal()
-  until evname == "key_down"
-  computer.shutdown(true)
+  if computer~=nil then
+    gpu.set(2,i+1, "Press any key to restart.")
+    local evname
+    repeat
+      evname = computer.pullSignal()
+    until evname == "key_down"
+    computer.shutdown(true)
+  end
+  while true do
+    coroutine.yield()
+  end
 end

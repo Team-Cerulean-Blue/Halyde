@@ -1,7 +1,7 @@
 local loadfile = ...
 local filesystem = loadfile("/halyde/lib/filesystem.lua")(loadfile)
 
-_G._OSVERSION = "Halyde 2.3.0"
+_G._OSVERSION = "Halyde 2.4.0"
 _G._OSLOGO = ""
 local handle, tmpdata = filesystem.open("/halyde/config/oslogo.ans", "r"), nil
 repeat
@@ -32,6 +32,7 @@ function _G.import(module, ...)
     tmpdata = handle:read(math.huge or math.maxinteger)
     data = data .. (tmpdata or "")
   until not tmpdata
+  handle:close()
   return(assert(load(data, "="..modulepath))(table.unpack(args)))
 end
 
