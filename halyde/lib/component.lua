@@ -18,6 +18,7 @@ function compLib.virtual.add(address, componentType, proxy)
   checkArg(1, address, "string")
   checkArg(2, componentType, "string")
   checkArg(3, proxy, "table")
+  proxy["address"] = address
   componentlib.additions[address] = {["componentType"] = componentType, ["proxy"] = proxy}
   if componentlib.removals[address] then
     componentlib.removals[address] = nil

@@ -1,0 +1,16 @@
+Usage: label [ADDRESS] [LABEL]
+Get or set a label of a component that supports labelling.
+
+  ADDRESS    The component to use for getting or setting the label.
+    eeprom   The computer's EEPROM.
+    halyde   The drive where the Halyde installation resides in.
+    slotN    The slot number of the drive, in top-to-bottom order (range 7-9)
+    #N       The slot number of the drive, in drive space (range 1-3)
+             The ID of the component, abbreviated. Must have three or more characters.
+  LABEL*     The label to set the component to. If not found, the current label will be printed out.
+
+Examples:
+  label #3              Get the label of the third drive in the computer.
+  label eeprom          Get the label of the EEPROM inserted in the computer.
+  label slot8 Storage   Set the drive at slot 8 to have the label "Storage"
+  label halyde Halyde   Set the label of the Halyde installation to "Halyde"

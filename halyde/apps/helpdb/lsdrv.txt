@@ -1,0 +1,27 @@
+Usage: lsdrv [FLAGS]
+Shows all drives that are inserted into the computer.
+
+  FLAGS                   Specifies extra options when executing the command.
+    -a, --all             Shows every column and every component. Acts the same as '-o all -s all'.
+    -o, --output [COLS]   Specifies the columns to output in the output table.
+                          Possible columns are: "slot", "capacity", "managed", "readOnly", "id", "mount", "bootable", and "label".
+                          If the list of columns start with a "+", the default columns will appear first.
+                          Default columns are slots, capacity, the entire ID, the mount point, and the drive label.
+    -s, --show [EXPR]     Only list drives when the expression returns 'true'.
+    -S, --sort [EXPR]     Sort the output by an expression that returns a number.
+                          The higher the number, the lower the drive is displayed, and vice-versa.
+      EXPR                An expression in Lua, for filtering or sorting output.
+                          If this expression contains spaces, make sure to put quotation marks on them!
+                          Built-in variables are: "component", "computer", "type", "id", "readonly", "capacity", "managed", "eeprom", "halyde", "tmp", "proxy", "slot", and "all" (true).
+
+Examples:
+  lsblk                                          Show regular drives, with the default columns.
+  lsblk -a                                       Show all storage components, with every column.
+  lsblk -o +bootable                             Show drives, with an added "bootable" category.
+  lsblk -o slot,label -s halyde                  Show the slot and the label of the drive where Halyde is installed.
+  lsblk -o mount,capacity,label -s "not halyde"  Show the mount points, capacities and labels of all drives other than Halyde.
+  lsblk -s type=='filesystem'                    Only show managed drives.
+  lsblk -s slot==1                               Show all drives that aren't physical (Virtual components, tmpfs)
+  lsblk -S capacity                              Sort the drives by capacity, in ascending order.
+  lsblk -S -capacity                             Sort the drives by capacity, in descending order.
+  lsblk -o +managed -S managed                   Show managed drives first, then unmanaged drives second, with an extra "managed" column.
