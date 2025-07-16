@@ -64,16 +64,16 @@ local function render()
     realCursorX = math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 2)
   end
   for i = scrollPosY, height + scrollPosY - 3 do
-    rawset(1, i - scrollPosY + 1, (tmpdata[i] or ""):sub(scrollPosX))
+    gpu.set(1, i - scrollPosY + 1, (tmpdata[i] or ""):sub(scrollPosX))
   end
   rawset(1, height - 1, "\27[107m\27[30m" .. filestring .. string.rep(" ", width))
   rawset(1, height, "\27[107m\27[30m^X\27[0m Exit  \27[107m\27[30m^S\27[0m Save" .. string.rep(" ", width))
   local char = gpu.get(realCursorX, cursorPosY)
   if cursorWhite then
-    rawset(realCursorX, cursorPosY, "\27[107m\27[30m" .. char .. "\27[0m")
-  else
-    rawset(realCursorX, cursorPosY, char)
+    gpu.setForeground(0)
+    gpu.setBackground(0xFFFFFF)
   end
+  gpu.set(realCursorX, cursorPosY, char)
   gpu.bitblt()
   gpu.setActiveBuffer(0)
 end
@@ -210,7 +210,7 @@ local function processEvent(args)
           scrollPosX = scrollPosX - 1
           renderFlag = true
         else
-          rawset(1, cursorPosY, tmpdata[cursorPosY + scrollPosY - 1]:sub(scrollPosX) .. " ")
+          gpu.set(1, cursorPosY, tmpdata[cursorPosY + scrollPosY - 1]:sub(scrollPosX) .. " ")
         end
       end
     end
@@ -225,7 +225,7 @@ local function processEvent(args)
         cursorPosX = width
         renderFlag = true
       else
-        rawset(1, cursorPosY, tmpdata[cursorPosY + scrollPosY - 1]:sub(scrollPosX))
+        gpu.set(1, cursorPosY, tmpdata[cursorPosY + scrollPosY - 1]:sub(scrollPosX))
       end
     end
     if args[3] >= 32 and args[3] <= 126 then
@@ -240,7 +240,7 @@ local function processEvent(args)
         scrollPosX = scrollPosX + 1
         renderFlag = true
       else
-        rawset(1, cursorPosY, tmpdata[cursorPosY + scrollPosY - 1]:sub(scrollPosX))
+        gpu.set(1, cursorPosY, tmpdata[cursorPosY + scrollPosY - 1]:sub(scrollPosX))
       end
     end
   elseif args[1] == "scroll" then
@@ -258,15 +258,21 @@ local function processEvent(args)
 end
 
 local function save()
-  rawset(1, height - 1, "\27[107m\27[30m" .. string.rep(" ", width))
+  gpu.setBackground(0xFFFFFF)
+  gpu.setForeground(0)
+  gpu.set(1, height - 1, string.rep(" ", width))
   termlib.cursorPosX = 1
   termlib.cursorPosY = height - 1
   local savepath = read(nil, "\27[107m\27[30mSave location: ", filepath)
+  gpu.setBackground(0xFFFFFF)
+  gpu.setForeground(0)
   if fs.exists(savepath) then
-    rawset(1, height - 1, "\27[107m\27[30m" .. string.rep(" ", width))
+    gpu.set(1, height - 1, string.rep(" ", width))
     local answer = read(nil, "\27[107m\27[30mFile already exists. Overwrite it? [Y/n] ")
     if answer:lower() == "n" then
-      rawset(1, height - 1, "\27[107m\27[30m" .. filestring .. string.rep(" ", width))
+      gpu.setBackground(0xFFFFFF)
+      gpu.setForeground(0)
+      gpu.set(1, height - 1, filestring .. string.rep(" ", width))
       return
     end
   end
@@ -278,9 +284,9 @@ local function save()
       handle:write(table.concat(tmpdata, "\n") .. "\n") -- add a newline at the end to follow POSIX standards
     end
     handle:close()
-    rawset(1, height - 1, "\27[107m\27[30m" .. filestring .. string.rep(" ", width))
+    gpu.set(1, height - 1, filestring .. string.rep(" ", width))
   else
-    rawset(1, height - 1, "\27[107m\27[30mERROR: " .. errorMessage:gsub("\n", "") .. string.rep(" ", width))
+    gpu.set(1, height - 1, "ERROR: " .. errorMessage:gsub("\n", "") .. string.rep(" ", width))
   end
   changesMade = false
 end
@@ -321,7 +327,7 @@ while true do
   end
   if cursorRenderFlag then
     local char = gpu.get(previousCursorX, previousCursorY)
-    rawset(previousCursorX, previousCursorY, char)
+    gpu.set(previousCursorX, previousCursorY, char)
     local realCursorX = math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 2)
     if realCursorX < 1 then
       scrollPosX = scrollPosX + realCursorX - 1
@@ -330,9 +336,13 @@ while true do
     end
     local char = gpu.get(realCursorX, cursorPosY)
     if cursorWhite then
-      rawset(realCursorX, cursorPosY, "\27[107m\27[30m" .. char .. "\27[0m")
-    else
-      rawset(realCursorX, cursorPosY, char)
+      gpu.setBackground(0xFFFFFF)
+      gpu.setForeground(0)
+    end
+    gpu.set(realCursorX, cursorPosY, char)
+    if cursorWhite then
+      gpu.setForeground(0xFFFFFF)
+      gpu.setBackground(0)
     end
   end
   if renderFlag then
