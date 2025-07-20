@@ -88,8 +88,14 @@ local function readBytes(self,n)
     return string.byte(byte)
   end
   local bytes, res = {string.byte(self:read(n),1,n)}, 0
-  for i=1,#bytes do
-    res = (res<<8)&0xFFFFFFFF | bytes[i]
+  if self.littleEndian then
+    for i=#bytes,1,-1 do
+      res = (res<<8)&0xFFFFFFFF | bytes[i]
+    end
+  else
+    for i=1,#bytes do
+      res = (res<<8)&0xFFFFFFFF | bytes[i]
+    end
   end
   return res
 end

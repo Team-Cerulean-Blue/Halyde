@@ -9,6 +9,8 @@ else
 end
 
 function unicodeLib.readCodePoint(readByte)
+  checkArg(1,readByte,"function")
+
   local function inRange(min,max,...)
     for _,v in ipairs({...}) do
       if not (v and v>=min and v<max) then return false end
@@ -61,9 +63,9 @@ function unicodeLib.readChar(readByte)
 end
 
 function unicodeLib.codepoint(chr)
-  checkArg(1,readByte,"string")
+  checkArg(1,chr,"string")
   local ptr = 1
-  return readUniChar(function()
+  return unicode.readCodePoint(function()
       local byte = chr:byte(ptr)
       ptr=ptr+1
       return byte
