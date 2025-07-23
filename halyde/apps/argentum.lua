@@ -541,7 +541,7 @@ elseif command == "update" then
         table.remove(packages, table.find(packages, packages[i]))
         i = i - 1
       else
-        print(packages[i].." needs updating [\x1b[93m"..version.."\x1b[39m --> \x1b[93m"..agcfg[packages[i]].version.."\x1b[39m]")
+        print(packages[i].." is out of date [\x1b[93m"..version.."\x1b[39m < \x1b[92m"..agcfg[packages[i]].version.."\x1b[39m]")
       end
     end
     i = i + 1
