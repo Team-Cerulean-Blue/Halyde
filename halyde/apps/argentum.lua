@@ -126,11 +126,37 @@ local function doChecks(package)
   return true
 end
 
+local function lpad(str, len, char)
+  str=tostring(str)
+  if char == nil then char = ' ' end
+  return string.rep(char, len - #str) .. str
+end
+
+local gpu = component.gpu
+local width,height = gpu.getResolution()
+local function progress(package,progress)
+  local info = string.format("%s %s%%",package,lpad(math.floor(progress*100),2))
+
+  info=info..string.rep(" ",width-#info)
+  local progX = math.floor(progress*width)
+  gpu.setBackground(0x00FF00)
+  gpu.setForeground(0x000000)
+  gpu.set(1,height,info:sub(1,progX))
+  gpu.setBackground(0x000000)
+  gpu.setForeground(0xFFFFFF)
+  gpu.set(progX+1,height,info:sub(progX+1))
+end
+
+local function clearProgress()
+  gpu.setBackground(0x000000)
+  gpu.fill(1,height,width,1," ")
+end
+
 local function installPackage(package, overwriteFlag)
   if not overwriteFlag then
     overwriteFlag = false
   end
-  print("Installing " .. package .. "...")
+  if not overwriteFlag then print("Installing " .. package .. "...") end
   local agcfg = getAgConfig(package, source)
   if not agcfg then
     return false
@@ -165,11 +191,14 @@ local function installPackage(package, overwriteFlag)
       end
     end
   end
-  for _, file in ipairs(agcfg[package].files) do
+  for idx, file in ipairs(agcfg[package].files) do
+    clearProgress()
     ::retry::
     print("  Downloading " .. file .. "...")
+    progress(package,idx/#agcfg[package].files)
     local data, errorMessage = getFile(source .. agcfg[package].maindir .. file)
     if not data then
+      clearProgress()
       local response = read(nil, "\27[91mCould not fetch " .. file .. ": " .. errorMessage .. "\n\27[0m[a - Abort/R - Retry/s - Skip]")
       if response:lower() == "a" then
         fs.remove("/argentum/store/" .. package)
@@ -194,6 +223,7 @@ local function installPackage(package, overwriteFlag)
     handle:close()
     ::skip::
   end
+  clearProgress()
   fs.makeDirectory("/argentum/store/" .. package)
   local handle = fs.open("/argentum/store/" .. package .. "/package.cfg", "w")
   handle:write(packageStore)
@@ -213,15 +243,21 @@ local function removePackage(package)
     data = data .. (tmpdata or "")
   until not tmpdata
   handle:close()
-  for line in (data .. "\n"):gmatch("(.-)\n") do
+  data = data .. "\n"
+  local idx = 0
+  for line in data:gmatch("(.-)\n") do
+    idx=idx+1
     if line:sub(1, 1) == "A" then
+      clearProgress()
       ::retry::
       print("  Removing " .. line:sub(2) .. "...")
       if line:sub(-1, -1) == "/" and fs.list(line:sub(2))[1] then
         print("  There are still files in " .. line:sub(2) .. ". Skipping.")
       else
+        progress(package,idx/select(2,data:gsub("\n","\n")))
         local result, errorMessage = fs.remove(line:sub(2))
         if not result then
+          clearProgress()
           local response = read(nil, "\27[91mFailed to remove " .. line:sub(2) .. ": " .. errorMessage .. "\n\27[0m[a - Abort/r - Retry/S - Skip]")
           if response:lower() == "a" then
             return false
@@ -231,10 +267,13 @@ local function removePackage(package)
         end
       end
     elseif line:sub(1, 1) == "M" then
+      clearProgress()
       ::retry::
       print("  Reverting " .. line:sub(2) .. "...")
+      progress(package,idx/select(2,data:gsub("\n","\n")))
       local handle, data, tmpdata = fs.open("/argentum/store/" .. package .. "/files/" .. line:sub(2), "r"), "", nil
-      if not handle then 
+      if not handle then
+        clearProgress()
         local response = read(nil, "\27[91mFailed to revert " .. line:sub(2) .. ": " .. data .. "\n\27[0m[a - Abort/R - Retry/s - Skip]") -- this is pretty stupid but i think the error message would get pushed to data
         if response:lower() == "a" then
           return false
@@ -255,6 +294,7 @@ local function removePackage(package)
       ::skip::
     end
   end
+  clearProgress()
   fs.remove("/argentum/store/" .. package .. "/")
   return true
 end
@@ -497,10 +537,11 @@ elseif command == "update" then
         end
       end
       if agcfg[packages[i]].version == version then
-        print(packages[i] .. " is up to date")
         table.remove(packageList, table.find(packageList, packages[i]))
         table.remove(packages, table.find(packages, packages[i]))
         i = i - 1
+      else
+        print(packages[i].." needs updating [\x1b[93m"..version.."\x1b[39m --> \x1b[93m"..agcfg[packages[i]].version.."\x1b[39m]")
       end
     end
     i = i + 1
