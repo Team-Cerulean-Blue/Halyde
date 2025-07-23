@@ -17,7 +17,9 @@ while true do
     return
   else
     local function runCommand()
-      assert(load(loadedLibraries .. command))()
+      local func = load(loadedLibraries.."return "..command,"=stdin") or load(loadedLibraries..command,"=stdin")
+      local res = {assert(func)()}
+      if res and (type(res[1])~="nil" or type(res[2])~="nil") then print(table.unpack(res)) end
     end
     local result, reason = xpcall(runCommand, function(errMsg)
       return errMsg .. "\n\n" .. debug.traceback()

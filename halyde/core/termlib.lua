@@ -1,3 +1,4 @@
+local serialize = import("serialize")
 local unicode = import("unicode")
 local event = import("event")
 --local keyboard = import("keyboard")
@@ -209,7 +210,9 @@ function _G.print(...)
   local args = {...}
   local stringArgs = {}
   for _, arg in pairs(args) do
-    if tostring(arg) then
+    if type(arg)=="table" then
+      table.insert(stringArgs, serialize.table(arg,true))
+    elseif tostring(arg) then
       table.insert(stringArgs, tostring(arg))
     end
   end
