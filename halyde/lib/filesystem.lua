@@ -304,8 +304,8 @@ function filesystem.list(path)
   elseif path == "/special/drive" then
     local returnTable = {}
     local tmpAddress = computer.tmpAddress()
-    for address, _ in component.list("drive") do
-      if address~=tmpAddress then
+    for address, type in component.list("drive") do
+      if address~=tmpAddress and type=="drive" then
         table.insert(returnTable, address:sub(1, 3))
       end
     end
