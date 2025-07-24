@@ -1,0 +1,15 @@
+Usage: boot [ADDRESS] [FLAGS]
+Restarts and automatically boots into any storage medium. Meant to be used for systems using a Lua BIOS EEPROM.
+
+  ADDRESS         The storage medium to boot to.
+    hdd1          The first hard drive inserted in the computer.
+    hdd2          The second hard drive inserted in the computer.
+    floppy        The floppy disk that is inserted in the computer.
+                  The ID of the component, abbreviated. Must have three or more characters.
+  FLAGS           Specifies extra options when executing the command.
+    -f, --force   Forces booting into the storage medium.
+
+Examples:
+  boot hdd1     Boot into the first hard drive inserted in the computer.
+  boot hdd2     Boot into the second hard drive inserted in the computer.
+  boot floppy   Boot into the floppy disk inserted in the comuter.
