@@ -44,7 +44,7 @@ gpu.setForeground(defaultForegroundColor)
 gpu.setBackground(defaultBackgroundColor)
 
 local function scrollDown()
-  width, height = gpu.getResolution()
+  local width, height = gpu.getResolution()
   if gpu.copy(1,1,width,height,0,-1) then
     local prevForeground = gpu.getForeground()
     local prevBackground = gpu.getBackground()
@@ -66,7 +66,7 @@ local function newLine()
 end
 
 local function parseCodeNumbers(code)
-  o = {}
+  local o = {}
   for num in code:sub(3,-2):gmatch("[^;]+") do
     table.insert(o,tonumber(num))
   end
@@ -97,7 +97,7 @@ local function findCodeEnd(text,i)
 end
 
 function termlib.write(text, textWrap)
-  width, height = gpu.getResolution()
+  local width, height = gpu.getResolution()
 
   -- you don't know how tiring this was just for ANSI escape code support
 
@@ -113,10 +113,10 @@ function termlib.write(text, textWrap)
   end
   text = tostring(text)
   text = "\27[0m" .. text:gsub("\t", "  ")
-  readBreak = 0
+  local readBreak = 0
   -- readBreak is for when, inside the for loop, there normally would have been an increase in the "i" variable because it has read more than one character.
   -- unfortunately, changing the "i" variable would have unpredictable effects, so to not risk anything, this workaround was done.
-  section = ""
+  local section = ""
 
   local function printSection()
     if #section==0 then
@@ -150,17 +150,17 @@ function termlib.write(text, textWrap)
     elseif string.byte(text,i)==0x1b and i<=#text-2 then
       printSection()
       --ocelot.log("0x1b char detected")
-      codeType = string.sub(text,i+1,i+1)
+      local codeType = string.sub(text,i+1,i+1)
       if codeType=="[" then
         -- Control Sequence Introducer
         --ocelot.log("Control Sequence Introducer")
-        codeEndIdx = findCodeEnd(text,i)
+        local codeEndIdx = findCodeEnd(text,i)
         -- codeEndIdx = string.find(text,"m",i)
-        code = string.sub(text,i,codeEndIdx)
+        local code = string.sub(text,i,codeEndIdx)
         --ocelot.log("Code: "..code.." ("..i..", "..codeEndIdx..")")
         readBreak = readBreak + #code - 1
-        nums = parseCodeNumbers(code)
-        codeEnd = code:sub(-1)
+        local nums = parseCodeNumbers(code)
+        local codeEnd = code:sub(-1)
         --ocelot.log("Code end: "..codeEnd..", "..#codeEnd)
         if codeEnd == "m" then
           -- Select Graphic Rendition
