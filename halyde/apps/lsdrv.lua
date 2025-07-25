@@ -1,3 +1,4 @@
+local serialize = import("serialize")
 local component = import("component")
 local computer = import("computer")
 local unicode = import("unicode")
@@ -52,6 +53,11 @@ local function defaultHeaders()
   if width>80 then addHeader("id") end
   addHeader("mount")
   addHeader("label")
+end
+
+local function invalidArgSyntax(err)
+  print(err)
+  return shell.run("help lsdrv")
 end
 
 local outArgIdx = table.find(args,"-o") or table.find(args,"--output")
@@ -169,8 +175,12 @@ local function handleComponent(id,type)
     bootable = formatBoolean(isBootable(proxy,type))
   end
 
-  local clabel = proxy.getLabel()
-  label=clabel and "\""..clabel.."\"" or "None"
+  if proxy.getLabel then
+    local clabel = proxy.getLabel()
+    label=clabel and serialize.string(clabel) or "None"
+  else
+    label="Unsupported"
+  end
 
   local function insertElement(i,v)
     if not tablePos[i] then return end
@@ -238,6 +248,7 @@ if not showAll then
   if showArgIdx then
     table.remove(args,showArgIdx)
     local arg = table.remove(args,showArgIdx)
+    if not arg then return invalidArgSyntax("Argument -s must have a value") end
     local func,err = luaExpr(arg)
     if func then
       filter(comps,func)
@@ -255,6 +266,7 @@ local sortArgIdx = table.find(args,"-S") or table.find(args,"--sort")
 if sortArgIdx then
   table.remove(args,sortArgIdx)
   local arg = table.remove(args,sortArgIdx)
+  if not arg then return invalidArgSyntax("Argument -S must have a value") end
   local func,err = luaExpr(arg)
   if func then
     table.sort(comps,function(a,b)
