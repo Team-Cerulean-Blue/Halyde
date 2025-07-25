@@ -1,0 +1,10 @@
+{
+    "diagnostics.globals": [
+        "checkArg",
+        "computer",
+        "component"
+    ],
+    "diagnostics.disable": [
+        "lowercase-global"
+    ]
+}
