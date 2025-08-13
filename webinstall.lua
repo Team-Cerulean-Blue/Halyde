@@ -1,3 +1,4 @@
+local io = require("io")
 local component = require("component")
 if not component.isAvailable("internet") then
   io.stderr.write("This program requires an internet card to run.")
@@ -95,6 +96,7 @@ if #drives == 0 then
   io.stderr.write("All drives are read-only.\nHalyde cannot be installed.")
 elseif #drives == 1 then
   installLocation = "/mnt/" .. drives[1]
+  installAddress = driveAddresses[1]
 end
 
 gpu.fill(1,1,width,height," ")
