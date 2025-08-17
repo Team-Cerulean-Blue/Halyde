@@ -1,5 +1,5 @@
-local component = import("component")
-local computer = import("computer")
+local component = require("component")
+local computer = require("computer")
 local args = {...}
 if not args then return print("\x1b[91mCannot get arguments.") end
 if not args[1] then

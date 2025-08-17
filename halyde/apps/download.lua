@@ -1,7 +1,7 @@
 local url = ...
 
-local component = import("component")
-local fs = import("filesystem")
+local component = require("component")
+local fs = require("filesystem")
 
 if not component.list("internet")() then
   print("\27[91mThis program requires an internet card to run.")

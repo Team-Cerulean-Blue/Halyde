@@ -1,13 +1,13 @@
-local component = import("component")
-local computer = import("computer")
+local component = require("component")
+local computer = require("computer")
 
 local function printstat(text)
-  termlib.cursorPosX = 35
-  termlib.write(text .. "\n", false)
+  terminal.cursorPosX = 35
+  terminal.write(text .. "\n", false)
 end
 
-termlib.write(_OSLOGO, false)
-termlib.cursorPosY = termlib.cursorPosY - 17
+terminal.write(_OSLOGO, false)
+terminal.cursorPosY = terminal.cursorPosY - 17
 printstat("\27[92mOS\27[0m: ".._OSVERSION)
 printstat("\27[92mArchitecture\27[0m: ".._VERSION)
 local componentCounter = 0
@@ -15,7 +15,7 @@ for _, _ in component.list() do
   componentCounter = componentCounter + 1
 end
 printstat("\27[92mComponents\27[0m: "..tostring(componentCounter))
-printstat("\27[92mCoroutines\27[0m: "..tostring(#cormgr.corList))
+printstat("\27[92mCoroutines\27[0m: "..tostring(#tsched.getTasks()))
 printstat("\27[92mBattery\27[0m: "..tostring(math.floor(computer.energy() / computer.maxEnergy() * 1000 + 0.5) / 10).."%")
 local totalMemory = computer.totalMemory()
 local usedMemory = computer.totalMemory() - computer.freeMemory()
@@ -67,4 +67,4 @@ local width, height = component.invoke(component.list("gpu")(), "getResolution")
 printstat("\27[92mResolution\27[0m: "..tostring(width).."x"..tostring(height).."\n")
 printstat("\27[40m  \27[41m  \27[42m  \27[43m  \27[44m  \27[45m  \27[46m  \27[47m  ")
 printstat("\27[100m  \27[101m  \27[102m  \27[103m  \27[104m  \27[105m  \27[106m  \27[107m  ")
-termlib.cursorPosY = termlib.cursorPosY + 5
+terminal.cursorPosY = terminal.cursorPosY + 5

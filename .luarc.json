@@ -1,10 +1,100 @@
 {
-    "diagnostics.globals": [
-        "checkArg",
-        "computer",
-        "component"
+  "$schema": "https://raw.githubusercontent.com/LuaLS/lua-language-server/master/locale/en-us/setting.lua",
+  "runtime": {
+    "version": "Lua 5.3",
+    "special": {},
+    "unicodeName": false,
+    "nonstandardSymbol": []
+  },
+  "workspace": {
+    "checkThirdParty": false,
+    "maxPreload": 5000,
+    "preloadFileSize": 500
+  },
+  "diagnostics": {
+    "disable": [
+      "undefined-global",
+      "lowercase-global"
     ],
-    "diagnostics.disable": [
-        "lowercase-global"
+    "globals": [
+      "_G",
+      "_VERSION",
+      "assert",
+      "error",
+      "getmetatable",
+      "ipairs",
+      "load",
+      "next",
+      "pairs",
+      "pcall",
+      "rawequal",
+      "rawget",
+      "rawlen",
+      "rawset",
+      "select",
+      "setmetatable",
+      "tonumber",
+      "tostring",
+      "type",
+      "xpcall",
+      "checkArg",
+      "bit32",
+      "coroutine",
+      "debug",
+      "math",
+      "os",
+      "string",
+      "table",
+      "component",
+      "computer",
+      "unicode",
+      "utf8"
     ]
+  },
+  "completion": {
+    "enable": true,
+    "callSnippet": "Both",
+    "keywordSnippet": "Both",
+    "displayContext": 6
+  },
+  "hover": {
+    "enable": true,
+    "viewString": true,
+    "viewStringMax": 1000,
+    "viewNumber": true,
+    "fieldInfer": 3000,
+    "previewFields": 50,
+    "enumsLimit": 5
+  },
+  "semantic": {
+    "enable": true,
+    "variable": true,
+    "annotation": true,
+    "keyword": false
+  },
+  "format": {
+    "enable": true,
+    "defaultConfig": {
+      "indent_style": "space",
+      "indent_size": "2",
+      "tab_width": "2"
+    }
+  },
+  "spell": {
+    "dict": []
+  },
+  "telemetry": {
+    "enable": false
+  },
+  "IntelliSense": {
+    "traceLocalSet": false,
+    "traceReturn": false,
+    "traceBeSetted": false,
+    "traceFieldInject": false
+  },
+  "type": {
+    "castNumberToInteger": false,
+    "weakUnionCheck": false,
+    "weakNilCheck": false
+  }
 }

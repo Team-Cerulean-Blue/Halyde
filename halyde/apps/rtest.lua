@@ -1,4 +1,4 @@
-local raster = import("raster")
+local raster = require("raster")
 
 raster.init()
 
@@ -15,7 +15,7 @@ end]]
     end
 end ]]
 
-local event = import("event")
+local event = require("event")
 local x=0
 local y=0
 local vx=1

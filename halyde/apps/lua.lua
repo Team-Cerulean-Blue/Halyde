@@ -1,13 +1,13 @@
 print("\27[44m".._VERSION.."\27[0m shell")
 print('Type "exit" to exit.')
 termlib.readHistory["lua"] = {""}
-local fs = import("filesystem")
+local fs = require("filesystem")
 
 local loadedLibraries = ""
 local libList = fs.list("halyde/lib")
 for _, lib in pairs(libList) do
   if lib:match("(.+)%.lua") then
-    loadedLibraries = loadedLibraries .. "local " .. lib:match("(.+)%.lua") .. ' = import("' .. lib:match("(.+)%.lua") .. '")\n'
+    loadedLibraries = loadedLibraries .. "local " .. lib:match("(.+)%.lua") .. ' = require("' .. lib:match("(.+)%.lua") .. '")\n'
   end
 end
 

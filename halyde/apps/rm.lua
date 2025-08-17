@@ -1,5 +1,5 @@
 local file = ...
-local fs = import("filesystem")
+local fs = require("filesystem")
 
 if not file then
   shell.run("help rm")

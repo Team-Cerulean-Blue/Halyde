@@ -1,5 +1,5 @@
 local directory = ...
-local fs = import("filesystem")
+local fs = require("filesystem")
 
 if not directory then
   shell.run("help mkdir")

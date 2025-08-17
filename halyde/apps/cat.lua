@@ -1,5 +1,5 @@
 local files = {...}
-local fs = import("filesystem")
+local fs = require("filesystem")
 if not files or not files[1] then
   shell.run("help cat")
   return
