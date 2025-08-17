@@ -2,11 +2,11 @@ _G.evmgr = {}
 _G.evmgr.eventQueue = {}
 local maxEventQueueLength = 10 -- increase if events start getting dropped
 
-local computer = require("computer")
+local computer = import("computer")
 
-_G._PUBLIC.keyboard.ctrlDown = false
-_G._PUBLIC.keyboard.altDown = false
-_G._PUBLIC.keyboard.shiftDown = false
+keyboard.ctrlDown = false
+keyboard.altDown = false
+keyboard.shiftDown = false
 
 --local ocelot = component.proxy(component.list("ocelot")())
 
@@ -16,31 +16,31 @@ while true do
     args = {computer.uptime(), computer.pullSignal(0)}
     if args and args[2] then
       table.insert(evmgr.eventQueue, args)
-      if _PUBLIC.keyboard then
+      if keyboard then
         if args[2] == "key_down" then
           local keycode = args[5]
-          local key = _PUBLIC.keyboard.keys[keycode]
+          local key = keyboard.keys[keycode]
           if key == "lcontrol" then
-            _PUBLIC.keyboard.ctrlDown = true
+            keyboard.ctrlDown = true
           elseif key == "lmenu" then
-            _PUBLIC.keyboard.altDown = true
+            keyboard.altDown = true
           elseif key == "lshift" then
-            _PUBLIC.keyboard.shiftDown = true
-          elseif key == "c" and _PUBLIC.keyboard.ctrlDown and _PUBLIC.keyboard.altDown then
+            keyboard.shiftDown = true
+          elseif key == "c" and keyboard.ctrlDown and keyboard.altDown then
             if print then
-              print("\n\27[91mCoroutine "..tostring(#tsched.tasks).." killed.")
+              print("\n\27[91mCoroutine "..tostring(#cormgr.corList).." killed.")
             end
-            tsched.tasks[#tsched.tasks] = nil
+            cormgr.corList[#cormgr.corList] = nil
           end
         elseif args[2] == "key_up" then
           local keycode = args[5]
-          local key = _PUBLIC.keyboard.keys[keycode]
+          local key = keyboard.keys[keycode]
           if key == "lcontrol" then
-            _PUBLIC.keyboard.ctrlDown = false
+            keyboard.ctrlDown = false
           elseif key == "lmenu" then
-            _PUBLIC.keyboard.altDown = false
+            keyboard.altDown = false
           elseif key == "lshift" then
-            _PUBLIC.keyboard.shiftDown = true
+            keyboard.shiftDown = true
           end
         end
       end

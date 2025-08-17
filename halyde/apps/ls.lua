@@ -1,8 +1,8 @@
 local args = {...}
 local target = args[1]
 args = nil
-local fs = require("filesystem")
-local unicode = require("unicode")
+local fs = import("filesystem")
+local unicode = import("unicode")
 local maxLength = 0
 local margin = 2 -- minimum space between filename and size
 local dirTable = {}

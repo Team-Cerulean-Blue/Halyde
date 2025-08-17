@@ -1,1 +1,1 @@
-require("computer").shutdown()
+import("computer").shutdown()

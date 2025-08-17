@@ -9,7 +9,7 @@ local raster = {
   ["backgroundColor"]=0xFFFFFF
 }
 
-local component = require("component")
+local component = import("component")
 -- local ocelot = component.proxy(component.list("ocelot")())
 local gpu = component.gpu
 

@@ -1,5 +1,5 @@
 local directory = ...
-local fs = require("filesystem")
+local fs = import("filesystem")
 
 if not directory then
   return

@@ -1,5 +1,5 @@
-local fs = require("filesystem")
-local json = require("json")
+local fs = import("filesystem")
+local json = import("json")
 local handle, data, tmpdata = fs.open("/halyde/config/shell.json", "r"), "", nil
 repeat
   tmpdata = handle:read(math.huge)
@@ -7,21 +7,23 @@ repeat
 until not tmpdata
 handle:close()
 local shellcfg = json.decode(data)
-local component = require("component")
+import("/halyde/core/termlib.lua")
+local event = import("event")
+local component = import("component")
 local gpu = component.gpu
 
 _G.shell = {}
 _G.shell.workingDirectory = shellcfg["defaultWorkingDirectory"]
 _G.shell.aliases = shellcfg["aliases"]
 
-local function runAsTask(path, ...)
+local function runAsCoroutine(path, ...)
   --ocelot.log("running " .. path .. " as coroutine")
-  tsched.runAsTask(path, ...)
-  local corIndex = #tsched.getTasks()
-  local task = tsched.getTasks()[#tsched.getTasks()]
+  cormgr.loadCoroutine(path, ...)
+  local corIndex = #cormgr.corList
+  local cor = cormgr.corList[#cormgr.corList]
   repeat
     coroutine.yield()
-  until tsched.getTasks()[corIndex] ~= task
+  until cormgr.corList[corIndex] ~= cor
 end
 
 function _G.shell.run(command)
@@ -64,14 +66,14 @@ function _G.shell.run(command)
   if fs.exists(args[1]) and not fs.isDirectory(args[1]) then
     local path = args[1]
     table.remove(args, 1)
-    runAsTask(path, table.unpack(args))
+    runAsCoroutine(path, table.unpack(args))
     return
   end
   for _, item in pairs(PATH) do
     if fs.exists(item..args[1]) and not fs.isDirectory(item .. args[1]) then
       local path = fs.concat(item, args[1])
       table.remove(args, 1)
-      runAsTask(path, table.unpack(args))
+      runAsCoroutine(path, table.unpack(args))
       return
     else -- try to look for it without the file extension
       local files = fs.list(item) or {}
@@ -79,7 +81,7 @@ function _G.shell.run(command)
         -- previous pattern: (.+)%.[^%.]+$
         if args[1] == file:match("(.+)%.[^%.]+$") and not fs.isDirectory(item .. file) then
           table.remove(args, 1)
-          runAsTask(item .. file, table.unpack(args))
+          runAsCoroutine(item .. file, table.unpack(args))
           return
         end
       end
@@ -98,7 +100,7 @@ while true do
   if shell.workingDirectory:sub(-1, -1) ~= "/" then
     shell.workingDirectory = shell.workingDirectory .. "/"
   end
-  local shellCommand = terminal.read("shell", shellcfg.prompt:format(shell.workingDirectory))
+  local shellCommand = read("shell", shellcfg.prompt:format(shell.workingDirectory))
   shell.run(shellCommand)
   gpu.freeAllBuffers()
 end

@@ -1,4 +1,4 @@
-local fs = require("filesystem")
+local fs = import("filesystem")
 local args = {...}
 local command = args[1]
 args = nil

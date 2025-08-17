@@ -1,14 +1,14 @@
 local loadfile = ... -- raw loadfile from boot.lua
-local unicode, component, computer
+local component, computer
 
 if loadfile then
-  unicode = loadfile("/lib/unicode.lua")(loadfile)
-  component = loadfile("/lib/component.lua")(loadfile)
+  unicode = loadfile("/halyde/lib/unicode.lua")(loadfile)
+  component = loadfile("/halyde/lib/component.lua")(loadfile)
   computer = _G.computer
-elseif require then
-  unicode = require("unicode")
-  component = require("component")
-  computer = require("computer")
+elseif import then
+  unicode = import("unicode")
+  component = import("component")
+  computer = import("computer")
 end
 
 local filesystem = {}

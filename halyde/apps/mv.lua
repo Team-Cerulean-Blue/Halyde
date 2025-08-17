@@ -1,5 +1,5 @@
 local fromFile, toFile = ...
-local fs = require("filesystem")
+local fs = import("filesystem")
 
 if not fromFile or not toFile then
   shell.run("help mv")

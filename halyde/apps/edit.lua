@@ -1,8 +1,8 @@
 local file = ...
-local fs = require("filesystem")
-local event = require("event")
-local component = require("component")
-local unicode = require("unicode")
+local fs = import("filesystem")
+local event = import("event")
+local component = import("component")
+local unicode = import("unicode")
 local gpu = component.gpu
 local width, height = gpu.getResolution()
 local scrollPosX, scrollPosY = 1, 1

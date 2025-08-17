@@ -1,7 +1,7 @@
-local serialize = require("serialize")
-local component = require("component")
-local computer = require("computer")
-local unicode = require("unicode")
+local serialize = import("serialize")
+local component = import("component")
+local computer = import("computer")
+local unicode = import("unicode")
 
 local width,height = component.gpu.getResolution()
 

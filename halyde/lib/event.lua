@@ -1,4 +1,4 @@
-local computer = require("computer")
+local computer = import("computer")
 local event = {}
 
 local bufferTime = 0.1 -- A little bit of buffer time so events won't be skipped by accident.

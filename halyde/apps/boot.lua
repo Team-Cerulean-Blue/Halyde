@@ -1,5 +1,5 @@
-local component = require("component")
-local computer = require("computer")
+local component = import("component")
+local computer = import("computer")
 local args = {...}
 
 local force = false

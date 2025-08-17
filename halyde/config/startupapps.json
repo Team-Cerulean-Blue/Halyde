@@ -1,1 +1,1 @@
-["/halyde/shell/shell.lua"]
+["/halyde/core/fullkb.lua","/halyde/core/evmgr.lua","/halyde/core/drvload.lua","/halyde/core/shell.lua"]

@@ -1,4 +1,4 @@
-local computer = require("computer")
+local computer = import("computer")
 
 if type(computer)~="table" then
   return print("\x1b[91mComputer library returned '"..type(computer).."' type\x1b[39m")

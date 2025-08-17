@@ -1,24 +1,5 @@
 local gpu = component.proxy(component.list("gpu")())
-local resX, resY = gpu.getResolution()
-
--- Architecture check
-local foundArchitecture = false
-for _, arch in pairs(computer.getArchitectures()) do
-  if arch == "Lua 5.3" then
-    foundArchitecture = true
-    break
-  end
-end
-
-if foundArchitecture then
-  computer.setArchitecture("Lua 5.3")
-else
-  gpu.set(1, 1, "Required architecture (Lua 5.3) is not supported.")
-  gpu.set(1, 2, "Halting.")
-  while true do
-    computer.pullSignal()
-  end
-end
+local resx, resy = gpu.getResolution()
 
 local function loadfile(file)
   checkArg(1, file, "string")
@@ -36,36 +17,36 @@ local function handleError(errorMessage)
   return(errorMessage.."\n \n"..debug.traceback())
 end
 
-function loadBoot()
-  loadfile("/halyde/kernel/boot.lua")(loadfile)
+function loadthething()
+  loadfile("/halyde/core/boot.lua")(loadfile)
 end
 
 gpu.setBackground(0x000000)
-gpu.fill(1, 1, resX, resY, " ")
-
--- Copying low-level functions in case of post-preload failure
-local pullSignal = computer.pullSignal
-local shutdown = computer.shutdown
-
-local result, reason = xpcall(loadBoot, handleError)
+gpu.fill(1, 1, resx, resy, " ")
+local result, reason = xpcall(loadthething, handleError)
 if not result then
+  if import then
+    local computer = import("computer")
+  end
   gpu.setBackground(0x000000)
-  gpu.fill(1, 1, resX, resY, " ")
+  gpu.fill(1, 1, resx, resy, " ")
   gpu.setBackground(0x800000)
   gpu.setForeground(0xFFFFFF)
   gpu.set(2,2,"A critical error has occurred.")
   local i = 4
-  reason = tostring(reason):gsub("\t", "  ")
-  for line in string.gmatch(reason or "unknown error", "([^\n]*)\n?") do
+  reason = reason:gsub("\t", "  ")
+  for line in string.gmatch((reason ~= nil and tostring(reason)) or "unknown error", "([^\n]*)\n?") do
     gpu.set(2,i,line)
     i = i + 1
   end
-  gpu.set(2,i+1, "Press any key to restart.")
-  local evname
-  repeat
-    evname = pullSignal()
-  until evname == "key_down"
-  shutdown(true)
+  if computer~=nil then
+    gpu.set(2,i+1, "Press any key to restart.")
+    local evname
+    repeat
+      evname = computer.pullSignal()
+    until evname == "key_down"
+    computer.shutdown(true)
+  end
   while true do
     coroutine.yield()
   end

@@ -1,9 +1,9 @@
 local packages = {...}
 local command = packages[1]
 table.remove(packages, 1)
-local fs = require("filesystem")
-local component = require("component")
-local agReg = require("/argentum/registry.cfg")
+local fs = import("filesystem")
+local component = import("component")
+local agReg = import("/argentum/registry.cfg")
 if not command then
   shell.run("help argentum")
   return
@@ -346,7 +346,7 @@ if command == "install" then
   else
     print("\27[91mFailed to fetch Ag registry: " .. (errorMessage or "returned nil"))
   end
-  agReg = require("/argentum/registry.cfg")
+  agReg = import("/argentum/registry.cfg")
   while true do
     if not doChecks(packages[i]) then
       table.insert(fails, packages[i])
@@ -497,7 +497,7 @@ elseif command == "update" then
   else
     print("\27[91mFailed to fetch Ag registry: " .. (errorMessage or "returned nil"))
   end
-  agReg = require("/argentum/registry.cfg")
+  agReg = import("/argentum/registry.cfg")
   if not packages[1] then
     local packagesInstalled = fs.list("/argentum/store/")
     for _, currentPackage in pairs(packagesInstalled) do
@@ -632,7 +632,7 @@ elseif command == "info" then
   else
     print("\27[91mFailed to fetch Ag registry: " .. (errorMessage or "returned nil"))
   end
-  agReg = require("/argentum/registry.cfg")
+  agReg = import("/argentum/registry.cfg")
   if not agReg[packages[1]] and not source then
     print("\27[91mPackage " .. packages[1] .. " does not exist.")
     return
@@ -656,7 +656,7 @@ elseif command == "search" then
   else
     print("\27[91mFailed to fetch Ag registry: " .. (errorMessage or "returned nil"))
   end
-  agReg = require("/argentum/registry.cfg")
+  agReg = import("/argentum/registry.cfg")
   local searchResults = {}
   for packageName, _ in pairs(agReg) do
     if packageName:find(packages[1], 1, true) then
@@ -679,7 +679,7 @@ elseif command == "list" then
   else
     print("\27[91mFailed to fetch Ag registry: " .. (errorMessage or "returned nil"))
   end
-  agReg = require("/argentum/registry.cfg")
+  agReg = import("/argentum/registry.cfg")
   local sortedPackages = {}
   for packageName, _ in pairs(agReg) do
     table.insert(sortedPackages, packageName)

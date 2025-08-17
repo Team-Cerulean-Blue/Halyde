@@ -1,7 +1,7 @@
-local component = require("component")
-local computer = require("computer")
-local raster = require("raster")
-local event = require("event")
+local component = import("component")
+local computer = import("computer")
+local raster = import("raster")
+local event = import("event")
 
 -- Initialize the 3D renderer for a spinning cube
 -- Using the raster library for drawing
