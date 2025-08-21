@@ -1,3 +1,5 @@
+local idCounter = 1
+
 _G._PUBLIC.tsched = {}
 _G.tsched = {}
 _G.tsched.tasks = {}
@@ -9,8 +11,6 @@ local computer = require("computer")
 local filesystem = require("filesystem")
 local json = require("json")
 local gpu = component.gpu
-local ocelot = component.ocelot
-
 function _G._PUBLIC.tsched.runAsTask(path,...)
   local args = {...}
   local function taskFunction()
@@ -48,15 +48,21 @@ function _G._PUBLIC.tsched.runAsTask(path,...)
 end
 
 function _G._PUBLIC.tsched.addTask(func, name)
-  ocelot.log("Added task " .. name)
   local task = coroutine.create(func)
-  table.insert(tsched.tasks, {["task"] = task, ["name"] = name})
+  table.insert(tsched.tasks, {["task"] = task, ["name"] = name, ["id"] = idCounter})
+  idCounter = idCounter + 1
   return task
 end
 
 function _G._PUBLIC.tsched.removeTask(id)
   -- TODO: Check for user permissions before running
-  table.remove(_G.tsched.tasks, id)
+  for index, task in pairs(tsched.tasks) do
+    if task.id == id then
+      table.remove(tsched.tasks, index)
+      return true
+    end
+  end
+  return false
 end
 
 function handleError(errormsg)
@@ -76,7 +82,7 @@ local function runTasks()
         handleError(errorMessage)
       end
       if coroutine.status(tsched.tasks[i].task) == "dead" then
-        _PUBLIC.tsched.removeTask(i)
+        _PUBLIC.tsched.removeTask(tsched.tasks[i].id)
         --ocelot.log("Removed coroutine")
         i = i - 1
       end

@@ -3,7 +3,6 @@ local filesystem = assert(loadfile("/lib/filesystem.lua")(loadfile))
 _G._OSVERSION = "HALYDE VERSION" -- TODO: Put this in a separate config file
 _G._OSLOGO = ""
 _G._PUBLIC = {}
-local ocelot = component.proxy(component.list("ocelot")())
 
 local handle, tmpdata = filesystem.open("/halyde/config/oslogo.ans", "r"), nil
 repeat
@@ -16,7 +15,6 @@ _G.package = {["preloaded"] = {}}
 loadfile("/halyde/kernel/modules/datatools.lua")()
 
 function _G.require(module, ...)
-  ocelot.log("Requiring " .. module)
   local args = table.pack(...)
   if package.preloaded[module] then
     return package.preloaded[module]
@@ -50,7 +48,7 @@ function _G.package.preload(module)
   _G[module] = nil
 end
 
-require("/halyde/kernel/datatools.lua") -- If this is not imported BEFORE modload gets run, modload requires filesystem which requires computer which requires datatools.
+require("/halyde/kernel/datatools.lua") -- If this is not imported BEFORE modload gets run, modload requires filesystem which requires computer which requires datatools. TODO: When VFS is implemented, make the pre-VFS loading of filesystem load a more basic version. And remove this.
 require("/halyde/kernel/modload.lua")
 
 package.preload("component")

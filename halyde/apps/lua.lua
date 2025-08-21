@@ -1,10 +1,10 @@
 print("\27[44m".._VERSION.."\27[0m shell")
 print('Type "exit" to exit.')
-termlib.readHistory["lua"] = {""}
+terminal.readHistory["lua"] = {""}
 local fs = require("filesystem")
 
 local loadedLibraries = ""
-local libList = fs.list("halyde/lib")
+local libList = fs.list("/lib/")
 for _, lib in pairs(libList) do
   if lib:match("(.+)%.lua") then
     loadedLibraries = loadedLibraries .. "local " .. lib:match("(.+)%.lua") .. ' = require("' .. lib:match("(.+)%.lua") .. '")\n'
@@ -12,7 +12,7 @@ for _, lib in pairs(libList) do
 end
 
 while true do
-  local command = read("lua", "\27[44mlua>\27[0m ")
+  local command = terminal.read("lua", "\27[44mlua>\27[0m ")
   if command == "exit" then
     return
   else

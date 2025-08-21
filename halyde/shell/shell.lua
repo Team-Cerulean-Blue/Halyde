@@ -17,11 +17,21 @@ _G.shell.aliases = shellcfg["aliases"]
 local function runAsTask(path, ...)
   --ocelot.log("running " .. path .. " as coroutine")
   tsched.runAsTask(path, ...)
-  local corIndex = #tsched.getTasks()
-  local task = tsched.getTasks()[#tsched.getTasks()]
-  repeat
-    coroutine.yield()
-  until tsched.getTasks()[corIndex] ~= task
+  local pid = tsched.getTasks()[#tsched.getTasks()].id
+  while true do
+    local foundTask = false
+    for _, task in pairs(tsched.getTasks()) do
+      if task.id == pid then
+        foundTask = true
+        break
+      end
+    end
+    if foundTask then
+      coroutine.yield()
+    else
+      break
+    end
+  end
 end
 
 function _G.shell.run(command)

@@ -1,7 +1,6 @@
-local cor = coroutine.create(function()
-  print("Hello World!")
-end)
-
-print(coroutine.status(cor))
-coroutine.resume(cor)
-print(coroutine.status(cor))
+local pid = tsched.getCurrentTask().id
+local shareTable = ipc.shareWith(pid)
+shareTable.gabbagool = "Pigeon Pizza! Wow!"
+print(shareTable.gabbagool)
+print(pid)
+print(ipc.shared[pid].gabbagool)

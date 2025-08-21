@@ -30,7 +30,7 @@ while true do
             if print then
               print("\n\27[91mCoroutine "..tostring(#tsched.tasks).." killed.")
             end
-            tsched.tasks[#tsched.tasks] = nil
+            table.remove(tsched.tasks, #tsched.tasks)
           end
         elseif args[2] == "key_up" then
           local keycode = args[5]
