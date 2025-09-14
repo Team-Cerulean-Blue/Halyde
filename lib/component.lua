@@ -19,7 +19,11 @@ function compLib.virtual.add(address, componentType, proxy)
   checkArg(2, componentType, "string")
   checkArg(3, proxy, "table")
   proxy["address"] = address
-  componentlib.additions[address] = {["componentType"] = componentType, ["proxy"] = proxy}
+  local proc
+  if _PUBLIC.tsched then
+    proc = _PUBLIC.tsched.getCurrentTask()
+  end
+  componentlib.additions[address] = {["componentType"] = componentType, ["proxy"] = proxy, ["proc"] = proc}
   if componentlib.removals[address] then
     componentlib.removals[address] = nil
   end
@@ -31,6 +35,15 @@ function compLib.virtual.remove(address)
     componentlib.additions[address] = nil
   else
     table.insert(componentlib.removals, address)
+  end
+end
+
+function compLib.virtual.check(address)
+  checkArg(1, address, "string")
+  if _G.componentlib.additions[address] then
+    return true, _G.componentlib.additions[address].proc
+  else
+    return false
   end
 end
 

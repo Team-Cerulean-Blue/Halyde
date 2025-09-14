@@ -38,7 +38,7 @@ if type(args[1])=="string" then
     return
   end
   if not force then
-    if componentlib.additions[compID] then
+    if component.virtual.check(compID) then
       return print("\x1b[91mThis component is virtual and cannot be booted from directly.\nID: "..compID)
     end
     local type = component.type(compID)
@@ -56,5 +56,5 @@ if type(args[1])=="string" then
   end
   computer.shutdown(true)
 else
-  shell.run("help boot")
+  require("shell").run("help boot")
 end
