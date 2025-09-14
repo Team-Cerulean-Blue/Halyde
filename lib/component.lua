@@ -79,6 +79,7 @@ function compLib.invoke(address, funcName, ...)
   --ocelot.log("Invoking " .. funcName .. " from " .. address)
   if componentlib.additions[address] then
     --ocelot.log("vcomponent")
+    if not componentlib.additions[address].proxy[funcName] then error("no such method") end
     return componentlib.additions[address].proxy[funcName](...)
   else
     return LLcomponent.invoke(address, funcName, ...)

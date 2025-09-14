@@ -7,13 +7,14 @@ local maxLength = 0
 local margin = 2 -- minimum space between filename and size
 local dirTable = {}
 local fileTable = {}
+local workingDirectory = require("shell").getWorkingDirectory()
 
 if target then
   if target:sub(1, 1) ~= "/" then
-    target = fs.concat(shell.workingDirectory, target)
+    target = fs.concat(workingDirectory, target)
   end
 else
-  target = shell.workingDirectory
+  target = workingDirectory
 end
 
 local files = fs.list(target)

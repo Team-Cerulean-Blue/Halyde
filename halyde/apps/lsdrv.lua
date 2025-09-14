@@ -106,7 +106,7 @@ local function formatSize(mem)
 end
 
 local function fileExists(proxy,path)
-  return proxy.exists(path) and not proxy.isDirectory(path)
+  return proxy.exists and proxy.isDirectory and proxy.exists(path) and not proxy.isDirectory(path)
 end
 
 local function getBootCode(proxy)
@@ -140,24 +140,37 @@ local function handleComponent(id,type)
   -- for i=1,#tableOut do table.insert(out,"unknown") end
   local slot,capacity,managed,readOnly,mount,bootable,label
 
+  local virtual,vproc = component.virtual.check(id)
   local cslot = component.slot(id)
-  if cslot==-1 then
-    slot="Virtual"
+  if virtual then
+    if vproc and vproc.name then
+      slot="Virtual ("..vproc.name..")"
+    else
+      slot="Virtual (unknown)"
+    end
+  elseif cslot==-1 then
+    slot="External"
   elseif cslot==9 then
     slot="EEPROM"
+  elseif cslot==5 or cslot==6 then
+    slot="HDD #"..(cslot-4)
+  elseif cslot==7 then
+    slot="Floppy"
   else
     slot="#"..(cslot+2)
   end
 
-  managed="Yes"
+  managed="No"
   readOnly="No"
   if type=="drive" then
-    managed="No"
     capacity=formatSize(proxy.getCapacity())
     mount="/special/drive/"..id:sub(1,3)
   elseif type=="filesystem" then
-    capacity=formatSize(proxy.spaceTotal())
-    if proxy.isReadOnly() then
+    managed="Yes"
+    if proxy.spaceTotal then
+      capacity=formatSize(proxy.spaceTotal())
+    end
+    if not proxy.isReadOnly or proxy.isReadOnly() then
       readOnly="Yes"
     end
     mount="/mnt/"..id:sub(1,3)
