@@ -3,7 +3,7 @@ local computer = require("computer")
 local args = {...}
 if not args then return print("\x1b[91mCannot get arguments.") end
 if not args[1] then
-  return shell.run("help label")
+  return require("shell").run("help label")
 end
 local inputID = args[1]
 local comp
@@ -33,7 +33,7 @@ elseif #inputID>=3 then
   comp = component.proxy(fullID)
 else
   print("\x1b[91mAddress must have atleast 3 characters")
-  return shell.run("help label")
+  return require("shell").run("help label")
 end
 if not comp then
   return print("\x1b[91mCould not find component from \""..inputID.."\".")

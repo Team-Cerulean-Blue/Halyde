@@ -10,7 +10,7 @@ end
 
 if not url then
   print("Please enter a URL to download from.")
-  shell.run("help download")
+  require("shell").run("help download")
   return
 end
 
@@ -39,7 +39,7 @@ until not tmpdata
 local saveLocation
 local saveLocationOK = false
 repeat
-  saveLocation = read(nil, "File save location: ", fs.concat(shell.workingDirectory, url:match("/([^/]+)$")))
+  saveLocation = terminal.read(nil, "File save location: ", fs.concat(require("shell").getWorkingDirectory(), url:match("/([^/]+)$")))
   if fs.isDirectory(saveLocation) then
     print("\27[91mThe specified location is a directory.")
   elseif fs.exists(saveLocation) then
