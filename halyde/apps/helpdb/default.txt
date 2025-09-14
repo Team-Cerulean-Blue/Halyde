@@ -1,22 +1,25 @@
 All default Halyde shell commands:
-  argentum   Uses the Argentum package manager.
-  cat        Concatenates and prints a file.
-  cd         Changes directory.
-  clear      Clears the screen.
-  cp         Copies a file.
-  download   Downloads a file from the internet.
-  echo       Prints a message.
-  edit       Opens the text editor.
-  fetch      Displays system information.
-  help       Shows this.
-  ls         Lists files.
-  lscor      Lists coroutines.
-  lua        Starts the Lua shell.
-  mkdir      Makes a directory.
-  mv         Moves/renames a file.
-  reboot     Reboots the computer.
-  rm         Deletes a file.
-  shutdown   Shuts down the computer.
+  argentum     Uses the Argentum package manager.
+  boot         Boots to another OS.
+  cat          Concatenates and prints a file.
+  cd           Changes directory.
+  clear        Clears the screen.
+  cp           Copies a file.
+  download     Downloads a file from the internet.
+  echo         Prints a message.
+  edit         Opens the text editor.
+  fetch        Displays system information.
+  help         Shows this.
+  label        Labels storage devices and EEPROMS.
+  ls           Lists files.
+  lscor        Lists coroutines.
+  lua          Starts the Lua shell.
+  mkdir        Makes a directory.
+  mv           Moves/renames a file.
+  reboot       Reboots the computer.
+  resolution   Sets the resolution.
+  rm           Deletes a file.
+  shutdown     Shuts down the computer.
 
 You can get additional information on any app or command by running:
   help [COMMAND]

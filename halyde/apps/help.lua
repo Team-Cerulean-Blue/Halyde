@@ -1,3 +1,4 @@
+local shell = require("shell")
 local fs = require("filesystem")
 local args = {...}
 local command = args[1]
@@ -11,8 +12,9 @@ if not command then
   print(data)
   return
 end
-if shell.aliases[command] then
-  command = shell.aliases[command]
+local aliases = shell.getAliases()
+if aliases[command] then
+  command = aliases[command]
 end
 if fs.exists("/halyde/apps/helpdb/" .. command .. ".txt") then
   local handle, data, tmpdata = fs.open("/halyde/apps/helpdb/" .. command .. ".txt", "r"), "", nil
@@ -21,7 +23,7 @@ if fs.exists("/halyde/apps/helpdb/" .. command .. ".txt") then
     data = data .. (tmpdata or "")
   until not tmpdata
   print(data)
-  local aliases = table.copy(shell.aliases)
+  -- local aliases = table.copy(shell.aliases)
   if table.find(aliases, command) then
     local aliasIndex = table.find(aliases, command)
     local aliasString = "Aliases:\n  " .. aliasIndex

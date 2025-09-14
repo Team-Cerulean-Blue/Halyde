@@ -13,6 +13,7 @@ local conversionTables = {
 }
 
 function table.find(tab, item)
+  checkArg(1,tab,"table")
   for k, v in pairs(tab) do
     if v == item then
       return k

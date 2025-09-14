@@ -29,11 +29,16 @@ function _G._PUBLIC.tsched.runAsTask(path,...)
       -- Userland environment definition
       local userland = table.copy(_PUBLIC)
       userland._G = userland
+      userland.load=function(chunk,chunkname,mode,env)
+        if not env or env==_G then env=userland end -- if they SOMEHOW get the kernel environment they're not running jack shit
+        return load(chunk,chunkname,mode,env)
+      end
+      userland.require = reqgen(userland.load)
 
       assert(load(data, "="..path, "t", userland))(table.unpack(args))
     end, function(errorMessage)
       return errorMessage .. "\n \n" .. debug.traceback()
-    end, path, table.unpack(args))
+    end, --[[ path,]] table.unpack(args))
     if not result then
       if print then
         gpu.freeAllBuffers()
@@ -44,14 +49,20 @@ function _G._PUBLIC.tsched.runAsTask(path,...)
     end
     --require(path, table.unpack(args))
   end
-  _PUBLIC.tsched.addTask(taskFunction, string.match(tostring(path), "([^/]+)%.lua$"))
+  local _,taskInfo = _PUBLIC.tsched.addTask(taskFunction, string.match(tostring(path), "([^/]+)%.lua$"))
+  taskInfo.path = path
+  taskInfo.args = table.copy(args)
 end
 
 function _G._PUBLIC.tsched.addTask(func, name)
   local task = coroutine.create(func)
-  table.insert(tsched.tasks, {["task"] = task, ["name"] = name, ["id"] = idCounter})
+  local taskInfo = {["task"] = task, ["name"] = name, ["id"] = idCounter}
+  if currentTask and type(currentTask.id)=="number" then
+    taskInfo.parent = currentTask.id
+  end
+  table.insert(tsched.tasks, taskInfo)
   idCounter = idCounter + 1
-  return task
+  return task, taskInfo
 end
 
 function _G._PUBLIC.tsched.removeTask(id)

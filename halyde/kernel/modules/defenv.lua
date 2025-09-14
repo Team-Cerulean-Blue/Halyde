@@ -9,7 +9,6 @@ end
 function module.init()
   local publicTable = {
     "print",
-    "require",
     "_VERSION",
     "_OSVERSION",
     "assert",

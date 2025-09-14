@@ -10,9 +10,30 @@ local shellcfg = json.decode(data)
 local component = require("component")
 local gpu = component.gpu
 
+local workingDirectory = shellcfg["defaultWorkingDirectory"]
+local aliases = shellcfg["aliases"]
+
 _G.shell = {}
-_G.shell.workingDirectory = shellcfg["defaultWorkingDirectory"]
-_G.shell.aliases = shellcfg["aliases"]
+
+function _G.shell.getWorkingDirectory()
+  return workingDirectory
+end
+function _G.shell.setWorkingDirectory(dir)
+  checkArg(1, dir, "string")
+  workingDirectory = dir
+end
+function _G.shell.getAliases()
+  return table.copy(aliases)
+end
+function _G.shell.addAlias(executable, aliasName)
+  checkArg(1, executable, "string")
+  checkArg(2, aliasName, "string")
+  aliases[aliasName]=executable
+end
+function _G.shell.removeAlias(aliasName)
+  checkArg(1, aliasName, "string")
+  aliases[aliasName]=nil
+end
 
 local function runAsTask(path, ...)
   --ocelot.log("running " .. path .. " as coroutine")
@@ -36,9 +57,9 @@ end
 
 function _G.shell.run(command)
   checkArg(1, command, "string")
-  if shell.aliases[command:match("[^ ]+")] then
+  if aliases[command:match("[^ ]+")] then
     local _, cmdend = command:find("[^ ]+")
-    command = shell.aliases[command:match("[^ ]+")] .. command:sub(cmdend + 1)
+    command = aliases[command:match("[^ ]+")] .. command:sub(cmdend + 1)
   end
   local gm, result, args, trimmedCommand = command:gmatch("[^ ]+"), nil, {}, command
   while true do
@@ -98,6 +119,9 @@ function _G.shell.run(command)
   print("No such file or command: "..args[1])
 end
 
+local shareTable = ipc.shareWithAll()
+shareTable.shell = _G.shell
+
 print(shellcfg["startupMessage"]:format(_OSVERSION, shellcfg.splashMessages[math.random(1, #shellcfg.splashMessages)]))
 while true do
   coroutine.yield()
@@ -105,10 +129,10 @@ while true do
   --print(shellcfg["prompt"]:format(shell.workingDirectory),false)
   -- termlib.cursorPosX = #(shell.workingDirectory .. " >  ")
   -- termlib.cursorPosY = termlib.cursorPosY - 1
-  if shell.workingDirectory:sub(-1, -1) ~= "/" then
-    shell.workingDirectory = shell.workingDirectory .. "/"
+  if workingDirectory:sub(-1, -1) ~= "/" then
+    workingDirectory = workingDirectory .. "/"
   end
-  local shellCommand = terminal.read("shell", shellcfg.prompt:format(shell.workingDirectory))
+  local shellCommand = terminal.read("shell", shellcfg.prompt:format(workingDirectory))
   shell.run(shellCommand)
   gpu.freeAllBuffers()
 end

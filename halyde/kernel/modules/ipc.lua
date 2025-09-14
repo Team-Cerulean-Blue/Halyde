@@ -48,6 +48,24 @@ function module.init()
         return nil
       end
       return globalTable.vars[key]
+    end,["__pairs"]=function()
+      if not _G.ipc.shared[currentPID] then
+        return pairs({})
+      end
+      local globalTable
+      for _, tab in pairs(_G.ipc.shared[currentPID]) do
+        if tab.sharedWith == pid then
+          globalTable = tab
+        end
+      end
+      if not globalTable then
+        return pairs({})
+      end
+      if not globalTable.vars then
+        return pairs({})
+      end
+
+      return pairs(table.copy(globalTable.vars))
     end})
     return shareTable
   end
@@ -75,6 +93,8 @@ function module.init()
       end
       globalTable.vars[key] = value
     end, ["__index"] = function(_, key)
+      print(_G.ipc.shared)
+
       local currentPID = _PUBLIC.tsched.getCurrentTask().id
       if not _G.ipc.shared[currentPID] then
         return nil
@@ -92,7 +112,40 @@ function module.init()
         return nil
       end
       return globalTable.vars[key]
+    end,["__pairs"]=function()
+      if not _G.ipc.shared[currentPID] then
+        return pairs({})
+      end
+      local globalTable
+      for _, tab in pairs(_G.ipc.shared[currentPID]) do
+        if tab.sharedWith == pid then
+          globalTable = tab
+        end
+      end
+      if not globalTable then
+        return pairs({})
+      end
+      if not globalTable.vars then
+        return pairs({})
+      end
+
+      return pairs(table.copy(globalTable.vars))
     end})
+
+    -- check if the reverse is also available
+    --[[ if not _G.ipc.shared[pid] then
+      _G.ipc.shared[pid]={}
+    end
+    for _, tab in pairs(_G.ipc.shared[pid]) do
+      if tab.sharedWith == currentPID then
+        return -- it's already added
+      end
+    end
+    local reverseTable = {}
+    reverseTable.vars = globalTable.vars
+    reverseTable.sharedWith = currentPID
+    table.insert(_G.ipc.shared[pid],reverseTable) ]]
+
     return shareTable
   end
 
@@ -114,6 +167,12 @@ function module.init()
       end
     end
     return returnTable
+  end,["__pairs"]=function()
+    local ftbl = {}
+    for i in pairs(_G.ipc.shared) do
+      ftbl[i]=_PUBLIC.ipc.shared[i]
+    end
+    return pairs(ftbl)
   end})
 end
 

@@ -83,6 +83,7 @@ function serialize.table(tbl,colors,stack)
 
   local metatbl = getmetatable(tbl)
   local metakeys = {}
+  local metastring = ""
   if type(metatbl)=="table" then
     for i,v in pairs(metatbl) do
       keyNumber=false
@@ -91,16 +92,17 @@ function serialize.table(tbl,colors,stack)
   end
   if #metakeys>0 then
     out=out.."\n  "
-    if colors then out=out.."\x1b[92m" end
+    if colors then metastring=metastring.."\x1b[92m" end
     if table.find(metakeys,"__tostring") then
-      out=out.."tostring: "..serialize.string(tostring(tbl)).."\n  "
+      metastring=metastring.."tostring: "..serialize.string(tostring(tbl)).."\n  "
       table.remove(metakeys,table.find(metakeys,"__tostring"))
     end
-    out=out..table.concat(metakeys,", ")
-    if colors then out=out.."\x1b[39m" end
+    metastring=metastring..table.concat(metakeys,", ")
+    if colors then metastring=metastring.."\x1b[39m" end
+    out=out..metastring
   end
 
-  if keyAmount==0 then return "{}" end
+  if keyAmount==0 then return "{"..metastring.."}" end
   if keyNumber then
     -- fix strings not being serialised
     local vals = {}
@@ -117,7 +119,7 @@ function serialize.table(tbl,colors,stack)
         table.insert(vals,tostring(v))
       end
     end
-    return "{"..table.concat(vals,", ").."}"
+    return "{"..table.concat(vals,", ")..(#metakeys>0 and "\n "..metastring or "").."}"
   end
   return "{\n"..out.."\n}"
 end

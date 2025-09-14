@@ -14,11 +14,36 @@ function module.init()
   local computer = require("computer")
   local gpu = component.gpu
   _G._PUBLIC.terminal = {}
-  _PUBLIC.terminal.cursorPosX = 1
-  _PUBLIC.terminal.cursorPosY = 1
-  _PUBLIC.terminal.readHistory = {}
-
+  local cursorPosX = 1
+  local cursorPosY = 1
   local width, height = gpu.getResolution()
+  function _PUBLIC.terminal.getCursorPos()
+    return cursorPosX,cursorPosY
+  end
+  function _PUBLIC.terminal.setCursorPos(x,y)
+    checkArg(1,x,"number","nil")
+    checkArg(2,y,"number","nil")
+    if type(x)~=nil then cursorPosX=math.min(math.max(x,1),width) end
+    if type(y)~=nil then cursorPosY=math.min(math.max(y,1),height) end
+  end
+  local readHistory = {}
+  function _PUBLIC.terminal.getHistory(id)
+    checkArg(1,id,"string")
+    return table.copy(readHistory[id])
+  end
+  function _PUBLIC.terminal.setHistory(id,hist)
+    checkArg(1,id,"string")
+    checkArg(2,hist,"table")
+    for i=1,#hist do
+      hist[i]=tostring(hist[i])
+    end
+    readHistory[id]=hist
+  end
+  function _PUBLIC.terminal.addToHistory(id,hist)
+    checkArg(1,id,"string")
+    checkArg(2,hist,"string")
+    table.insert(readHistory[id],hist)
+  end
 
   local ANSIColorPalette = {
     ["dark"] = {
@@ -50,7 +75,6 @@ function module.init()
   gpu.setBackground(defaultBackgroundColor)
 
   local function scrollDown()
-    local width, height = gpu.getResolution()
     if gpu.copy(1,1,width,height,0,-1) then
       local prevForeground = gpu.getForeground()
       local prevBackground = gpu.getBackground()
@@ -59,14 +83,14 @@ function module.init()
       gpu.fill(1, height, width, 1, " ")
       gpu.setForeground(prevForeground)
       gpu.setBackground(prevBackground)
-      _PUBLIC.terminal.cursorPosY=height
+      cursorPosY=height
     end
   end
 
   local function newLine()
-    _PUBLIC.terminal.cursorPosX=1
-    _PUBLIC.terminal.cursorPosY = _PUBLIC.terminal.cursorPosY + 1
-    if _PUBLIC.terminal.cursorPosY>height then
+    cursorPosX=1
+    cursorPosY = cursorPosY + 1
+    if cursorPosY>height then
       scrollDown()
     end
   end
@@ -103,8 +127,6 @@ function module.init()
   end
 
   function _PUBLIC.terminal.write(text, textWrap)
-    local width, height = gpu.getResolution()
-
     -- you don't know how tiring this was just for ANSI escape code support
 
     if textWrap == nil then
@@ -129,12 +151,12 @@ function module.init()
         return
       end
       while true do
-        gpu.set(_PUBLIC.terminal.cursorPosX,_PUBLIC.terminal.cursorPosY,section)
-        if unicode.wlen(section) > width - _PUBLIC.terminal.cursorPosX + 1 and textWrap then
-          section = section:sub(width - _PUBLIC.terminal.cursorPosX + 2)
+        gpu.set(cursorPosX,cursorPosY,section)
+        if unicode.wlen(section) > width - cursorPosX + 1 and textWrap then
+          section = section:sub(width - cursorPosX + 2)
           newLine()
         else
-          _PUBLIC.terminal.cursorPosX = _PUBLIC.terminal.cursorPosX+unicode.wlen(section)
+          cursorPosX = cursorPosX+unicode.wlen(section)
           break
         end
       end
@@ -152,7 +174,7 @@ function module.init()
         newLine()
       elseif string.byte(text,i)==13 then
         printSection()
-        _PUBLIC.terminal.cursorPosX=1
+        cursorPosX=1
       elseif string.byte(text,i)==0x1b and i<=#text-2 then
         printSection()
         --ocelot.log("0x1b char detected")
@@ -204,7 +226,7 @@ function module.init()
           end
         end
       else
-        --gpu.set(_PUBLIC.terminal.cursorPosX,_PUBLIC.terminal.cursorPosY,string.sub(text,i,i))
+        --gpu.set(cursorPosX,cursorPosY,string.sub(text,i,i))
         section = section..string.sub(text,i,i)
       end
       ::continue::
@@ -226,11 +248,10 @@ function module.init()
   end
 
   function _G._PUBLIC.terminal.clear()
-    width, height = gpu.getResolution()
     gpu.setForeground(defaultForegroundColor)
     gpu.setBackground(defaultBackgroundColor)
     gpu.fill(1,1,width,height," ")
-    _PUBLIC.terminal.cursorPosX, _PUBLIC.terminal.cursorPosY = 1, 1
+    cursorPosX, cursorPosY = 1, 1
   end
 
   function _G._PUBLIC.terminal.read(readHistoryType, prefix, defaultText, maxChars)
@@ -244,22 +265,22 @@ function module.init()
 
     local historyIdx
     if readHistoryType then
-      if not _PUBLIC.terminal.readHistory[readHistoryType] then
-        _PUBLIC.terminal.readHistory[readHistoryType] = {text}
-      elseif _PUBLIC.terminal.readHistory[readHistoryType][#_PUBLIC.terminal.readHistory[readHistoryType] ] ~= "" then
-        table.insert(_PUBLIC.terminal.readHistory[readHistoryType], text)
+      if not readHistory[readHistoryType] then
+        readHistory[readHistoryType] = {text}
+      elseif readHistory[readHistoryType][#readHistory[readHistoryType] ] ~= text then
+        table.insert(readHistory[readHistoryType], text)
       end
-      historyIdx = #_PUBLIC.terminal.readHistory[readHistoryType]
+      historyIdx = #readHistory[readHistoryType]
     end
 
     local function updateHistory()
       if not readHistoryType then return end
-      _PUBLIC.terminal.readHistory[readHistoryType][historyIdx]=text
+      readHistory[readHistoryType][historyIdx]=text
     end
 
     local cur = unicode.len(text)+1
     if prefix then _PUBLIC.terminal.write(prefix) end
-    local startX, startY = _PUBLIC.terminal.cursorPosX, _PUBLIC.terminal.cursorPosY
+    local startX, startY = cursorPosX, cursorPosY
     local fg, bg = gpu.getForeground(), gpu.getBackground()
     local cursorBlink = true
     local function get(idx)
@@ -378,17 +399,18 @@ function module.init()
 
     while true do
       local args = {event.pull("key_down", "clipboard", 0.5)}
+      local ctrlDown = _PUBLIC.keyboard.getCtrlDown()
       if args and args[1] == "key_down" and args[4] then
         local key = _PUBLIC.keyboard.keys[args[4]]
         if key=="up" and readHistoryType then
           historyIdx=math.max(historyIdx-1,1)
-          reprint(_PUBLIC.terminal.readHistory[readHistoryType][historyIdx])
+          reprint(readHistory[readHistoryType][historyIdx])
         elseif key=="down" and readHistoryType then
-          historyIdx=math.min(historyIdx+1,#_PUBLIC.terminal.readHistory[readHistoryType])
-          reprint(_PUBLIC.terminal.readHistory[readHistoryType][historyIdx])
-        elseif key=="left" and _PUBLIC.keyboard.ctrlDown then
+          historyIdx=math.min(historyIdx+1,#readHistory[readHistoryType])
+          reprint(readHistory[readHistoryType][historyIdx])
+        elseif key=="left" and ctrlDown then
           moveWord(-1)
-        elseif key=="right" and _PUBLIC.keyboard.ctrlDown then
+        elseif key=="right" and ctrlDown then
           moveWord(1)
         elseif key=="left" then
           moveCur(-1)
@@ -398,9 +420,9 @@ function module.init()
           moveCur(-math.huge)
         elseif key=="end" then
           moveCur(math.huge)
-        elseif key=="back" and _PUBLIC.keyboard.ctrlDown then
+        elseif key=="back" and ctrlDown then
           deleteWord(-1)
-        elseif key=="delete" and _PUBLIC.keyboard.ctrlDown then
+        elseif key=="delete" and ctrlDown then
           deleteWord(1)
         elseif key=="back" and cur>1 then
           text=unicode.sub(text,1,cur-2)..unicode.sub(text,cur)
@@ -439,21 +461,21 @@ function module.init()
     end
 
     if readHistoryType then
-      if _PUBLIC.terminal.readHistory[readHistoryType][#_PUBLIC.terminal.readHistory[readHistoryType]]=="" then
-        table.remove(_PUBLIC.terminal.readHistory[readHistoryType],#_PUBLIC.terminal.readHistory[readHistoryType])
+      if readHistory[readHistoryType][#readHistory[readHistoryType]]=="" then
+        table.remove(readHistory[readHistoryType],#readHistory[readHistoryType])
       end
-      if historyIdx<#_PUBLIC.terminal.readHistory[readHistoryType] then
-        table.remove(_PUBLIC.terminal.readHistory[readHistoryType],historyIdx)
-        table.insert(_PUBLIC.terminal.readHistory[readHistoryType],text)
+      if historyIdx<#readHistory[readHistoryType] then
+        table.remove(readHistory[readHistoryType],historyIdx)
+        table.insert(readHistory[readHistoryType],text)
       end
-      while #_PUBLIC.terminal.readHistory[readHistoryType] > 50 do
-        table.remove(_PUBLIC.terminal.readHistory[readHistoryType], 1)
+      while #readHistory[readHistoryType] > 50 do
+        table.remove(readHistory[readHistoryType], 1)
       end
     end
 
-    _PUBLIC.terminal.cursorPosX=1
-    _PUBLIC.terminal.cursorPosY=_PUBLIC.terminal.cursorPosY+math.ceil((unicode.wlen(text)+startX-1)/width)
-    if _PUBLIC.terminal.cursorPosY>height then scrollDown() end
+    cursorPosX=1
+    cursorPosY=cursorPosY+math.ceil((unicode.wlen(text)+startX-1)/width)
+    if cursorPosY>height then scrollDown() end
 
     return text
   end

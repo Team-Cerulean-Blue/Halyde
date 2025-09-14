@@ -1,6 +1,6 @@
 print("\27[44m".._VERSION.."\27[0m shell")
 print('Type "exit" to exit.')
-terminal.readHistory["lua"] = {""}
+-- terminal.readHistory["lua"] = {""}
 local fs = require("filesystem")
 
 local loadedLibraries = ""
@@ -15,7 +15,7 @@ while true do
   local command = terminal.read("lua", "\27[44mlua>\27[0m ")
   if command == "exit" then
     return
-  else
+  elseif command~="" then
     local function runCommand()
       local func = load(loadedLibraries.."return "..command,"=stdin") or load(loadedLibraries..command,"=stdin")
       local res = {assert(func)()}

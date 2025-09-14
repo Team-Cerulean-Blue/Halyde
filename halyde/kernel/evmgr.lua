@@ -4,9 +4,19 @@ local maxEventQueueLength = 10 -- increase if events start getting dropped
 
 local computer = require("computer")
 
-_G._PUBLIC.keyboard.ctrlDown = false
-_G._PUBLIC.keyboard.altDown = false
-_G._PUBLIC.keyboard.shiftDown = false
+local ctrlDown = false
+local altDown = false
+local shiftDown = false
+
+function _G._PUBLIC.keyboard.getCtrlDown()
+  return ctrlDown
+end
+function _G._PUBLIC.keyboard.getAltDown()
+  return altDown
+end
+function _G._PUBLIC.keyboard.getShiftDown()
+  return shiftDown
+end
 
 --local ocelot = component.proxy(component.list("ocelot")())
 
@@ -21,12 +31,12 @@ while true do
           local keycode = args[5]
           local key = _PUBLIC.keyboard.keys[keycode]
           if key == "lcontrol" then
-            _PUBLIC.keyboard.ctrlDown = true
+            ctrlDown = true
           elseif key == "lmenu" then
-            _PUBLIC.keyboard.altDown = true
+            altDown = true
           elseif key == "lshift" then
-            _PUBLIC.keyboard.shiftDown = true
-          elseif key == "c" and _PUBLIC.keyboard.ctrlDown and _PUBLIC.keyboard.altDown then
+            shiftDown = true
+          elseif key == "c" and ctrlDown and altDown then
             if print then
               print("\n\27[91mCoroutine "..tostring(#tsched.tasks).." killed.")
             end
@@ -36,11 +46,11 @@ while true do
           local keycode = args[5]
           local key = _PUBLIC.keyboard.keys[keycode]
           if key == "lcontrol" then
-            _PUBLIC.keyboard.ctrlDown = false
+            ctrlDown = false
           elseif key == "lmenu" then
-            _PUBLIC.keyboard.altDown = false
+            altDown = false
           elseif key == "lshift" then
-            _PUBLIC.keyboard.shiftDown = true
+            shiftDown = true
           end
         end
       end
