@@ -1,30 +1,71 @@
-local fs = require("filesystem")
-local computer = require("computer")
+local fs, computer
+if require then
+	fs = require("filesystem")
+	computer = require("computer")
+else
+	local loadfile = ...
+	fs = loadfile("/lib/filesystem.lua")(loadfile)
+	computer = _G.computer
+end
+
+logFileSizeLimit = 16384
+
+local function writeToLog(path, text)
+	local handle
+	if fs.exists(path) then
+		handle = assert(fs.open(path, "a"))
+	else
+		handle = assert(fs.open(path, "w"))
+	end
+	handle:write(text .. "\n")
+	handle:close()
+
+	-- Log trimming if it gets too long
+	if fs.size(path) > logFileSizeLimit then
+		ocelot.log("Trimming log...")
+		local newlineCounter = 0
+		local sizeCounter = 0
+		local readHandle = fs.open(path, "r")
+		local chunkSize = 1024
+		readHandle:seek("end", -chunkSize)
+		repeat
+			local readText = readHandle:read(chunkSize)
+			readHandle:seek(-chunkSize * 2)
+			local _, newlineCount = readText:gsub("\n", "\n")
+			newlineCounter = newlineCounter + newlineCount
+			sizeCounter = sizeCounter + chunkSize
+		until sizeCounter >= logFileSizeLimit * 0.75
+		readHandle:seek(chunkSize)
+		local writeHandle = fs.open(path, "w")
+		while true do
+			local tmpdata = readHandle:read(math.huge or math.maxinteger)
+			if not tmpdata then
+				break
+			end
+			writeHandle:write(tmpdata)
+		end
+		readHandle:close()
+		writeHandle:close()
+	end
+end
 
 local log = {}
 
-function log.add(text, logType)
-  checkArg(1, text, "string")
-  checkArg(2, logType, "string", "nil")
-  if logType ~= "debug" and logType ~= "info" and logType ~= "warning" and logType ~= "error" and logType then
-    error("Log type must either be debug, info, warning or error.")
-  end
-  if not logType then
-    logType = "debug"
-  end
-  local handle = fs.open("/halyde/system.log", "a")
-  local time = computer.uptime()
-  local logText = string.format("[%02d:%02d:%02d:%02d] " .. text, math.floor(time / 86400), math.floor(time / 3600 % 24), math.floor(time / 60 % 60), math.floor(time % 60)) .. "\n"
-  if logType == "debug" then
-    handle:write("\27[37m" .. logText)
-  elseif logType == "info" then
-    handle:write("\27[97m" .. logText)
-  elseif logType == "warning" then
-    handle:write("\27[93m" .. logText)
-  else
-    handle:write("\27[91m" .. logText)
-  end
-  handle:close()
-end
+setmetatable(log, {
+	["__index"] = function(tab, index)
+		return {
+			["logpath"] = fs.concat("/halyde/logs/", index .. ".log"),
+			["info"] = function(text)
+				writeToLog(fs.concat("/halyde/logs/", index .. ".log"), "INFO [" .. computer.uptime() .. "] " .. text)
+			end,
+			["warn"] = function(text)
+				writeToLog(fs.concat("/halyde/logs/", index .. ".log"), "WARN [" .. computer.uptime() .. "] " .. text)
+			end,
+			["error"] = function(text)
+				writeToLog(fs.concat("/halyde/logs/", index .. ".log"), "ERROR [" .. computer.uptime() .. "] " .. text)
+			end,
+		}
+	end,
+})
 
 return log
