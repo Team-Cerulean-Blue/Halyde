@@ -1,15 +1,16 @@
 local fromFile, toFile = ...
 local fs = require("filesystem")
+local shell = require("shell")
 
 if not fromFile or not toFile then
   shell.run("help cp")
   return
 end
 if fromFile:sub(1, 1) ~= "/" then
-  fromFile = fs.concat(shell.workingDirectory, fromFile)
+  fromFile = fs.concat(shell.getWorkingDirectory(), fromFile)
 end
 if toFile:sub(1, 1) ~= "/" then
-  toFile = fs.concat(shell.workingDirectory, toFile)
+  toFile = fs.concat(shell.getWorkingDirectory(), toFile)
 end
 if fromFile == toFile then
   print("\27[91mSource and destination are the same.")

@@ -3,6 +3,7 @@ local fs = require("filesystem")
 local event = require("event")
 local component = require("component")
 local unicode = require("unicode")
+local workingDirectory = require("shell").getWorkingDirectory()
 local gpu = component.gpu
 local width, height = gpu.getResolution()
 local scrollPosX, scrollPosY = 1, 1
@@ -15,9 +16,8 @@ local tab = "  "
 --local ocelot = component.ocelot
 
 local function rawset(x, y, text)
-  termlib.cursorPosX = x
-  termlib.cursorPosY = y
-  termlib.write(text, false)
+  terminal.setCursorPos(x,y)
+  terminal.write(text, false)
 end
 
 local filestring, filepath, handle, data, tmpdata
@@ -25,7 +25,7 @@ if file then
   if file:sub(1, 1) == "/" then
     filepath = file
   else
-    filepath = shell.workingDirectory .. file
+    filepath = workingDirectory .. file
   end
   handle, data, tmpdata = fs.open(filepath, "r"), "", nil
   if fs.exists(filepath) then
@@ -44,7 +44,7 @@ if file then
       tmpdata = {data}
     end
   else
-    filepath = shell.workingDirectory .. file
+    filepath = workingDirectory .. file
     filestring = "[NEW FILE]"
     tmpdata = {""}
   end
@@ -55,7 +55,7 @@ else
 end
 local function render()
   gpu.setActiveBuffer(renderBuffer)
-  clear()
+  terminal.clear()
   --ocelot.log(tostring(scrollPosY))
   local realCursorX = math.min(cursorPosX, unicode.wlen(tmpdata[cursorPosY + scrollPosY - 1]) - scrollPosX + 2)
   if realCursorX < 1 then
@@ -152,7 +152,7 @@ local function processEvent(args)
   if args[1] == "key_down" then
     local keycode = args[4]
     local key = keyboard.keys[keycode]
-    if keyboard.ctrlDown then
+    if keyboard.getCtrlDown() then
       return false, false, key
     end
     if key == "down" and cursorPosY < #tmpdata then
@@ -261,14 +261,13 @@ local function save()
   gpu.setBackground(0xFFFFFF)
   gpu.setForeground(0)
   gpu.set(1, height - 1, string.rep(" ", width))
-  termlib.cursorPosX = 1
-  termlib.cursorPosY = height - 1
-  local savepath = read(nil, "\27[107m\27[30mSave location: ", filepath)
+  terminal.setCursorPos(1, height - 1)
+  local savepath = terminal.read(nil, "\27[107m\27[30mSave location: ", filepath)
   gpu.setBackground(0xFFFFFF)
   gpu.setForeground(0)
   if fs.exists(savepath) then
     gpu.set(1, height - 1, string.rep(" ", width))
-    local answer = read(nil, "\27[107m\27[30mFile already exists. Overwrite it? [Y/n] ")
+    local answer = terminal.read(nil, "\27[107m\27[30mFile already exists. Overwrite it? [Y/n] ")
     if answer:lower() == "n" then
       gpu.setBackground(0xFFFFFF)
       gpu.setForeground(0)
@@ -301,15 +300,14 @@ while true do
     renderFlag, cursorRenderFlag, specialKey = processEvent(args)
     if specialKey == "x" then
       if changesMade then
-        termlib.cursorPosX = 1
-        termlib.cursorPosY = height - 1
-        local response = read(nil, "\27[107m\27[30mWould you like to save changes? [Y/n] ")
+        terminal.setCursorPos(1, height - 1)
+        local response = terminal.read(nil, "\27[107m\27[30mWould you like to save changes? [Y/n] ")
         if response:lower() ~= "n" then
           save()
         end
       end
       gpu.freeAllBuffers()
-      clear()
+      terminal.clear()
       return
     end
     if specialKey == "s" then

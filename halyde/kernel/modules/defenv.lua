@@ -11,6 +11,7 @@ function module.init()
     "print",
     "_VERSION",
     "_OSVERSION",
+    "_OSLOGO",
     "assert",
     "error",
     "getmetatable",

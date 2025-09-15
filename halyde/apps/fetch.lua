@@ -2,12 +2,14 @@ local component = require("component")
 local computer = require("computer")
 
 local function printstat(text)
-  terminal.cursorPosX = 35
+  local cursorPosX, cursorPosY = terminal.getCursorPos()
+  terminal.setCursorPos(35, cursorPosY)
   terminal.write(text .. "\n", false)
 end
 
 terminal.write(_OSLOGO, false)
-terminal.cursorPosY = terminal.cursorPosY - 17
+local cursorPosX, cursorPosY = terminal.getCursorPos()
+terminal.setCursorPos(cursorPosX, cursorPosY - 17)
 printstat("\27[92mOS\27[0m: ".._OSVERSION)
 printstat("\27[92mArchitecture\27[0m: ".._VERSION)
 local componentCounter = 0
@@ -67,4 +69,5 @@ local width, height = component.invoke(component.list("gpu")(), "getResolution")
 printstat("\27[92mResolution\27[0m: "..tostring(width).."x"..tostring(height).."\n")
 printstat("\27[40m  \27[41m  \27[42m  \27[43m  \27[44m  \27[45m  \27[46m  \27[47m  ")
 printstat("\27[100m  \27[101m  \27[102m  \27[103m  \27[104m  \27[105m  \27[106m  \27[107m  ")
-terminal.cursorPosY = terminal.cursorPosY + 5
+local cursorPosX, cursorPosY = terminal.getCursorPos()
+terminal.setCursorPos(cursorPosX, cursorPosY + 5)

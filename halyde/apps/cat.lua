@@ -1,4 +1,5 @@
 local files = {...}
+local shell = require("shell")
 local fs = require("filesystem")
 if not files or not files[1] then
   shell.run("help cat")
@@ -6,7 +7,7 @@ if not files or not files[1] then
 end
 for _, file in ipairs(files) do 
   if file:sub(1, 1) ~= "/" then
-    file = fs.concat(shell.workingDirectory, file)
+    file = fs.concat(shell.getWorkingDirectory(), file)
   end
   if not fs.exists(file) then
     print("\27[91mFile does not exist.")
@@ -15,6 +16,6 @@ for _, file in ipairs(files) do
   local data
   repeat
     data = handle:read(math.huge or math.maxinteger)
-    termlib.write(data)
+    terminal.write(data)
   until not data
 end
