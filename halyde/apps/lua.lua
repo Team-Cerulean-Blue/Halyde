@@ -1,15 +1,19 @@
-print("\27[44m".._VERSION.."\27[0m shell")
-print('Type "exit" to exit.')
 -- terminal.readHistory["lua"] = {""}
 local fs = require("filesystem")
+local computer = require("computer")
 
-local loadedLibraries = ""
+local bootTime = computer.uptime()
 local libList = fs.list("/lib/")
 for _, lib in pairs(libList) do
   if lib:match("(.+)%.lua") then
-    loadedLibraries = loadedLibraries .. "local " .. lib:match("(.+)%.lua") .. ' = require("' .. lib:match("(.+)%.lua") .. '")\n'
+    local name = lib:match("(.+)%.lua")
+    _G[name] = require(name)
   end
 end
+
+print(string.format("\27[37mLoaded %d libraries in %.2f seconds\27[0m",#libList,computer.uptime()-bootTime))
+print(string.format("\27[44m%s\27[0m shell",_VERSION))
+print('Type "exit" to exit.')
 
 while true do
   local command = terminal.read("lua", "\27[44mlua>\27[0m ")
@@ -17,7 +21,7 @@ while true do
     return
   elseif command~="" then
     local function runCommand()
-      local func = load(loadedLibraries.."return "..command,"=stdin") or load(loadedLibraries..command,"=stdin")
+      local func = load("return "..command,"=stdin") or load(command,"=stdin")
       local res = {assert(func)()}
       if res and (type(res[1])~="nil" or type(res[2])~="nil") then print(table.unpack(res)) end
     end
