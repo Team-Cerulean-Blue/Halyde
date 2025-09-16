@@ -8,8 +8,8 @@ local log = assert(loadfile("/lib/log.lua")(loadfile))
 
 local handle, tmpdata = filesystem.open("/halyde/config/oslogo.ans", "r"), nil
 repeat
-	tmpdata = handle:read(math.huge)
-	_OSLOGO = _OSLOGO .. (tmpdata or "")
+  tmpdata = handle:read(math.huge)
+  _OSLOGO = _OSLOGO .. (tmpdata or "")
 until not tmpdata
 handle:close()
 
@@ -20,46 +20,46 @@ _G.package = { ["preloaded"] = {} }
 loadfile("/halyde/kernel/modules/datatools.lua")()
 
 function _G.reqgen(load)
-	return function(module, ...)
-		local args = table.pack(...)
-		if package.preloaded[module] then
-			return package.preloaded[module]
-		end
-		local modulepath
-		if filesystem.exists(module) then
-			modulepath = module
-		elseif filesystem.exists("/lib/" .. module .. ".lua") then
-			modulepath = "/lib/" .. module .. ".lua"
-		elseif
-			shell
-			and shell.workingDirectory
-			and filesystem.exists(filesystem.concat(shell.workingDirectory, module .. ".lua"))
-		then
-			modulepath = shell.workingDirectory .. module .. ".lua"
-		end
-		assert(modulepath, "Module not found\nPossible locations:\n/lib/" .. module .. ".lua")
-		local handle, data, tmpdata = filesystem.open(modulepath), "", nil
-		repeat
-			tmpdata = handle:read(math.huge or math.maxinteger)
-			data = data .. (tmpdata or "")
-		until not tmpdata
-		handle:close()
-		return (assert(load(data, "=" .. modulepath))(table.unpack(args)))
-	end
+  return function(module, ...)
+    local args = table.pack(...)
+    if package.preloaded[module] then
+      return package.preloaded[module]
+    end
+    local modulepath
+    if filesystem.exists(module) then
+      modulepath = module
+    elseif filesystem.exists("/lib/" .. module .. ".lua") then
+      modulepath = "/lib/" .. module .. ".lua"
+    elseif
+        shell
+        and shell.workingDirectory
+        and filesystem.exists(filesystem.concat(shell.workingDirectory, module .. ".lua"))
+    then
+      modulepath = shell.workingDirectory .. module .. ".lua"
+    end
+    assert(modulepath, "Module not found\nPossible locations:\n/lib/" .. module .. ".lua")
+    local handle, data, tmpdata = filesystem.open(modulepath), "", nil
+    repeat
+      tmpdata = handle:read(math.huge or math.maxinteger)
+      data = data .. (tmpdata or "")
+    until not tmpdata
+    handle:close()
+    return (assert(load(data, "=" .. modulepath))(table.unpack(args)))
+  end
 end
 
 _G.require = reqgen(_G.load)
 log.kernel.info("Generated userland require function")
 
 function _G.package.preload(module)
-	local handle, data, tmpdata = assert(filesystem.open("/lib/" .. module .. ".lua", "r")), "", nil
-	repeat
-		tmpdata = handle:read(math.huge or math.maxinteger)
-		data = data .. (tmpdata or "")
-	until not tmpdata
-	handle:close()
-	package.preloaded[module] = assert(load(data, "=" .. module))()
-	_G[module] = nil
+  local handle, data, tmpdata = assert(filesystem.open("/lib/" .. module .. ".lua", "r")), "", nil
+  repeat
+    tmpdata = handle:read(math.huge or math.maxinteger)
+    data = data .. (tmpdata or "")
+  until not tmpdata
+  handle:close()
+  package.preloaded[module] = assert(load(data, "=" .. module))()
+  _G[module] = nil
 end
 
 -- Datatools is imported twice??
@@ -80,10 +80,10 @@ gpu.setResolution(gpu.maxResolution())
 log.kernel.info("Bound GPU to screen " .. tostring(screenAddress))
 
 if not filesystem.exists("/halyde/config/shell.json") then -- Auto-generate configs
-	filesystem.copy("/halyde/config/generate/shell.json", "/halyde/config/shell.json")
+  filesystem.copy("/halyde/config/generate/shell.json", "/halyde/config/shell.json")
 end
 if not filesystem.exists("/halyde/config/startupapps.json") then
-	filesystem.copy("/halyde/config/generate/startupapps.json", "/halyde/config/startupapps.json")
+  filesystem.copy("/halyde/config/generate/startupapps.json", "/halyde/config/startupapps.json")
 end
 
 log.kernel.info("Starting tsched")
