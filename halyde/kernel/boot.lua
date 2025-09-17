@@ -4,7 +4,16 @@ _G._OSVERSION = "HALYDE VERSION" -- TODO: Put this in a separate config file
 _G._OSLOGO = ""
 _G._PUBLIC = {}
 _G._PUBLIC.unicode = assert(loadfile("/lib/unicode.lua")(loadfile))
+local component = assert(loadfile("/lib/component.lua")(loadfile))
+local gpu = component.gpu
+local screenAddress = component.list("screen")()
+
+gpu.bind(screenAddress)
+gpu.setResolution(gpu.maxResolution())
+
 local log = assert(loadfile("/lib/log.lua")(loadfile))
+
+log.kernel.info("Bound GPU to screen " .. tostring(screenAddress))
 
 local handle, tmpdata = filesystem.open("/halyde/config/oslogo.ans", "r"), nil
 repeat
@@ -68,16 +77,11 @@ log.kernel.info("Loading modules")
 require("/halyde/kernel/modload.lua")
 
 package.preload("component")
+log.kernel.info("Pre-loaded /lib/component.lua")
 package.preload("computer")
-log.kernel.info("Pre-loaded low-level packages")
-
-local component = require("component")
-local gpu = component.gpu
-local screenAddress = component.list("screen")()
-
-gpu.bind(screenAddress)
-gpu.setResolution(gpu.maxResolution())
-log.kernel.info("Bound GPU to screen " .. tostring(screenAddress))
+log.kernel.info("Pre-loaded /lib/computer.lua")
+package.preload("log")
+log.kernel.info("Pre-loaded /lib/log.lua")
 
 if not filesystem.exists("/halyde/config/shell.json") then -- Auto-generate configs
   filesystem.copy("/halyde/config/generate/shell.json", "/halyde/config/shell.json")

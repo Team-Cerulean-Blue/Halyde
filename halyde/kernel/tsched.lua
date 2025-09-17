@@ -11,8 +11,10 @@ local computer = require("computer")
 local filesystem = require("filesystem")
 local json = require("json")
 local gpu = component.gpu
-function _G._PUBLIC.tsched.runAsTask(path,...)
-  local args = {...}
+local log = require("log")
+
+function _G._PUBLIC.tsched.runAsTask(path, ...)
+  local args = { ... }
   local function taskFunction()
     local result, errorMessage = xpcall(function(...)
       local args = table.pack(...)
@@ -29,13 +31,13 @@ function _G._PUBLIC.tsched.runAsTask(path,...)
       -- Userland environment definition
       local userland = table.copy(_PUBLIC)
       userland._G = userland
-      userland.load=function(chunk,chunkname,mode,env)
-        if not env or env==_G then env=userland end -- if they SOMEHOW get the kernel environment they're not running jack shit
-        return load(chunk,chunkname,mode,env)
+      userland.load = function(chunk, chunkname, mode, env)
+        if not env or env == _G then env = userland end -- if they SOMEHOW get the kernel environment they're not running jack shit
+        return load(chunk, chunkname, mode, env)
       end
       userland.require = reqgen(userland.load)
 
-      assert(load(data, "="..path, "t", userland))(table.unpack(args))
+      assert(load(data, "=" .. path, "t", userland))(table.unpack(args))
     end, function(errorMessage)
       return errorMessage .. "\n \n" .. debug.traceback()
     end, --[[ path,]] table.unpack(args))
@@ -49,19 +51,25 @@ function _G._PUBLIC.tsched.runAsTask(path,...)
     end
     --require(path, table.unpack(args))
   end
-  local _,taskInfo = _PUBLIC.tsched.addTask(taskFunction, string.match(tostring(path), "([^/]+)%.lua$"))
+  local _, taskInfo = _PUBLIC.tsched.addTask(taskFunction, string.match(tostring(path), "([^/]+)%.lua$"))
   taskInfo.path = path
   taskInfo.args = table.copy(args)
 end
 
 function _G._PUBLIC.tsched.addTask(func, name)
   local task = coroutine.create(func)
-  local taskInfo = {["task"] = task, ["name"] = name, ["id"] = idCounter}
-  if currentTask and type(currentTask.id)=="number" then
+  local taskInfo = { ["task"] = task, ["name"] = name, ["id"] = idCounter }
+  if currentTask and type(currentTask.id) == "number" then
     taskInfo.parent = currentTask.id
   end
   table.insert(tsched.tasks, taskInfo)
   idCounter = idCounter + 1
+  if taskInfo.parent then
+    log.kernel.info("Created task " .. name .. " with PID " .. idCounter - 1 .. " by parent with PID " .. taskInfo
+      .parent)
+  else
+    log.kernel.info("Created task " .. name .. " with PID " .. idCounter - 1 .. " (no parent found)")
+  end
   return task, taskInfo
 end
 
@@ -70,14 +78,16 @@ function _G._PUBLIC.tsched.removeTask(id)
   for index, task in pairs(tsched.tasks) do
     if task.id == id then
       table.remove(tsched.tasks, index)
+      log.kernel.info("Removed task with PID " .. id)
       return true
     end
   end
+  log.kernel.warn("Tried to remove task that doesn't exist - PID " .. id)
   return false
 end
 
 function handleError(errormsg)
-  if errormsg == nil then -- TODO: Replace with proper error handling (if this isn't considered proper..?)
+  if errormsg == nil then -- TODO: Replace with proper error handling
     print("\27[91munknown error" .. "\n \n" .. debug.traceback())
   else
     print("\27[91m" .. tostring(errormsg) .. "\n \n" .. debug.traceback())
@@ -138,6 +148,7 @@ end
 _PUBLIC.tsched.addTask(taskFunction, "evmgr")
 package.preload("event")
 
+log.kernel.info("Starting startup apps...")
 local handle, data, tmpdata = filesystem.open("/halyde/config/startupapps.json", "r"), "", nil
 repeat
   tmpdata = handle:read(math.huge or math.maxinteger)
@@ -155,12 +166,11 @@ for _, line in ipairs(json.decode(data)) do
 end
 -- _G.cormgr.loadCoroutine("/halyde/core/shell.lua")
 
+log.setPrintLogs(false)
 while true do
   runTasks()
   if #_G.tsched.tasks == 0 then
-    computer.beep(1000, 0.5)
-    while true do
-      computer.pullSignal()
-    end
+    log.kernel.warn("No more tasks left! Shutting down...")
+    computer.shutdown()
   end
 end

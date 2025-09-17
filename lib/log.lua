@@ -1,15 +1,24 @@
-local fs, computer
+local fs, computer, gpu
 local chunkSize = 1024
 if require then
   fs = require("filesystem")
   computer = require("computer")
+  gpu = require("component").gpu
 else
   local loadfile = ...
   fs = loadfile("/lib/filesystem.lua")(loadfile)
   computer = _G.computer
+  gpu = loadfile("/lib/component.lua")(loadfile).gpu
 end
 
+local resX, resY = gpu.getResolution()
 local log = {}
+if not _G.logSettings then
+  _G.logSettings = { -- We have to preload the library just for this :P
+    ["printLogs"] = true,
+    ["printerY"] = 1
+  }
+end
 
 local logFileSizeLimit = 16384
 
@@ -60,6 +69,26 @@ local function writeToLog(path, text)
     readHandle:close()
     writeHandle:close()
   end
+
+  if _G.logSettings.printLogs then
+    -- Print onscreen
+    if text:sub(1, 4) == "INFO" then -- Set color
+      gpu.setForeground(0xFFFFFF)
+    elseif text:sub(1, 4) == "WARN" then
+      gpu.setForeground(0xFFFF00)
+    elseif text:sub(1, 5) == "ERROR" then
+      gpu.setForeground(0xFF0000)
+    end
+    repeat -- Line wrapping
+      if _G.logSettings.printerY > resY then
+        gpu.copy(1, 2, resX, resY - 1, 0, -1)
+        _G.logSettings.printerY = resY
+      end
+      gpu.set(1, _G.logSettings.printerY, text .. string.rep(" ", resX - #text))
+      text = text:sub(resX + 1)
+      _G.logSettings.printerY = _G.logSettings.printerY + 1
+    until text == ""
+  end
 end
 
 setmetatable(log, {
@@ -81,5 +110,10 @@ setmetatable(log, {
     }
   end,
 })
+
+function log.setPrintLogs(setting) -- Yes, this works with the metatable.
+  checkArg(1, setting, "boolean")
+  _G.logSettings.printLogs = setting
+end
 
 return log

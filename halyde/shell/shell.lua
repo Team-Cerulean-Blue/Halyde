@@ -18,21 +18,25 @@ _G.shell = {}
 function _G.shell.getWorkingDirectory()
   return workingDirectory
 end
+
 function _G.shell.setWorkingDirectory(dir)
   checkArg(1, dir, "string")
   workingDirectory = dir
 end
+
 function _G.shell.getAliases()
   return table.copy(aliases)
 end
+
 function _G.shell.addAlias(executable, aliasName)
   checkArg(1, executable, "string")
   checkArg(2, aliasName, "string")
-  aliases[aliasName]=executable
+  aliases[aliasName] = executable
 end
+
 function _G.shell.removeAlias(aliasName)
   checkArg(1, aliasName, "string")
-  aliases[aliasName]=nil
+  aliases[aliasName] = nil
 end
 
 local function runAsTask(path, ...)
@@ -99,7 +103,7 @@ function _G.shell.run(command)
     return
   end
   for _, item in pairs(PATH) do
-    if fs.exists(item..args[1]) and not fs.isDirectory(item .. args[1]) then
+    if fs.exists(item .. args[1]) and not fs.isDirectory(item .. args[1]) then
       local path = fs.concat(item, args[1])
       table.remove(args, 1)
       runAsTask(path, table.unpack(args))
@@ -116,11 +120,13 @@ function _G.shell.run(command)
       end
     end
   end
-  print("No such file or command: "..args[1])
+  print("No such file or command: " .. args[1])
 end
 
 local shareTable = ipc.shareWithAll()
 shareTable.shell = _G.shell
+
+terminal.clear()
 
 print(shellcfg["startupMessage"]:format(_OSVERSION, shellcfg.splashMessages[math.random(1, #shellcfg.splashMessages)]))
 while true do

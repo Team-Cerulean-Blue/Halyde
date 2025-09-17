@@ -11,7 +11,7 @@ end
 --local ocelot = LLcomponent.proxy(LLcomponent.list("ocelot")())
 --ocelot.log("loaded")
 
-_G.componentlib = {["additions"] = {}, ["removals"] = {}}
+_G.componentlib = { ["additions"] = {}, ["removals"] = {} }
 compLib.virtual = {}
 
 function compLib.virtual.add(address, componentType, proxy)
@@ -23,7 +23,7 @@ function compLib.virtual.add(address, componentType, proxy)
   if _PUBLIC.tsched then
     proc = _PUBLIC.tsched.getCurrentTask()
   end
-  componentlib.additions[address] = {["componentType"] = componentType, ["proxy"] = proxy, ["proc"] = proc}
+  componentlib.additions[address] = { ["componentType"] = componentType, ["proxy"] = proxy, ["proc"] = proc }
   if componentlib.removals[address] then
     componentlib.removals[address] = nil
   end
@@ -49,7 +49,7 @@ end
 
 function compLib.list(componentType)
   checkArg(1, componentType, "string", "nil")
-  local componentList = table.copy(LLcomponent.list(componentType))
+  local componentList = LLcomponent.list(componentType)
   for address, dataTable in pairs(componentlib.additions) do
     if dataTable.componentType == componentType or not componentType then
       componentList[address] = dataTable.componentType
@@ -59,10 +59,12 @@ function compLib.list(componentType)
     componentList[address] = nil
   end
   local i, value
-  setmetatable(componentList, {__call = function(self)
-    i, value = next(self, i)
-    return i, value
-  end})
+  setmetatable(componentList, {
+    __call = function(self)
+      i, value = next(self, i)
+      return i, value
+    end
+  })
   return componentList
 end
 
@@ -93,19 +95,21 @@ function compLib.get(address)
   end
   for currentAddress, name in compLib.list() do
     if currentAddress:find("^" .. address) then
-      return(currentAddress)
+      return (currentAddress)
     end
   end
   return nil, "full address not found"
 end
 
 -- Add main component proxies to the library
-setmetatable(compLib, {["__index"] = function(_, item)
-  if compLib.list(item)() then
-    return compLib.proxy(compLib.list(item)())
-  else
-    return compLib[item]
+setmetatable(compLib, {
+  ["__index"] = function(_, item)
+    if compLib.list(item)() then
+      return compLib.proxy(compLib.list(item)())
+    else
+      return compLib[item]
+    end
   end
-end})
+})
 
 return compLib
