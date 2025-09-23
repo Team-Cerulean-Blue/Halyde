@@ -1,0 +1,9 @@
+Usage: res [FLAGS]
+Gets or sets the current resolution.
+
+  FLAGS*           Specifies extra options when executing the command.
+    [no flags]     Displays the current and maximum resolution.
+    -x [number*]   Displays the current and maximum resolution on the x-axis.
+                   A new x-axis resolution can be specified as a number.
+    -y [number*]   Displays the current and maximum resolution on the y-axis.
+                   A new y-axis resolution can be specified as a number.
