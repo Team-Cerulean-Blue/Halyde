@@ -11,8 +11,6 @@ else
   gpu = loadfile("/lib/component.lua")(loadfile).gpu
 end
 
-fs.makeDirectory("halyde/logs") -- Git likes to not clone empty directories
-
 local resX, resY = gpu.getResolution()
 local log = {}
 if not _G.logSettings then
@@ -25,6 +23,7 @@ end
 local logFileSizeLimit = 16384
 
 local function writeToLog(path, text)
+  fs.makeDirectory("halyde/logs") -- Git likes to not clone empty directories
   local handle
   if fs.exists(path) then
     handle = assert(fs.open(path, "a"))
