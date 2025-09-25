@@ -11,6 +11,8 @@ else
   gpu = loadfile("/lib/component.lua")(loadfile).gpu
 end
 
+fs.makeDirectory("halyde/logs") -- Git likes to not clone empty directories
+
 local resX, resY = gpu.getResolution()
 local log = {}
 if not _G.logSettings then
