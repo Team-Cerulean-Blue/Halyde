@@ -47,9 +47,13 @@ gpu.fill(1, 1, resX, resY, " ")
 -- Copying low-level functions in case of post-preload failure
 local pullSignal = computer.pullSignal
 local beep = computer.beep
+local unicode = unicode
 
 local result, reason = xpcall(loadBoot, handleError)
+local lines = {}
 if not result then
+	reason = "A fatal error has occurred.\nHalyde cannot continue.\n \n"
+		.. tostring(reason or "unknown error"):gsub("\t", "  ")
 	local bgColor
 	if gpu.getDepth() == 1 then
 		bgColor = 0x000000
@@ -58,14 +62,13 @@ if not result then
 	end
 	gpu.setBackground(bgColor)
 	gpu.fill(1, 1, resX, resY, " ")
+	for line in string.gmatch(reason, "([^\n]*)\n?") do
+		table.insert(lines, line)
+	end
 	local function render()
 		gpu.setForeground(0xFFFFFF)
-		local i = 2
-		reason = "A fatal error has occurred.\nHalyde cannot continue.\n \n"
-			.. tostring(reason or "unknown error"):gsub("\t", "  ")
-		for line in string.gmatch(reason, "([^\n]*)\n?") do
-			gpu.set(2, i, line)
-			i = i + 1
+		for i = 1, #lines do
+			gpu.set(2, i + 1, lines[i])
 		end
 		gpu.fill(1, resY - 1, resX, 1, "─")
 		gpu.fill(1, resY, resX, 1, " ")
@@ -79,12 +82,52 @@ if not result then
 		gpu.set(14, resY, " / ")
 		gpu.set(19, resY, " Scroll" .. string.rep(" ", resX - 21))
 	end
+	local scrollY = 0 -- TODO: make scrolling capped
+	local function scrollDown()
+		if scrollY >= #lines - resY + 2 then
+			return
+		end
+		gpu.copy(1, 2, resX, resY - 3, 0, -1)
+		gpu.fill(1, resY - 2, resX, 1, " ")
+		local line = lines[scrollY + resY - 2]
+		if type(line) == "string" then
+			gpu.set(2, resY - 2, line)
+		end
+		scrollY = scrollY + 1
+	end
+	local function scrollUp()
+		if scrollY <= 0 then
+			return
+		end
+		gpu.copy(1, 1, resX, resY - 3, 0, 1)
+		gpu.fill(1, 1, resX, 1, " ")
+		local line = lines[scrollY - 1]
+		if type(line) == "string" then
+			gpu.set(2, 1, line)
+		end
+		scrollY = scrollY - 1
+	end
 	render()
 	beep(440, 0.2)
 	beep(465, 0.2)
 	beep(440, 0.2)
 	beep(370, 0.5)
-	while true do -- TODO: Make this scrollable
-		pullSignal()
+	while true do
+		local ev = { pullSignal() }
+		if ev[1] == "key_down" then
+			if ev[4] == 200 then
+				scrollUp()
+			end
+			if ev[4] == 208 then
+				scrollDown()
+			end
+		end
+		if ev[1] == "scroll" then
+			if ev[5] > 0 then
+				scrollUp()
+			else
+				scrollDown()
+			end
+		end
 	end
 end
