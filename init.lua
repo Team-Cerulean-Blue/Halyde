@@ -82,7 +82,11 @@ if not result then
 		gpu.set(14, resY, " / ")
 		gpu.set(19, resY, " Scroll" .. string.rep(" ", resX - 21))
 	end
-	local scrollY = 0 -- TODO: make scrolling capped
+	local function cropset(x, y, txt)
+		gpu.set(math.max(x, 1), y, unicode.sub(txt, math.max(2 - x, 1)))
+	end
+	local scrollX = 0
+	local scrollY = 0
 	local function scrollDown()
 		if scrollY >= #lines - resY + 2 then
 			return
@@ -91,7 +95,7 @@ if not result then
 		gpu.fill(1, resY - 2, resX, 1, " ")
 		local line = lines[scrollY + resY - 2]
 		if type(line) == "string" then
-			gpu.set(2, resY - 2, line)
+			cropset(2 - scrollX, resY - 2, line)
 		end
 		scrollY = scrollY + 1
 	end
@@ -103,9 +107,36 @@ if not result then
 		gpu.fill(1, 1, resX, 1, " ")
 		local line = lines[scrollY - 1]
 		if type(line) == "string" then
-			gpu.set(2, 1, line)
+			cropset(2 - scrollX, 1, line)
 		end
 		scrollY = scrollY - 1
+	end
+	local width = 0
+	for i = 1, #lines do
+		width = math.max(width, unicode.len(lines[i]))
+	end
+	local function rerender()
+		for i = 1, #lines do
+			local y = i - scrollY + 1
+			if y > 0 and y <= resY - 2 then
+				gpu.fill(1, y, resX, 1, " ")
+				cropset(2 - scrollX, y, lines[i])
+			end
+		end
+	end
+	local function scrollRight()
+		if scrollX >= width - resX + 2 then
+			return
+		end
+		scrollX = scrollX + 1
+		rerender()
+	end
+	local function scrollLeft()
+		if scrollX <= 0 then
+			return
+		end
+		scrollX = scrollX - 1
+		rerender()
 	end
 	render()
 	beep(440, 0.2)
@@ -120,6 +151,12 @@ if not result then
 			end
 			if ev[4] == 208 then
 				scrollDown()
+			end
+			if ev[4] == 203 then
+				scrollLeft()
+			end
+			if ev[4] == 205 then
+				scrollRight()
 			end
 		end
 		if ev[1] == "scroll" then
