@@ -52,8 +52,27 @@ local unicode = unicode
 local result, reason = xpcall(loadBoot, handleError)
 local lines = {}
 if not result then
+	local log
+	local logSuccess, logError = false, nil
+	if _G.require then
+		logSuccess, logError = pcall(function()
+			log = _G.require("log")
+			log.kernel.error("Halyde has crashed!\n" .. tostring(reason or "unknown error"))
+		end)
+	end
 	reason = "A fatal error has occurred.\nHalyde cannot continue.\n \n"
 		.. tostring(reason or "unknown error"):gsub("\t", "  ")
+	if not log then
+		reason = "WARNING: This error has occured early enough in the boot process that no log entry could be made.\n\n"
+			.. reason
+	elseif not logSuccess then
+		if type(logError) == "nil" then
+			logError = ""
+		else
+			logError = "\n │ " .. tostring(logError)
+		end
+		reason = "WARNING: An error has occured when making a log entry for this crash." .. logError .. "\n\n" .. reason
+	end
 	local bgColor
 	if gpu.getDepth() == 1 then
 		bgColor = 0x000000
