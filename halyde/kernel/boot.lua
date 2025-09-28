@@ -35,14 +35,17 @@ function _G.reqgen(load)
       return package.preloaded[module]
     end
     local modulepath
-    if filesystem.exists(module) then
+    if filesystem.exists(module) and not filesystem.isDirectory(module) then
       modulepath = module
-    elseif filesystem.exists("/lib/" .. module .. ".lua") then
+    elseif
+      filesystem.exists("/lib/" .. module .. ".lua") and not filesystem.isDirectory("/lib/" .. module .. ".lua")
+    then
       modulepath = "/lib/" .. module .. ".lua"
     elseif
-        shell
-        and shell.workingDirectory
-        and filesystem.exists(filesystem.concat(shell.workingDirectory, module .. ".lua"))
+      shell
+      and shell.workingDirectory
+      and filesystem.exists(filesystem.concat(shell.workingDirectory, module .. ".lua"))
+      and not filesystem.isDirectory(filesystem.concat(shell.workingDirectory, module .. ".lua"))
     then
       modulepath = shell.workingDirectory .. module .. ".lua"
     end
