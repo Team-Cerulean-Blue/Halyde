@@ -63,7 +63,7 @@ function compLib.list(componentType)
     __call = function(self)
       i, value = next(self, i)
       return i, value
-    end
+    end,
   })
   return componentList
 end
@@ -81,7 +81,9 @@ function compLib.invoke(address, funcName, ...)
   --ocelot.log("Invoking " .. funcName .. " from " .. address)
   if componentlib.additions[address] then
     --ocelot.log("vcomponent")
-    if not componentlib.additions[address].proxy[funcName] then error("no such method") end
+    if not componentlib.additions[address].proxy[funcName] then
+      error("no such method")
+    end
     return componentlib.additions[address].proxy[funcName](...)
   else
     return LLcomponent.invoke(address, funcName, ...)
@@ -95,21 +97,30 @@ function compLib.get(address)
   end
   for currentAddress, name in compLib.list() do
     if currentAddress:find("^" .. address) then
-      return (currentAddress)
+      return currentAddress
     end
   end
   return nil, "full address not found"
 end
 
+function compLib.isAvailable(componentType)
+  checkArg(1, componentType, "string")
+  if LLcomponent.list(componentType)() then
+    return true
+  else
+    return false
+  end
+end
+
 -- Add main component proxies to the library
 setmetatable(compLib, {
   ["__index"] = function(_, item)
-    if compLib.list(item)() then
+    if LLcomponent.list(item)() then
       return compLib.proxy(compLib.list(item)())
     else
       return compLib[item]
     end
-  end
+  end,
 })
 
 return compLib
