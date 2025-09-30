@@ -48,7 +48,9 @@ function event.pull(...)
     end
     
     -- Yield to allow other processes to run and more events to be added
-    coroutine.yield()
+    if timeout and timeout > 0 then
+      coroutine.yield()
+    end
   end
 end
 
