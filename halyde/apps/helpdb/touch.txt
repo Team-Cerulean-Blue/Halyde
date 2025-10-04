@@ -1,0 +1,6 @@
+Usage: touch [FLAGS] [FILE]
+Creates a file with empty content.
+
+  FLAGS               Specifies extra options when executing the command.
+    -o, --overwrite   Allows emptying out a file if it already exists.
+  FILE                The path of the file to create.²

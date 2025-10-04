@@ -1,11 +1,11 @@
-local files = {...}
+local files = { ... }
 local shell = require("shell")
 local fs = require("filesystem")
 if not files or not files[1] then
   shell.run("help cat")
   return
 end
-for _, file in ipairs(files) do 
+for _, file in ipairs(files) do
   if file:sub(1, 1) ~= "/" then
     file = fs.concat(shell.getWorkingDirectory(), file)
   end
