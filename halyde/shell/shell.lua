@@ -81,7 +81,7 @@ function _G.shell.run(command)
       if trimmedCommand:find('"') then
         table.insert(args, trimmedCommand:sub(1, trimmedCommand:find('"') - 1))
         trimmedCommand = trimmedCommand:sub(trimmedCommand:find('"') + 1)
-        gm = trimmedCommand:gmatch('[^ ]+')
+        gm = trimmedCommand:gmatch("[^ ]+")
       else
         print("\27[91mmalformed shell command")
         return
@@ -92,7 +92,7 @@ function _G.shell.run(command)
   end
   -- execute the program
   local PATH = table.copy(shellcfg.path)
-  table.insert(PATH, shell.workingDirectory)
+  table.insert(PATH, workingDirectory)
   if not args[1] then
     return
   end
