@@ -16,7 +16,7 @@ local log = {}
 if not _G.logSettings then
   _G.logSettings = { -- We have to preload the library just for this :P
     ["printLogs"] = true,
-    ["printerY"] = 1
+    ["printerY"] = 1,
   }
 end
 
@@ -36,7 +36,7 @@ local function writeToLog(path, text)
   -- Log trimming if it gets too long
   if fs.size(path) > logFileSizeLimit then
     local sizeCounter = 0
-    local readHandle = fs.open(path, "r")
+    local readHandle = fs.open(path, "r", false) -- Making sure buffering is disabled, otherwise this whole thing is pointless
     local currentChunk = ""
     readHandle:seek("end", -chunkSize)
     repeat
@@ -51,8 +51,13 @@ local function writeToLog(path, text)
       if not infoEntry and not warnEntry and not errorEntry then
         readHandle:seek(-chunkSize)
       else
-        readHandle:seek(math.min(infoEntry or math.huge or math.maxinteger, warnEntry or math.huge or math.maxinteger,
-          errorEntry or math.huge or math.maxinteger) - 1)
+        readHandle:seek(
+          math.min(
+            infoEntry or math.huge or math.maxinteger,
+            warnEntry or math.huge or math.maxinteger,
+            errorEntry or math.huge or math.maxinteger
+          ) - 1
+        )
         break
       end
       if readHandle:seek("cur") == 0 then -- Failsafe to prevent infinite loops
@@ -97,16 +102,22 @@ setmetatable(log, {
     return {
       ["logpath"] = fs.concat("/halyde/logs/", index .. ".log"),
       ["info"] = function(text)
-        writeToLog(fs.concat("/halyde/logs/", index .. ".log"),
-          "INFO [" .. string.format("%.2f", computer.uptime()) .. "] " .. text)
+        writeToLog(
+          fs.concat("/halyde/logs/", index .. ".log"),
+          "INFO [" .. string.format("%.2f", computer.uptime()) .. "] " .. text
+        )
       end,
       ["warn"] = function(text)
-        writeToLog(fs.concat("/halyde/logs/", index .. ".log"),
-          "WARN [" .. string.format("%.2f", computer.uptime()) .. "] " .. text)
+        writeToLog(
+          fs.concat("/halyde/logs/", index .. ".log"),
+          "WARN [" .. string.format("%.2f", computer.uptime()) .. "] " .. text
+        )
       end,
       ["error"] = function(text)
-        writeToLog(fs.concat("/halyde/logs/", index .. ".log"),
-          "ERROR [" .. string.format("%.2f", computer.uptime()) .. "] " .. text)
+        writeToLog(
+          fs.concat("/halyde/logs/", index .. ".log"),
+          "ERROR [" .. string.format("%.2f", computer.uptime()) .. "] " .. text
+        )
       end,
     }
   end,
