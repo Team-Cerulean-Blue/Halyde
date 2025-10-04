@@ -1,0 +1,6 @@
+Usage: beep [FLAGS]
+Make the computer beep.
+
+  FLAGS
+    -f, --frequency   Specifies the frequency, in Hz. Defaults to 440Hz.
+    -t, --time        Specifies how long, in seconds, the computer should beep. Defaults to 0.1s.
