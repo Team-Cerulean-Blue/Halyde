@@ -1,6 +1,6 @@
 local module = {}
 
-module.dependencies = {"terminal"}
+module.dependencies = { "terminal" }
 
 function module.check()
   return true -- This module should always be loaded
@@ -11,7 +11,6 @@ function module.init()
     "print",
     "_VERSION",
     "_OSVERSION",
-    "_OSLOGO",
     "assert",
     "error",
     "getmetatable",
@@ -39,7 +38,7 @@ function module.init()
     "table",
     "checkArg",
     "utf8",
-    "convert"
+    "convert",
   }
   for _, value in ipairs(publicTable) do
     _G._PUBLIC[value] = table.copy(_G[value])

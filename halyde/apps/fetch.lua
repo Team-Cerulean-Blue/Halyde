@@ -1,5 +1,6 @@
 local component = require("component")
 local computer = require("computer")
+local filesystem = require("filesystem")
 
 local function printstat(text)
   local cursorPosX, cursorPosY = terminal.getCursorPos()
@@ -7,18 +8,27 @@ local function printstat(text)
   terminal.write(text .. "\n", false)
 end
 
-terminal.write(_OSLOGO, false)
+local logo = ""
+local handle, tmpdata = filesystem.open("/halyde/config/oslogo.ans", "r"), nil
+repeat
+  tmpdata = handle:read(math.inf or math.maxinteger)
+  logo = logo .. (tmpdata or "")
+until not tmpdata
+
+terminal.write(logo, false)
 local cursorPosX, cursorPosY = terminal.getCursorPos()
 terminal.setCursorPos(cursorPosX, cursorPosY - 17)
-printstat("\27[92mOS\27[0m: ".._OSVERSION)
-printstat("\27[92mArchitecture\27[0m: ".._VERSION)
+printstat("\27[92mOS\27[0m: " .. _OSVERSION)
+printstat("\27[92mArchitecture\27[0m: " .. _VERSION)
 local componentCounter = 0
 for _, _ in component.list() do
   componentCounter = componentCounter + 1
 end
-printstat("\27[92mComponents\27[0m: "..tostring(componentCounter))
-printstat("\27[92mCoroutines\27[0m: "..tostring(#tsched.getTasks()))
-printstat("\27[92mBattery\27[0m: "..tostring(math.floor(computer.energy() / computer.maxEnergy() * 1000 + 0.5) / 10).."%")
+printstat("\27[92mComponents\27[0m: " .. tostring(componentCounter))
+printstat("\27[92mCoroutines\27[0m: " .. tostring(#tsched.getTasks()))
+printstat(
+  "\27[92mBattery\27[0m: " .. tostring(math.floor(computer.energy() / computer.maxEnergy() * 1000 + 0.5) / 10) .. "%"
+)
 local totalMemory = computer.totalMemory()
 local usedMemory = computer.totalMemory() - computer.freeMemory()
 local totalMemoryString
@@ -41,7 +51,7 @@ elseif convert(usedMemory, "B", "KiB") >= 1 then
 else
   usedMemoryString = tostring(usedMemory) .. " B"
 end
-printstat("\27[92mMemory\27[0m: "..usedMemoryString.." / "..totalMemoryString)
+printstat("\27[92mMemory\27[0m: " .. usedMemoryString .. " / " .. totalMemoryString)
 local totalDisk = component.invoke(computer.getBootAddress(), "spaceTotal")
 local usedDisk = component.invoke(computer.getBootAddress(), "spaceUsed")
 local totalDiskString
@@ -64,9 +74,9 @@ elseif convert(usedDisk, "B", "KiB") >= 1 then
 else
   usedDiskString = tostring(usedDisk) .. " B"
 end
-printstat("\27[92mDisk\27[0m: "..usedDiskString.." / "..totalDiskString)
+printstat("\27[92mDisk\27[0m: " .. usedDiskString .. " / " .. totalDiskString)
 local width, height = component.invoke(component.list("gpu")(), "getResolution")
-printstat("\27[92mResolution\27[0m: "..tostring(width).."x"..tostring(height).."\n")
+printstat("\27[92mResolution\27[0m: " .. tostring(width) .. "x" .. tostring(height) .. "\n")
 printstat("\27[40m  \27[41m  \27[42m  \27[43m  \27[44m  \27[45m  \27[46m  \27[47m  ")
 printstat("\27[100m  \27[101m  \27[102m  \27[103m  \27[104m  \27[105m  \27[106m  \27[107m  ")
 local cursorPosX, cursorPosY = terminal.getCursorPos()
