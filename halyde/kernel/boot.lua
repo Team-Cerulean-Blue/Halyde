@@ -1,7 +1,6 @@
 local loadfile = ...
 local filesystem = assert(loadfile("/lib/filesystem.lua")(loadfile))
 _G._OSVERSION = "HALYDE VERSION" -- TODO: Put this in a separate config file
-_G._OSLOGO = ""
 _G._PUBLIC = {}
 _G._PUBLIC.unicode = assert(loadfile("/lib/unicode.lua")(loadfile))
 local component = assert(loadfile("/lib/component.lua")(loadfile))
@@ -14,13 +13,6 @@ gpu.setResolution(gpu.maxResolution())
 local log = assert(loadfile("/lib/log.lua")(loadfile))
 
 log.kernel.info("Bound GPU to screen " .. tostring(screenAddress))
-
-local handle, tmpdata = filesystem.open("/halyde/config/oslogo.ans", "r"), nil
-repeat
-  tmpdata = handle:read(math.huge)
-  _OSLOGO = _OSLOGO .. (tmpdata or "")
-until not tmpdata
-handle:close()
 
 log.kernel.info("Loaded OS logo")
 
