@@ -1,0 +1,15 @@
+Usage: log [OPERATION] [ARGS]
+Tool to manage system logs.
+
+  OPERATION        Operation to do with the system logs.
+    view [LOG]                     View a log file.
+    list                           List all logs.
+    clear [LOG*]                   Clear a log file, or all if none specified.
+    info/warn/error [LOG] [TEXT]   Create a log entry for the specified log at the specified log level.
+  ARGS             Arguments (specified under OPERATION)
+
+Examples:
+  log view example
+  log list
+  log clear example
+  log info example This is an example.
