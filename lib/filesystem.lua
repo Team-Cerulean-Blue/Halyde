@@ -196,7 +196,7 @@ function filesystem.open(path, mode, buffered) -- opens a file and returns its h
   properHandle.address = address
   local content = nil
   local bufferOffset = 0 -- Position in file where buffer starts
-  local readCursor = 1   -- Position within buffer (1-based)
+  local readCursor = 1 -- Position within buffer (1-based)
 
   if buffered and mode == "r" then
     content = component.invoke(address, "read", handle, bufferSize) or ""
@@ -294,10 +294,7 @@ function filesystem.open(path, mode, buffered) -- opens a file and returns its h
       end
       local startSByte = ((readCursor - 1) % sectorSize) + 1
       local sect = unmanagedProxy.readSector(startSector)
-      unmanagedProxy.writeSector(
-        startSector,
-        sect:sub(1, startSByte - 1) .. data:sub(1, sectorSize - startSByte + 1)
-      )
+      unmanagedProxy.writeSector(startSector, sect:sub(1, startSByte - 1) .. data:sub(1, sectorSize - startSByte + 1))
       for i = 2, (#data + startSByte) // sectorSize do
         if startSector + i - 1 > sectorCount then
           return nil, "not enough space"
@@ -375,7 +372,7 @@ function filesystem.open(path, mode, buffered) -- opens a file and returns its h
       readCursor = 1
       return newPos
     else
-      return component.invoke(self.address, "seek", self.handle, whence, math.max(offset, -currentAbsolutePos))
+      return component.invoke(self.address, "seek", self.handle, whence, offset)
     end
   end
 
@@ -560,19 +557,18 @@ function filesystem.rename(fromPath, toPath)
     return component.invoke(fromAddress, "rename", fromAbsPath, toAbsPath)
   elseif filesystem.isDirectory(fromPath) then -- component.invoke(fromAddress, "isDirectory", fromAbsPath) then
     copyRecursive(fromAddress, fromAbsPath, toAddress, toAbsPath)
-    filesystem.remove(fromPath)                -- component.invoke(fromAddress,"remove", fromAbsPath)
+    filesystem.remove(fromPath) -- component.invoke(fromAddress,"remove", fromAbsPath)
   else
-    local handle, data, tmpdata = filesystem.open(fromPath), "",
-        nil                                               -- component.invoke(fromAddress, "open", fromAbsPath, "r"), "", nil
+    local handle, data, tmpdata = filesystem.open(fromPath), "", nil -- component.invoke(fromAddress, "open", fromAbsPath, "r"), "", nil
     repeat
       tmpdata = handle:read(math.huge or math.maxinteger) -- component.invoke(fromAddress, "read", handle, math.huge or math.maxinteger)
       data = data .. (tmpdata or "")
     until not tmpdata
-    tmpdata = handle:close()               -- component.invoke(fromAddress, "close", handle)
+    tmpdata = handle:close() -- component.invoke(fromAddress, "close", handle)
     local handle = filesystem.open(toPath) -- component.invoke(toAddress, "open", toAbsPath, "w")
-    handle:write(data)                     -- component.invoke(toAddress, "write", handle, data)
-    handle:close()                         -- component.invoke(toAddress, "close", handle)
-    filesystem.remove(fromPath)            -- component.invoke(fromAddress, "remove", fromAbsPath)
+    handle:write(data) -- component.invoke(toAddress, "write", handle, data)
+    handle:close() -- component.invoke(toAddress, "close", handle)
+    filesystem.remove(fromPath) -- component.invoke(fromAddress, "remove", fromAbsPath)
   end
 end
 
