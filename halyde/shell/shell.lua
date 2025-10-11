@@ -1,5 +1,8 @@
 local fs = require("filesystem")
 local json = require("json")
+if not fs.exists("/halyde/config/shell.json") then -- Auto-generate configs
+  fs.copy("/halyde/config/generate/shell.json", "/halyde/config/shell.json")
+end
 local handle, data, tmpdata = fs.open("/halyde/config/shell.json", "r"), "", nil
 repeat
   tmpdata = handle:read(math.huge)

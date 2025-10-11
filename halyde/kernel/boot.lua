@@ -14,11 +14,7 @@ local log = assert(loadfile("/lib/log.lua")(loadfile))
 
 log.kernel.info("Bound GPU to screen " .. tostring(screenAddress))
 
-log.kernel.info("Loaded OS logo")
-
 _G.package = { ["preloaded"] = {} }
-
-loadfile("/halyde/kernel/modules/datatools.lua")()
 
 function _G.reqgen(load)
   return function(module, ...)
@@ -64,23 +60,17 @@ function _G.package.preload(module)
   handle:close()
   package.preloaded[module] = assert(load(data, "=" .. module))()
   _G[module] = nil
+  log.kernel.info(string.format("Pre-loaded /lib/%s.lua", module))
 end
 
--- Datatools is imported twice??
 require("/halyde/kernel/datatools.lua") -- If this is not imported BEFORE modload gets run, modload requires filesystem which requires computer which requires datatools. TODO: When VFS is implemented, make the pre-VFS loading of filesystem load a more basic version. And remove this.
 log.kernel.info("Loading modules")
 require("/halyde/kernel/modload.lua")
 
 package.preload("component")
-log.kernel.info("Pre-loaded /lib/component.lua")
 package.preload("computer")
-log.kernel.info("Pre-loaded /lib/computer.lua")
 package.preload("log")
-log.kernel.info("Pre-loaded /lib/log.lua")
 
-if not filesystem.exists("/halyde/config/shell.json") then -- Auto-generate configs
-  filesystem.copy("/halyde/config/generate/shell.json", "/halyde/config/shell.json")
-end
 if not filesystem.exists("/halyde/config/startupapps.json") then
   filesystem.copy("/halyde/config/generate/startupapps.json", "/halyde/config/startupapps.json")
 end
