@@ -14,6 +14,7 @@ local gpu = component.gpu
 local log = require("log")
 
 function _G._PUBLIC.tsched.runAsTask(path, ...)
+  checkArg(1, path, "string")
   local args = { ... }
   local function taskFunction()
     local result, errorMessage = xpcall(function(...)
@@ -59,9 +60,11 @@ function _G._PUBLIC.tsched.runAsTask(path, ...)
 end
 
 function _G._PUBLIC.tsched.addTask(func, name)
+  checkArg(1, func, "function")
+  checkArg(2, name, "string")
   local task = coroutine.create(func)
   local taskInfo = { ["task"] = task, ["name"] = name, ["id"] = idCounter }
-  if currentTask and type(currentTask.id) == "number" then
+  if type(currentTask) == "table" and type(currentTask.id) == "number" then
     taskInfo.parent = currentTask.id
   end
   table.insert(tsched.tasks, taskInfo)
@@ -77,6 +80,7 @@ function _G._PUBLIC.tsched.addTask(func, name)
 end
 
 function _G._PUBLIC.tsched.removeTask(id)
+  checkArg(1, id, "number")
   -- TODO: Check for user permissions before running
   for index, task in pairs(tsched.tasks) do
     if task.id == id then
