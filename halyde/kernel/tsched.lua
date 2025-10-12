@@ -6,10 +6,15 @@ local gpu = component.gpu
 local log = require("log")
 
 function handleError(errormsg)
+  local traceback = debug.traceback()
   if errormsg == nil then -- TODO: Replace with proper error handling
-    print("\27[91munknown error" .. "\n \n" .. debug.traceback())
+    print("\27[91munknown error" .. "\n \n" .. traceback)
+    log.kernel.error(string.format("Process ID %d has crashed!\n\n%s", tsched.currentTask.id, traceback))
   else
-    print("\27[91m" .. tostring(errormsg) .. "\n \n" .. debug.traceback())
+    print("\27[91m" .. tostring(errormsg) .. "\n \n" .. traceback)
+    log.kernel.error(
+      string.format("Process ID %d has crashed: %s\n\n%s", tsched.currentTask.id, tostring(errormsg), traceback)
+    )
   end
 end
 
