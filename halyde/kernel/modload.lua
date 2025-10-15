@@ -16,8 +16,14 @@ if not moduleList then
 end
 local modules = {}
 local moduleTypes = {}
+local modulesLoaded = {}
 
 local function loadModule(modName)
+  if table.find(modulesLoaded, modName) then
+    log.kernel.warn(string.format("[modload: %s] Module was already loaded - skipping", modName))
+    return
+  end
+
   local moduleData = modules[modName]
   table.remove(moduleList, table.find(moduleList, modName))
   if not moduleData then
@@ -48,6 +54,7 @@ local function loadModule(modName)
   log.kernel.info(string.format("[modload: %s] Loading module", modName))
   if moduleData.init then -- I have no idea why this would not exist, but it's a failsafe
     moduleData.init()
+    table.insert(modulesLoaded, modName)
   end
 end
 
