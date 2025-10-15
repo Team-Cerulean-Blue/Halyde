@@ -70,6 +70,7 @@ require("/halyde/kernel/modload.lua")
 package.preload("component")
 package.preload("computer")
 package.preload("log")
+package.preload("event")
 
 if not filesystem.exists("/halyde/config/startupapps.json") then
   filesystem.copy("/halyde/config/generate/startupapps.json", "/halyde/config/startupapps.json")

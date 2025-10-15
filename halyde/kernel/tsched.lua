@@ -39,33 +39,6 @@ local function runTasks()
   end
 end
 
-local function taskFunction()
-  local result, errorMessage = xpcall(function()
-    if not filesystem.exists("/halyde/kernel/evmgr.lua") then
-      error("No such file: /halyde/kernel/evmgr.lua")
-    end
-    local handle, data, tmpdata = filesystem.open("/halyde/kernel/evmgr.lua"), "", nil
-    repeat
-      tmpdata = handle:read(math.huge or math.maxinteger)
-      data = data .. (tmpdata or "")
-    until not tmpdata
-    handle:close()
-    assert(load(data, "=/halyde/kernel/evmgr.lua"))()
-  end, function(errorMessage)
-    return errorMessage .. "\n \n" .. debug.traceback()
-  end, "/halyde/kernel/evmgr.lua")
-  if not result then
-    if print then
-      gpu.freeAllBuffers()
-      print("\n\27[91m" .. errorMessage)
-    else
-      error(errorMessage)
-    end
-  end
-end
-_PUBLIC.tsched.addTask(taskFunction, "evmgr")
-package.preload("event")
-
 log.kernel.info("Starting startup apps...")
 local handle, data, tmpdata = filesystem.open("/halyde/config/startupapps.json", "r"), "", nil
 repeat
