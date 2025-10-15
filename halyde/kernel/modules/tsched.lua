@@ -76,10 +76,15 @@ function module.init()
     idCounter = idCounter + 1
     if taskInfo.parent then
       log.kernel.info(
-        "Created task " .. name .. " with PID " .. idCounter - 1 .. " by parent with PID " .. taskInfo.parent
+        string.format(
+          "[tsched] Created task %s with PID %d by parent with PID %d",
+          name,
+          idCounter - 1,
+          taskInfo.parent
+        )
       )
     else
-      log.kernel.info("Created task " .. name .. " with PID " .. idCounter - 1 .. " (no parent found)")
+      log.kernel.info(string.format("[tsched] Created task %s with PID %d (no parent found)", name, idCounter - 1))
     end
     return task, taskInfo
   end
@@ -90,11 +95,11 @@ function module.init()
     for index, task in pairs(tsched.tasks) do
       if task.id == id then
         table.remove(tsched.tasks, index)
-        log.kernel.info("Removed task with PID " .. id)
+        log.kernel.info(string.format("[tsched] Removed task with PID %d", id))
         return true
       end
     end
-    log.kernel.warn("Tried to remove task that doesn't exist - PID " .. id)
+    log.kernel.warn(string.format("[tsched] Tried to remove task that doesn't exist - PID %d", id))
     return false
   end
 

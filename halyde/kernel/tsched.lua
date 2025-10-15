@@ -9,11 +9,16 @@ function handleError(errormsg)
   local traceback = debug.traceback()
   if errormsg == nil then -- TODO: Replace with proper error handling
     print("\27[91munknown error" .. "\n \n" .. traceback)
-    log.kernel.error(string.format("Process ID %d has crashed!\n\n%s", tsched.currentTask.id, traceback))
+    log.kernel.error(string.format("[tsched] Process ID %d has crashed!\n\n%s", tsched.currentTask.id, traceback))
   else
     print("\27[91m" .. tostring(errormsg) .. "\n \n" .. traceback)
     log.kernel.error(
-      string.format("Process ID %d has crashed: %s\n\n%s", tsched.currentTask.id, tostring(errormsg), traceback)
+      string.format(
+        "[tsched] Process ID %d has crashed: %s\n\n%s",
+        tsched.currentTask.id,
+        tostring(errormsg),
+        traceback
+      )
     )
   end
 end
@@ -27,7 +32,7 @@ local function runTasks()
         handleError(errorMessage)
       end
       if not tsched.tasks[i] then
-        log.kernel.warn("Attempted to update a non-existent task. This is likely because it was removed.")
+        log.kernel.warn("[tsched] Attempted to update a non-existent task. This is likely because it was removed.")
       elseif coroutine.status(tsched.tasks[i].task) == "dead" then
         _PUBLIC.tsched.removeTask(tsched.tasks[i].id)
         --ocelot.log("Removed coroutine")
@@ -39,7 +44,7 @@ local function runTasks()
   end
 end
 
-log.kernel.info("Starting startup apps...")
+log.kernel.info("[tsched] Starting startup apps...")
 local handle, data, tmpdata = filesystem.open("/halyde/config/startupapps.json", "r"), "", nil
 repeat
   tmpdata = handle:read(math.huge or math.maxinteger)
@@ -61,7 +66,7 @@ log.setPrintLogs(false)
 while true do
   runTasks()
   if #_G.tsched.tasks == 0 then
-    log.kernel.warn("No more tasks left! Shutting down...")
+    log.kernel.warn("[tsched] No more tasks left! Shutting down...")
     computer.shutdown()
   end
 end
