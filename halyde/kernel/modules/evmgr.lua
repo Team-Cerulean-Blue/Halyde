@@ -10,7 +10,7 @@ local process
 
 function module.init()
   _G.evmgr = {}
-  _G.evmgr.eventQueue = {}
+  _G.evmgr.eventQueue = { kernel = {} }
   local maxEventQueueLength = 10 -- increase if events start getting dropped
 
   local computer = require("computer")
@@ -31,11 +31,14 @@ function module.init()
 
   _, process = _PUBLIC.tsched.addTask(function()
     while true do
+      -- check for events
       local args
       repeat
         args = { computer.uptime(), computer.pullSignal(0) }
         if args and args[2] then
-          table.insert(evmgr.eventQueue, args)
+          for pid in pairs(evmgr.eventQueue) do
+            table.insert(evmgr.eventQueue[pid], args)
+          end
           if _PUBLIC.keyboard then
             if args[2] == "key_down" then
               local keycode = args[5]
@@ -64,13 +67,16 @@ function module.init()
               end
             end
           end
-          while #evmgr.eventQueue > maxEventQueueLength do
-            --ocelot.log("Queue length breach, removing first signal")
-            table.remove(evmgr.eventQueue, 1)
+          for pid in pairs(evmgr.eventQueue) do
+            while #evmgr.eventQueue[pid] > maxEventQueueLength do
+              --ocelot.log("Queue length breach, removing first signal")
+              table.remove(evmgr.eventQueue[pid], 1)
+            end
           end
         end
       until not args or not args[1]
-      --ocelot.log("done")
+      -- TODO: check for processes that have ended
+      -- run other tasks
       coroutine.yield()
     end
   end, "evmgr")
