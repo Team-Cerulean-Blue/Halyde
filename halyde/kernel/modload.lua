@@ -30,11 +30,21 @@ local function loadModule(modName)
     table.remove(moduleList, table.find(moduleList, modName))
     return true
   end
-  if not moduleData.check() then
+  local ready = false
+  local status, err = xpcall(function()
+    ready = moduleData.check()
+  end, debug.traceback)
+  if not status then
+    ready = false
+    log.kernel.error(
+      string.format("[modload: %s] Could not check if module was ready: %s", modName, tostring(err or "unknown error"))
+    )
+  end
+  if not ready then
     log.kernel.info(string.format("[modload: %s] Module not ready - skipping", modName))
     return false
   end
-  if moduleData.dependencies then
+  if type(moduleData.dependencies) == "table" then
     for _, dependency in pairs(moduleData.dependencies) do
       if table.find(moduleList, dependency) then
         loadModule(dependency)
@@ -53,9 +63,22 @@ local function loadModule(modName)
   --print(modName)
   log.kernel.info(string.format("[modload: %s] Loading module", modName))
   if moduleData.init then -- I have no idea why this would not exist, but it's a failsafe
-    moduleData.init()
-    table.insert(modulesLoaded, modName)
-    table.remove(moduleList, table.find(moduleList, modName))
+    local status, err = xpcall(function()
+      moduleData.init()
+    end, debug.traceback)
+    if not status then
+      log.kernel.error(
+        string.format(
+          "[modload: %s] An error has occured while initiating this module: %s",
+          modName,
+          tostring(err or "unknown error")
+        )
+      )
+      return false
+    else
+      table.insert(modulesLoaded, modName)
+      table.remove(moduleList, table.find(moduleList, modName))
+    end
   end
   return true
 end
@@ -121,11 +144,30 @@ loadAllModules()
 local function checkModules()
   log.kernel.info("[modload] Updating module availability.")
   loadAllModules() -- load modules that haven't returned true before
-  -- TODO: make this function exit modules that haven't returned false before (check if this is right first)
+  -- exit modules that haven't returned false before (check if this is right first)
   for _, v in pairs(table.copy(modulesLoaded)) do
-    if not modules[v].check() then
+    local ready = false
+    local status, err = xpcall(function()
+      ready = modules[v].check()
+    end, debug.traceback)
+    if not status then
+      ready = false
+      log.kernel.error(
+        string.format(
+          "[modload: %s] Could not check if module was ready: %s",
+          modName,
+          tostring(err or "unknown error")
+        )
+      )
+    end
+    if not ready then
       log.kernel.info(string.format("[modload: %s] Module is no longer ready: exiting", v))
-      modules[v].exit()
+      local status, err = xpcall(function()
+        modules[v].exit()
+      end, debug.traceback)
+      if not status then
+        log.kernel.error(string.format("[modload: %s] Could not exit module: %s", v, tostring(err or "unknown error")))
+      end
       table.insert(moduleList, table.remove(modulesLoaded, table.find(modulesLoaded, v)))
     end
   end
