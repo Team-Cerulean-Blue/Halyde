@@ -20,6 +20,37 @@ if not _G.logSettings then
   }
 end
 
+function getlines(s)
+  if s:sub(-1) ~= "\n" then
+    s = s .. "\n"
+  end
+  return s:gmatch("(.-)\n")
+end
+
+local function writeToScreen(text)
+  -- Print onscreen
+  if text:sub(1, 4) == "INFO" then -- Set color
+    gpu.setForeground(0xFFFFFF)
+  elseif text:sub(1, 4) == "WARN" then
+    gpu.setForeground(0xFFFF00)
+  elseif text:sub(1, 5) == "ERROR" then
+    gpu.setForeground(0xFF0000)
+  end
+  local i = 0
+  for line in getlines(text) do
+    line = line:gsub("\t", "  ")
+    repeat -- Line wrapping
+      if _G.logSettings.printerY > resY then
+        gpu.copy(1, 2, resX, resY - 1, 0, -1)
+        _G.logSettings.printerY = resY
+      end
+      gpu.set(1, _G.logSettings.printerY, line .. string.rep(" ", resX - #line))
+      line = line:sub(resX + 1)
+      _G.logSettings.printerY = _G.logSettings.printerY + 1
+    until line == ""
+  end
+end
+
 local logFileSizeLimit = 16384
 
 local function writeToLog(path, text)
@@ -77,23 +108,7 @@ local function writeToLog(path, text)
   end
 
   if _G.logSettings.printLogs then
-    -- Print onscreen
-    if text:sub(1, 4) == "INFO" then -- Set color
-      gpu.setForeground(0xFFFFFF)
-    elseif text:sub(1, 4) == "WARN" then
-      gpu.setForeground(0xFFFF00)
-    elseif text:sub(1, 5) == "ERROR" then
-      gpu.setForeground(0xFF0000)
-    end
-    repeat -- Line wrapping
-      if _G.logSettings.printerY > resY then
-        gpu.copy(1, 2, resX, resY - 1, 0, -1)
-        _G.logSettings.printerY = resY
-      end
-      gpu.set(1, _G.logSettings.printerY, text .. string.rep(" ", resX - #text))
-      text = text:sub(resX + 1)
-      _G.logSettings.printerY = _G.logSettings.printerY + 1
-    until text == ""
+    writeToScreen(text)
   end
 end
 
