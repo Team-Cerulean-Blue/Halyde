@@ -21,18 +21,18 @@ local modulesLoaded = {}
 local function loadModule(modName)
   if table.find(modulesLoaded, modName) then
     log.kernel.warn(string.format("[modload: %s] Module was already loaded - skipping", modName))
-    return
+    return true
   end
 
   local moduleData = modules[modName]
-  table.remove(moduleList, table.find(moduleList, modName))
   if not moduleData then
     log.kernel.warn(string.format("[modload: %s] Could not find module data.", modName))
-    return
+    table.remove(moduleList, table.find(moduleList, modName))
+    return true
   end
   if not moduleData.check() then
     log.kernel.info(string.format("[modload: %s] Module not ready - skipping", modName))
-    return
+    return false
   end
   if moduleData.dependencies then
     for _, dependency in pairs(moduleData.dependencies) do
@@ -55,14 +55,16 @@ local function loadModule(modName)
   if moduleData.init then -- I have no idea why this would not exist, but it's a failsafe
     moduleData.init()
     table.insert(modulesLoaded, modName)
+    table.remove(moduleList, table.find(moduleList, modName))
   end
+  return true
 end
 
 for _, modName in pairs(moduleList) do -- Get all the module types
   log.kernel.info(string.format("[modload: %s] Getting data from module", modName))
   local moduleData
   local status, err = pcall(function()
-    moduleData = require(fs.concat(modulePath, modName)) -- TODO: Make this not actually throw an error, rather put something in the log and move on
+    moduleData = require(fs.concat(modulePath, modName))
   end)
   if not status then
     log.kernel.error(
@@ -100,8 +102,41 @@ for _, modName in pairs(moduleList) do -- Get all the module types
   ::continue::
 end
 
-while moduleList[1] do
-  if moduleList[1]:sub(-1, -1) ~= "/" then -- Check if it's not a directory. If it is, it might be module config
-    loadModule(moduleList[1])
+local function loadAllModules() -- attempt at loading all modules, unless if they're not ready
+  local notReadyModules = {}
+  while moduleList[1] do
+    if moduleList[1]:sub(-1, -1) ~= "/" then -- Check if it's not a directory. If it is, it might be module config
+      local ready = loadModule(moduleList[1])
+      if not ready then
+        table.insert(notReadyModules, table.remove(moduleList, 1))
+      end
+    end
   end
+  moduleList = notReadyModules
+  -- log.kernel.info("debug: modload finished attempting loading modules. remaining: " .. table.concat(moduleList, ","))
+end
+
+loadAllModules()
+
+local function checkModules()
+  log.kernel.info("[modload] Updating module availability.")
+  loadAllModules() -- load modules that haven't returned true before
+  -- TODO: make this function exit modules that haven't returned false before (check if this is right first)
+  for _, v in pairs(table.copy(modulesLoaded)) do
+    if not modules[v].check() then
+      log.kernel.info(string.format("[modload: %s] Module is no longer ready: exiting", v))
+      modules[v].exit()
+      table.insert(moduleList, table.remove(modulesLoaded, table.find(modulesLoaded, v)))
+    end
+  end
+end
+
+if _PUBLIC.tsched then
+  _PUBLIC.tsched.addTask(function()
+    local event = require("event")
+    while true do
+      event.pull("component_added", "component_removed") -- wait until a component gets added or removed
+      checkModules()
+    end
+  end, "modload")
 end
