@@ -48,13 +48,26 @@ print('Type "exit" to exit.')
 while true do
   local command = terminal.read("lua", "\27[44mlua>\27[0m ")
   if command == "exit" then
+    coroutine.yield()
     return
   elseif command ~= "" then
     local function runCommand()
-      local func = load("return " .. command, "=stdin") or load(command, "=stdin")
-      local res = { assert(func)() }
-      if res and (type(res[1]) ~= "nil" or type(res[2]) ~= "nil") then
-        print(table.unpack(res))
+      local func, err = load("return " .. command, "=stdin")
+      local returns = true
+      if not func then
+        func, err = load(command, "=stdin")
+        returns = false
+      end
+      if not func then
+        return print("\x1b[91msyntax error: " .. (err or "unknown error"))
+      end
+      local res = { func() }
+      if returns then
+        if res and type(res[1]) ~= "nil" then
+          print(table.unpack(res))
+        elseif res and type(res[2]) ~= "nil" then
+          print("nil", table.unpack(res))
+        end
       end
     end
     local result, reason = xpcall(runCommand, function(errMsg)
