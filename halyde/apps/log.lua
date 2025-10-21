@@ -26,12 +26,12 @@ local function viewlog(logname)
             else
                 entry = string.sub(entry, 1, -1)
             end
-            if entry:sub(1, 4) == "INFO" then
-                print(entry)
-            elseif entry:sub(1, 4) == "WARN" then
+            if entry:sub(1, 4) == "WARN" then
                 print("\x1b[93m" .. entry)
             elseif entry:sub(1, 5) == "ERROR" then
                 print("\x1b[91m" .. entry)
+            else
+                print(entry)
             end
             entry = ""
         else
