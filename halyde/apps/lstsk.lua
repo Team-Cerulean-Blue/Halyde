@@ -1,5 +1,5 @@
 local tasks = tsched.getTasks()
-print("\27[93m"..tostring(#tasks).."\27[0m coroutines active")
+print("\27[93m"..tostring(#tasks).."\27[0m tasks active")
 for i=1, #tasks do
     local pipeChar = "├ "
     if i==#tasks then pipeChar = "└ " end
