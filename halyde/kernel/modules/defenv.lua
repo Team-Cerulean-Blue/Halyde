@@ -39,6 +39,7 @@ function module.init()
     "checkArg",
     "utf8",
     "convert",
+    "wait"
   }
   for _, value in ipairs(publicTable) do
     _G._PUBLIC[value] = table.copy(_G[value])

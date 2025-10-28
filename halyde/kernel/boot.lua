@@ -72,6 +72,14 @@ package.preload("computer")
 package.preload("log")
 package.preload("event")
 
+local computer = require("computer")
+function wait(seconds)
+  local oldTime = computer.uptime()
+  while computer.uptime() < oldTime + seconds do
+    coroutine.yield()
+  end
+end
+
 if not filesystem.exists("/halyde/config/startupapps.json") then
   filesystem.copy("/halyde/config/generate/startupapps.json", "/halyde/config/startupapps.json")
 end
