@@ -68,23 +68,20 @@ function module.init()
     checkArg(1, func, "function")
     checkArg(2, name, "string")
     local task = coroutine.create(func)
-    local taskInfo = { ["task"] = task, ["name"] = name, ["id"] = idCounter }
+    local taskInfo = { ["task"] = task, ["name"] = name, ["id"] = idCounter}
     if type(tsched.currentTask) == "table" and type(tsched.currentTask.id) == "number" then
       taskInfo.parent = tsched.currentTask.id
+      taskInfo.user = tsched.currentTask.user
     end
     table.insert(tsched.tasks, taskInfo)
     idCounter = idCounter + 1
     if taskInfo.parent then
       log.kernel.info(
-        string.format(
-          "[tsched] Created task %s with PID %d by parent with PID %d",
-          name,
-          idCounter - 1,
-          taskInfo.parent
-        )
+        ("[tsched] Created task %s (PID %d) by parent PID %d as UID %d"):format(name, idCounter - 1, taskInfo.parent, taskInfo.user)
       )
     else
-      log.kernel.info(string.format("[tsched] Created task %s with PID %d (no parent found)", name, idCounter - 1))
+      taskInfo.user = 1 -- It's probably being run from kernel level
+      log.kernel.info(string.format("[tsched] Created task %s (PID %d) as UID 1 (no parent found)", name, idCounter - 1))
     end
     return task, taskInfo
   end

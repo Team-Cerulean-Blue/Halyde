@@ -1,6 +1,6 @@
-local pid = tsched.getCurrentTask().id
-local shareTable = ipc.shareWith(pid)
-shareTable.gabbagool = "Pigeon Pizza! Wow!"
-print(shareTable.gabbagool)
-print(pid)
-print(ipc.shared[pid].gabbagool)
+local args = {...}
+
+print(user.addTask(function()
+  print("I eat rocks")
+  print(tsched.getCurrentTask())
+end, "testerpester", tonumber(args[1]), args[2]))
