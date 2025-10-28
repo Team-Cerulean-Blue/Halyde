@@ -14,7 +14,8 @@
   "diagnostics": {
     "disable": [
       "undefined-global",
-      "lowercase-global"
+      "lowercase-global",
+      "missing-fields"
     ],
     "globals": [
       "_G",
