@@ -264,6 +264,7 @@ function module.init()
       checkOption("prefix", options.prefix, "string")
       checkOption("maxChars", options.maxChars, "number")
       checkOption("defaultText", options.defaultText, "string")
+      checkOption("censor", options.censor, "string")
     end
 
     options.maxChars = options.maxChars or math.huge
@@ -297,8 +298,11 @@ function module.init()
       end
       return math.min(y,height)
     end
-    local function set(index, character, invertedColors)
+    local function set(index, character, invertedColors) -- HACK: Currently, this will uncensor all spaces in the inputted text.
       if character==nil or character=="" then return end
+      if options.censor then
+        character = character:gsub("[^ ]", options.censor)
+      end
       if invertedColors then
         gpu.setForeground(bg)
         gpu.setBackground(fg)
@@ -399,6 +403,7 @@ function module.init()
       text=new
       set(curPos(cur)," ",true)
     end
+
 
     while true do
       local args = {event.pull("key_down", "clipboard", 0.5)}
