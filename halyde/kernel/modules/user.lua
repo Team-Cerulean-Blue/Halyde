@@ -27,14 +27,14 @@ function module.init()
     local userRegistry = json.decode(data)
 
     if not userRegistry[userId] then
-      return false, "No such UID"
+      return false, "No such UID."
     end
 
     local salt = md5.sumhexa(userRegistry[userId].name) -- A little bit of salt and pepper
     local passwordHash = md5.sumhexa(userPassword .. salt)
     if passwordHash ~= userRegistry[userId].hash then
       wait(3) -- Something to hopefully shove away brute forcers
-      return false, "Password incorrect"
+      return false, "Password incorrect."
     end
 
     local task = coroutine.create(func)
