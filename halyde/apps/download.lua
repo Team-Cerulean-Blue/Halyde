@@ -43,7 +43,7 @@ repeat
   if fs.isDirectory(saveLocation) then
     print("\27[91mThe specified location is a directory.")
   elseif fs.exists(saveLocation) then
-    local answer = read(nil, "\27[91mThere is already a file at the specified directory. Overwrite it? [Y/n]")
+    local answer = terminal.read({prefix = "\27[91mThere is already a file at the specified directory. Overwrite it? [Y/n]"})
     if answer:lower() ~= "n" then
       saveLocationOK = true
     end

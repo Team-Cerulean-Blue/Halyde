@@ -107,7 +107,7 @@ local function doChecks(package)
   if agcfg[package].dependencies then
     for _, dependency in ipairs(agcfg[package].dependencies) do
       if not agReg[dependency] and not agcfg[dependency] then
-        local response = terminal.read(nil, "\27[91mPackage " .. package .. " requires dependency " .. dependency .. " that does not exist.\n[A - Abort/s - Skip]")
+        local response = terminal.read({prefix = "\27[91mPackage " .. package .. " requires dependency " .. dependency .. " that does not exist.\n[A - Abort/s - Skip]"})
         if response:lower() ~= "s" then
           fs.remove("/argentum/store/" .. package)
           return false
@@ -166,7 +166,7 @@ local function installPackage(package, overwriteFlag)
   if agcfg[package].dependencies then
     for _, dependency in ipairs(agcfg[package].dependencies) do
       if not agReg[dependency] and not agcfg[dependency] then
-        local response = terminal.read(nil, "\27[91mPackage " .. package .. " requires dependency " .. dependency .. " that does not exist.\n[A - Abort/s - Skip]")
+        local response = terminal.read({prefix = "\27[91mPackage " .. package .. " requires dependency " .. dependency .. " that does not exist.\n[A - Abort/s - Skip]"})
         if response:lower() ~= "s" then
           fs.remove("/argentum/store/" .. package)
           return false
@@ -199,7 +199,7 @@ local function installPackage(package, overwriteFlag)
     local data, errorMessage = getFile(source .. agcfg[package].maindir .. file)
     if not data then
       clearProgress()
-      local response = terminal.read(nil, "\27[91mCould not fetch " .. file .. ": " .. errorMessage .. "\n\27[0m[a - Abort/R - Retry/s - Skip]")
+      local response = terminal.read({prefix = "\27[91mCould not fetch " .. file .. ": " .. errorMessage .. "\n\27[0m[a - Abort/R - Retry/s - Skip]"})
       if response:lower() == "a" then
         fs.remove("/argentum/store/" .. package)
         return false
@@ -258,7 +258,7 @@ local function removePackage(package)
         local result, errorMessage = fs.remove(line:sub(2))
         if not result then
           clearProgress()
-          local response = terminal.read(nil, "\27[91mFailed to remove " .. line:sub(2) .. ": " .. errorMessage .. "\n\27[0m[a - Abort/r - Retry/S - Skip]")
+          local response = terminal.read({prefix = "\27[91mFailed to remove " .. line:sub(2) .. ": " .. errorMessage .. "\n\27[0m[a - Abort/r - Retry/S - Skip]"})
           if response:lower() == "a" then
             return false
           elseif response:lower() == "r" then
@@ -274,7 +274,7 @@ local function removePackage(package)
       local handle, data, tmpdata = fs.open("/argentum/store/" .. package .. "/files/" .. line:sub(2), "r"), "", nil
       if not handle then
         clearProgress()
-        local response = terminal.read(nil, "\27[91mFailed to revert " .. line:sub(2) .. ": " .. data .. "\n\27[0m[a - Abort/R - Retry/s - Skip]") -- this is pretty stupid but i think the error message would get pushed to data
+        local response = terminal.read({prefix = "\27[91mFailed to revert " .. line:sub(2) .. ": " .. data .. "\n\27[0m[a - Abort/R - Retry/s - Skip]"}) -- this is pretty stupid but i think the error message would get pushed to data
         if response:lower() == "a" then
           return false
         elseif response:lower() == "s" then
@@ -360,7 +360,7 @@ if command == "install" then
   local answer
   if #fails == 0 then
     print("Packages that will be installed: " .. table.concat(packageList, ", "))
-    if terminal.read(nil, "Would you like to proceed? [Y/n] "):lower() == "n" then
+    if terminal.read({prefix = "Would you like to proceed? [Y/n] "}):lower() == "n" then
       return
     end
   elseif #packageList == 0 then
@@ -370,7 +370,7 @@ if command == "install" then
     print("Some packages cannot be installed.")
     print("Packages that will be installed: " .. table.concat(packageList, ", "))
     print("Packages that cannot be installed: " .. table.concat(fails, ", "))
-    if terminal.read(nil, "Would you like to proceed? [y/N] "):lower() ~= "y" then
+    if terminal.read({prefix = "Would you like to proceed? [y/N] "}):lower() ~= "y" then
       return
     end
   end
@@ -452,7 +452,7 @@ elseif command == "remove" then
   local answer
   if #fails == 0 then
     print("Packages that will be removed: " .. table.concat(packageList, ", "))
-    if terminal.read(nil, "Would you like to proceed? [Y/n] "):lower() == "n" then
+    if terminal.read({prefix = "Would you like to proceed? [Y/n] "}):lower() == "n" then
       return
     end
   elseif #packageList == 0 then
@@ -462,7 +462,7 @@ elseif command == "remove" then
     print("Some packages cannot be removed.")
     print("Packages that will be removed: " .. table.concat(packageList, ", "))
     print("Packages that cannot be removed: " .. table.concat(fails, ", "))
-    if terminal.read(nil, "Would you like to proceed? [y/N] "):lower() ~= "y" then
+    if terminal.read({prefix = "Would you like to proceed? [y/N] "}):lower() ~= "y" then
       return
     end
   end
@@ -560,14 +560,14 @@ elseif command == "update" then
     end
   elseif #fails == 0 then
     print("Packages that will be updated: " .. table.concat(packageList, ", "))
-    if terminal.read(nil, "Would you like to proceed? [Y/n] "):lower() == "n" then
+    if terminal.read({prefix = "Would you like to proceed? [Y/n] "}):lower() == "n" then
       return
     end
   else
     print("Some packages cannot be updated.")
     print("Packages that will be updated: " .. table.concat(packageList, ", "))
     print("Packages that cannot be updated: " .. table.concat(fails, ", "))
-    if terminal.read(nil, "Would you like to proceed? [y/N] "):lower() ~= "y" then
+    if terminal.read({prefix = "Would you like to proceed? [y/N] "}):lower() ~= "y" then
       return
     end
   end

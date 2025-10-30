@@ -262,12 +262,12 @@ local function save()
   gpu.setForeground(0)
   gpu.set(1, height - 1, string.rep(" ", width))
   terminal.setCursorPos(1, height - 1)
-  local savepath = terminal.read(nil, "\27[107m\27[30mSave location: ", filepath)
+  local savepath = terminal.read({prefix = "\27[107m\27[30mSave location: ", defaultText = filepath})
   gpu.setBackground(0xFFFFFF)
   gpu.setForeground(0)
   if fs.exists(savepath) then
     gpu.set(1, height - 1, string.rep(" ", width))
-    local answer = terminal.read(nil, "\27[107m\27[30mFile already exists. Overwrite it? [Y/n] ")
+    local answer = terminal.read({prefix = "\27[107m\27[30mFile already exists. Overwrite it? [Y/n] "})
     if answer:lower() == "n" then
       gpu.setBackground(0xFFFFFF)
       gpu.setForeground(0)
@@ -301,7 +301,7 @@ while true do
     if specialKey == "x" then
       if changesMade then
         terminal.setCursorPos(1, height - 1)
-        local response = terminal.read(nil, "\27[107m\27[30mWould you like to save changes? [Y/n] ")
+        local response = terminal.read({prefix = "\27[107m\27[30mWould you like to save changes? [Y/n] "})
         if response:lower() ~= "n" then
           save()
         end

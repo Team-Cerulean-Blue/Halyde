@@ -254,36 +254,43 @@ function module.init()
     cursorPosX, cursorPosY = 1, 1
   end
 
-  function _G._PUBLIC.terminal.read(readHistoryType, prefix, defaultText, maxChars)
-    checkArg(1, readHistoryType, "string", "nil")
-    checkArg(2, prefix, "string", "nil")
-    checkArg(3, defaultText, "string", "nil")
-    checkArg(4, maxChars, "number", "nil")
-    maxChars = maxChars or math.huge
+  function _G._PUBLIC.terminal.read(options)
+    checkArg(1, options, "table", "nil")
+    local function checkOption(name, value, neededType)
+      assert(type(value) == "string" or not value, ("%s option must be %s, %s provided"):format(name, neededType, type(value)))
+    end
+    if options then
+      checkOption("readHistoryType", options.readHistoryType, "string")
+      checkOption("prefix", options.prefix, "string")
+      checkOption("maxChars", options.maxChars, "number")
+      checkOption("defaultText", options.defaultText, "string")
+    end
 
-    local text = defaultText or ""
+    options.maxChars = options.maxChars or math.huge
+
+    local text = options.defaultText or ""
 
     local historyIdx
-    if readHistoryType then
-      if not readHistory[readHistoryType] then
-        readHistory[readHistoryType] = {text}
-      elseif readHistory[readHistoryType][#readHistory[readHistoryType] ] ~= text then
-        table.insert(readHistory[readHistoryType], text)
+    if options.readHistoryType then
+      if not readHistory[options.readHistoryType] then
+        readHistory[options.readHistoryType] = {text}
+      elseif readHistory[options.readHistoryType][#readHistory[options.readHistoryType] ] ~= text then
+        table.insert(readHistory[options.readHistoryType], text)
       end
-      historyIdx = #readHistory[readHistoryType]
+      historyIdx = #readHistory[options.readHistoryType]
     end
 
     local function updateHistory()
-      if not readHistoryType then return end
-      readHistory[readHistoryType][historyIdx]=text
+      if not options.readHistoryType then return end
+      readHistory[options.readHistoryType][historyIdx]=text
     end
 
     local cur = unicode.len(text)+1
-    if prefix then _PUBLIC.terminal.write(prefix) end
+    if options.prefix then _PUBLIC.terminal.write(options.prefix) end
     local startX, startY = cursorPosX, cursorPosY
     local fg, bg = gpu.getForeground(), gpu.getBackground()
     local cursorBlink = true
-    local function get(idx)
+    local function get(idx) -- FIXME: Why is this here if it's unused?
       idx=startX+idx-1
       return gpu.get(idx%width,startY+(idx//width))
     end
@@ -294,7 +301,7 @@ function module.init()
       end
       return math.min(y,height)
     end
-    local function set(idx,chr,rev)
+    local function set(idx,chr,rev) -- FIXME: Very clear variable naming... I would fix it but I don't even know what they mean.
       if chr==nil or chr=="" then return end
       if rev then
         gpu.setForeground(bg)
@@ -321,13 +328,13 @@ function module.init()
     end
     local function add(chr)
       if type(chr)~="string" or #chr==0 then return end
-      if unicode.len(text)>=maxChars then return end
-      if maxChars<math.huge then
-        chr=unicode.sub(chr,1,maxChars-unicode.len(text))
+      if unicode.len(text)>=options.maxChars then return end
+      if options.maxChars<math.huge then
+        chr=unicode.sub(chr,1,options.maxChars-unicode.len(text))
       end
       text=unicode.sub(text,1,cur-1)..chr..unicode.sub(text,cur)
       set(curPos(cur),chr,false)
-      cur=math.min(cur+unicode.len(chr),maxChars+1)
+      cur=math.min(cur+unicode.len(chr),options.maxChars+1)
       set(curPos(cur),strDef(unicode.sub(text,cur,cur)," "),true)
       cursorBlink = true
       set(curPos(cur+1),unicode.sub(text,cur+1),false)
@@ -402,12 +409,12 @@ function module.init()
       local ctrlDown = _PUBLIC.keyboard.getCtrlDown()
       if args and args[1] == "key_down" and args[4] then
         local key = _PUBLIC.keyboard.keys[args[4]]
-        if key=="up" and readHistoryType then
+        if key=="up" and options.readHistoryType then
           historyIdx=math.max(historyIdx-1,1)
-          reprint(readHistory[readHistoryType][historyIdx])
-        elseif key=="down" and readHistoryType then
-          historyIdx=math.min(historyIdx+1,#readHistory[readHistoryType])
-          reprint(readHistory[readHistoryType][historyIdx])
+          reprint(readHistory[options.readHistoryType][historyIdx])
+        elseif key=="down" and options.readHistoryType then
+          historyIdx=math.min(historyIdx+1,#readHistory[options.readHistoryType])
+          reprint(readHistory[options.readHistoryType][historyIdx])
         elseif key=="left" and ctrlDown then
           moveWord(-1)
         elseif key=="right" and ctrlDown then
@@ -460,16 +467,16 @@ function module.init()
       ::continue::
     end
 
-    if readHistoryType then
-      if readHistory[readHistoryType][#readHistory[readHistoryType]]=="" then
-        table.remove(readHistory[readHistoryType],#readHistory[readHistoryType])
+    if options.readHistoryType then
+      if readHistory[options.readHistoryType][#readHistory[options.readHistoryType]]=="" then
+        table.remove(readHistory[options.readHistoryType],#readHistory[options.readHistoryType])
       end
-      if historyIdx<#readHistory[readHistoryType] then
-        table.remove(readHistory[readHistoryType],historyIdx)
-        table.insert(readHistory[readHistoryType],text)
+      if historyIdx<#readHistory[options.readHistoryType] then
+        table.remove(readHistory[options.readHistoryType],historyIdx)
+        table.insert(readHistory[options.readHistoryType],text)
       end
-      while #readHistory[readHistoryType] > 50 do
-        table.remove(readHistory[readHistoryType], 1)
+      while #readHistory[options.readHistoryType] > 50 do
+        table.remove(readHistory[options.readHistoryType], 1)
       end
     end
 

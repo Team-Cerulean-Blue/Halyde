@@ -46,7 +46,7 @@ print(string.format("\27[44m%s\27[0m shell", _VERSION))
 print('Type "exit" to exit.')
 
 while true do
-  local command = terminal.read("lua", "\27[44mlua>\27[0m ")
+  local command = terminal.read({readHistoryType = "lua", prefix = "\27[44mlua>\27[0m "})
   if command == "exit" then
     coroutine.yield()
     return
