@@ -1,3 +1,6 @@
+-- TODO: Rename this to something else (while making an alias from the original command).
+-- Touch seems kind of a silly name for a command to make a file.
+-- Maybe something like mkfile would be better?
 local cliparse = require("cliparse")
 cliparse.config({
   ["o"] = 0,
