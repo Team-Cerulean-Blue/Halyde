@@ -1,8 +1,6 @@
-local component = require("component")
 local computer = require("computer")
 local filesystem = require("filesystem")
 local json = require("json")
-local gpu = component.gpu
 local log = require("log")
 
 function handleError(errormsg)
@@ -63,6 +61,7 @@ end
 -- _G.cormgr.loadCoroutine("/halyde/core/shell.lua")
 
 log.setPrintLogs(false)
+
 while true do
   runTasks()
   if #_G.tsched.tasks == 0 then
