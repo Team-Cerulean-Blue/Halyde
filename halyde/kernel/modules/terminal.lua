@@ -290,10 +290,6 @@ function module.init()
     local startX, startY = cursorPosX, cursorPosY
     local fg, bg = gpu.getForeground(), gpu.getBackground()
     local cursorBlink = true
-    local function get(idx) -- FIXME: Why is this here if it's unused?
-      idx=startX+idx-1
-      return gpu.get(idx%width,startY+(idx//width))
-    end
     local function checkScroll(y)
       for i=1,y-height do
         scrollDown()
