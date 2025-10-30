@@ -141,7 +141,7 @@ while true do
   if workingDirectory:sub(-1, -1) ~= "/" then
     workingDirectory = workingDirectory .. "/"
   end
-  local shellCommand = terminal.read("shell", shellcfg.prompt:format(workingDirectory))
+  local shellCommand = terminal.read({readHistoryType = "shell", prefix = shellcfg.prompt:format(workingDirectory)})
   shell.run(shellCommand)
   gpu.freeAllBuffers()
 end

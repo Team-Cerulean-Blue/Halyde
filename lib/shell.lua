@@ -1,7 +1,7 @@
 local filesystem = require("filesystem")
 
 -- get a list of installed shells
-local shellDir = filesystem.list("/halyde/shell/")
+local shellDir = filesystem.list("/halyde/scripts/") -- HACK: /halyde/scripts features more than just shells!
 local shells = {}
 for i=1,#shellDir do
   table.insert(shells,string.match(shellDir[i],"([^/]+)%.lua$"))
