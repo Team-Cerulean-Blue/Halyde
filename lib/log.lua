@@ -15,7 +15,7 @@ local resX, resY = gpu.getResolution()
 local log = {}
 if not _G.logSettings then
   _G.logSettings = { -- We have to preload the library just for this :P
-    ["printLogs"] = true,
+    ["printLogs"] = true, -- FIXME: Or do we?
     ["printerY"] = 1,
   }
 end
