@@ -37,7 +37,7 @@ function _G.reqgen(load)
     then
       modulepath = shell.workingDirectory .. module .. ".lua"
     end
-    assert(modulepath, "Module not found\nPossible locations:\n/lib/" .. module .. ".lua")
+    assert(modulepath, "Module not found\nPossible locations:\n/lib/" .. module .. ".lua") -- FIXME: When providing an absolute path, this spits out some weird stuff.
     local handle, data, tmpdata = filesystem.open(modulepath), "", nil
     repeat
       tmpdata = handle:read(math.huge or math.maxinteger)
