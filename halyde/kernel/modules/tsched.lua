@@ -16,7 +16,7 @@ function module.init()
   local gpu = component.gpu
   local log = require("log")
 
-  local idCounter = 1
+  tsched.idCounter = 1
 
   function _G._PUBLIC.tsched.runAsTask(path, ...)
     checkArg(1, path, "string")
@@ -68,20 +68,27 @@ function module.init()
     checkArg(1, func, "function")
     checkArg(2, name, "string")
     local task = coroutine.create(func)
-    local taskInfo = { ["task"] = task, ["name"] = name, ["id"] = idCounter}
+    local taskInfo = { ["task"] = task, ["name"] = name, ["id"] = tsched.idCounter }
     if type(tsched.currentTask) == "table" and type(tsched.currentTask.id) == "number" then
       taskInfo.parent = tsched.currentTask.id
       taskInfo.user = tsched.currentTask.user
     end
     table.insert(tsched.tasks, taskInfo)
-    idCounter = idCounter + 1
+    tsched.idCounter = tsched.idCounter + 1
     if taskInfo.parent then
       log.kernel.info(
-        ("[tsched] Created task %s (PID %d) by parent PID %d as UID %d"):format(name, idCounter - 1, taskInfo.parent, taskInfo.user)
+        ("[tsched] Created task %s (PID %d) by parent PID %d as UID %d"):format(
+          name,
+          tsched.idCounter - 1,
+          taskInfo.parent,
+          taskInfo.user
+        )
       )
     else
       taskInfo.user = 1 -- It's probably being run from kernel level
-      log.kernel.info(string.format("[tsched] Created task %s (PID %d) as UID 1 (no parent found)", name, idCounter - 1))
+      log.kernel.info(
+        string.format("[tsched] Created task %s (PID %d) as UID 1 (no parent found)", name, tsched.idCounter - 1)
+      )
     end
     return task, taskInfo
   end

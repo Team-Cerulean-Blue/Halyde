@@ -38,17 +38,32 @@ function module.init()
     end
 
     local task = coroutine.create(func)
-    local taskInfo = { ["task"] = task, ["name"] = name, ["id"] = #_PUBLIC.tsched.getTasks() + 1, ["user"] = userId}
+    local taskInfo = { ["task"] = task, ["name"] = name, ["id"] = tsched.idCounter, ["user"] = userId }
     if type(tsched.currentTask) == "table" and type(tsched.currentTask.id) == "number" then
       taskInfo.parent = tsched.currentTask.id
+    else
+      log.kernel.info("debug: tsched.currentTask is " .. require("serialize").table(tsched.currentTask))
     end
     table.insert(tsched.tasks, taskInfo)
     if taskInfo.parent then
       log.kernel.info(
-        ("[tsched (user)] Created task %s (PID %d) by parent PID %d as UID %d"):format(name, #_PUBLIC.tsched.getTasks(), taskInfo.parent, taskInfo.user)
+        ("[tsched (user)] Created task %s (PID %d) by parent PID %d as UID %d"):format(
+          name,
+          #_PUBLIC.tsched.getTasks(),
+          taskInfo.parent,
+          taskInfo.user
+        )
       )
-      log.kernel.info(string.format("[tsched (user)] Created task %s (PID %d) as UID %d (no parent found)", name, #_PUBLIC.tsched.getTasks(), taskInfo.user))
+      log.kernel.info(
+        string.format(
+          "[tsched (user)] Created task %s (PID %d) as UID %d (no parent found)",
+          name,
+          #_PUBLIC.tsched.getTasks(),
+          taskInfo.user
+        )
+      )
     end
+    tsched.idCounter = tsched.idCounter + 1
     return task, taskInfo
   end
 end
