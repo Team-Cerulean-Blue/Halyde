@@ -1,3 +1,5 @@
+-- WTF: What the fuck is this for?? Why does it print the computer library???
+-- TODO: Integrate this into lsdrv.
 local computer = require("computer")
 
 if type(computer)~="table" then
