@@ -301,21 +301,21 @@ function module.init()
       end
       return math.min(y,height)
     end
-    local function set(idx,chr,rev) -- FIXME: Very clear variable naming... I would fix it but I don't even know what they mean.
-      if chr==nil or chr=="" then return end
-      if rev then
+    local function set(index, character, invertedColors)
+      if character==nil or character=="" then return end
+      if invertedColors then
         gpu.setForeground(bg)
         gpu.setBackground(fg)
       else
         gpu.setForeground(fg)
         gpu.setBackground(bg)
       end
-      idx=startX+idx-1
-      local setX, setY = (idx-1)%width+1, startY+((idx-1)//width+1)-1
+      index=startX+index-1
+      local setX, setY = (index-1)%width+1, startY+((index-1)//width+1)-1
       setY = checkScroll(setY)
-      gpu.set(setX,setY,unicode.sub(chr,1,width-setX+1))
-      for i=1,math.ceil((#chr+setX-1)/width)+1 do
-        gpu.set(1,setY+i,unicode.sub(chr,2-setX+i*width,width+i*width-setX))
+      gpu.set(setX,setY,unicode.sub(character,1,width-setX+1))
+      for i=1,math.ceil((#character+setX-1)/width)+1 do
+        gpu.set(1,setY+i,unicode.sub(character,2-setX+i*width,width+i*width-setX))
         setY = checkScroll(setY)
       end
     end
