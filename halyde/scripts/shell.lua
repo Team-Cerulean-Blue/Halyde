@@ -129,8 +129,6 @@ end
 local shareTable = ipc.shareWithAll()
 shareTable.shell = _G.shell
 
-terminal.clear()
-
 print(shellcfg["startupMessage"]:format(_OSVERSION, shellcfg.splashMessages[math.random(1, #shellcfg.splashMessages)]))
 while true do
   coroutine.yield()
