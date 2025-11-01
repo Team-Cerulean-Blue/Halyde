@@ -257,15 +257,16 @@ function module.init()
   function _G._PUBLIC.terminal.read(options)
     checkArg(1, options, "table", "nil")
     local function checkOption(name, value, neededType)
-      assert(type(value) == "string" or not value, ("%s option must be %s, %s provided"):format(name, neededType, type(value)))
+      assert(not value or type(value) == neededType, ("%s option must be %s, %s provided"):format(name, neededType, type(value)))
     end
-    if options then
-      checkOption("readHistoryType", options.readHistoryType, "string")
-      checkOption("prefix", options.prefix, "string")
-      checkOption("maxChars", options.maxChars, "number")
-      checkOption("defaultText", options.defaultText, "string")
-      checkOption("censor", options.censor, "string")
+    if not options then
+      options = {}
     end
+    checkOption("readHistoryType", options.readHistoryType, "string")
+    checkOption("prefix", options.prefix, "string")
+    checkOption("maxChars", options.maxChars, "number")
+    checkOption("defaultText", options.defaultText, "string")
+    checkOption("censor", options.censor, "string")
 
     options.maxChars = options.maxChars or math.huge
 
