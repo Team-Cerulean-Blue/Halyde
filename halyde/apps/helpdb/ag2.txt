@@ -1,0 +1,31 @@
+Usage: ag2 [COMMAND] [PACKAGES]
+Uses the Argentum 2 package manager.
+
+  COMMAND         Specifies the operation for Argentum 2 to do.
+    install       Installs packages.
+    remove        Removes packages.
+    update        Updates packages.
+    list          Lists all available packages.
+    repo-list     Lists all installed repositories.
+    repo-add      Adds a custom repository.
+    repo-remove   Removes a repository.
+    info          Shows a packages version, description and other relevant information.
+  PACKAGES*       Packages to work on.
+
+  These flags are also available and can be inserted anywhere:
+    -x, --exclude-deps   Ignore dependencies.
+      WARNING: Using this can and will leave you with broken packages.
+      Use it at your own risk and only when truly necessary.
+    -u, --update-repos   Update the list of repositories.
+    -f, --force          Force the operation, even if there are conflicts or unresolvable dependencies.
+      WARNING: Using this can and will leave you with broken packages.
+      Use it at your own risk and only when truly necessary.
+    -c, --clean          Clean up now-unnecessary packages (previous dependencies).
+    -s, --source [URL]   Use a custom source for the operation.
+
+Examples:
+  ag2 install halyde       Installs the halyde package.
+  ag2 list                 Lists all packages.
+  ag2 info halyde          Shows information about the halyde package.
+  ag2 remove -x edit       Removes edit, but does not remove any packages that depend on it.
+  ag2 remove -c hal-draw   Removes hal-draw and any dependencies that are no longer needed.

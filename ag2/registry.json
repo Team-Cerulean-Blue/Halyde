@@ -1,5 +1,7 @@
 {
   "halyde": "https://raw.githubusercontent.com/Team-Cerulean-Blue/Halyde/refs/heads/Pre-Alpha-3.0.0/",
   "argentum": "https://raw.githubusercontent.com/Team-Cerulean-Blue/Halyde/refs/heads/Pre-Alpha-3.0.0/",
-  "edit": "https://raw.githubusercontent.com/Team-Cerulean-Blue/Halyde/refs/heads/Pre-Alpha-3.0.0/"
+  "edit": "https://raw.githubusercontent.com/Team-Cerulean-Blue/Halyde/refs/heads/Pre-Alpha-3.0.0/",
+  "package1": "https://raw.githubusercontent.com/WahPlus/ArgentumPackages/refs/heads/main/",
+  "package2": "https://raw.githubusercontent.com/WahPlus/ArgentumPackages/refs/heads/main/"
 }
