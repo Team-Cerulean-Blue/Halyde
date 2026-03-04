@@ -136,13 +136,15 @@ if command == "install" then
     return
   end
   for i, package in ipairs(packages) do
-    if not registry[package] then
-      print("\27[91mCould not find package in registry: " .. package)
+    local source = parsed.s or parsed.source
+    if not registry[package] and not source then
+      print("\27[91mCould not find package in registry and no source provided: " .. package)
       failure = true
       goto SKIP
+    else
+      source = registry[package]
     end
-    local success, data = getFile(fs.concat(registry[package], "/ag2.json"))
-    -- TODO: Make the above compatible with --source
+    local success, data = getFile(fs.concat(source, "/ag2.json"))
     if not success then
       print(("\27[91mFailed to get package config (ag2.json) of package '%s': " .. data):format(package))
       failure = true
@@ -194,9 +196,14 @@ if command == "install" then
   end
 
   for _, package in ipairs(packages) do
+    local source
+    if registry[package] then
+      source = registry[package]
+    else
+      source = parsed.s or parsed.source
+    end
     print(("Installing %s..."):format(package))
-    local _, data = getFile(fs.concat(registry[package], "/ag2.json"))
-    -- TODO: Make the above compatible with --source
+    local _, data = getFile(fs.concat(source, "/ag2.json"))
     local packageConfig = json.decode(data)[package]
     if packageConfig.directories then
       for _, directory in ipairs(packageConfig.directories) do
@@ -208,7 +215,7 @@ if command == "install" then
       for _, file in ipairs(packageConfig.files) do
         ::RETRY::
         print(("  Downloading file %s..."):format(file))
-        local success, data = getFile(fs.concat(registry[package], file))
+        local success, data = getFile(fs.concat(source, file))
 
         if not success then
           print(("\27[91mFailed to get file '%s' of package '%s': " .. data):format(file, package))
@@ -274,46 +281,59 @@ if command == "install" then
     end
 
     print("  Writing tracking file...")
-    if not fs.exists("/ag2/store/") then
-      fs.makeDirectory("/ag2/store/")
-      -- Technically this would break if /ag2/store/ was a file, but... why would it be a file?
+    if not fs.exists("/ag2/pkg/") then
+      fs.makeDirectory("/ag2/pkg/")
+      -- Technically this would break if /ag2/pkg/ was a file, but... why would it be a file?
     end
 
     -- TODO: Make functions for reading from and writing to a file with error handling since this is really repetitive
     ::RETRY::
-    local handle, errorMessage = fs.open(("/ag2/store/%s.json"):format(package), "w")
+    local handle, errorMessage = fs.open(("/ag2/pkg/%s.json"):format(package), "w")
     if not handle then
-      print(("\27[91mFailed to open write handle to file '/ag2/store/%s.json': " .. errorMessage):format(package))
+      print(("\27[91mFailed to open write handle to file '/ag2/pkg/%s.json': " .. errorMessage):format(package))
       local answer = terminal.read({prefix = "Abort, Retry, Skip? [a/R/s]"})
       if answer:lower() == "a" then
         print("Exiting.")
         return
       elseif answer:lower() == "s" then
-        print(("  \27[93mSkipped file /ag2/store/%s.json."):format(package))
+        print(("  \27[93mSkipped file /ag2/pkg/%s.json."):format(package))
         goto SKIP
       else
         goto RETRY
       end
     end
 
-    local success, errorMessage = handle:write(data)
+    local packageData = {
+      name = package,
+      version = packageConfig.version,
+      autoInstalled = false,
+      -- TODO: Make the above actually work
+      dependencies = packageConfig.dependencies,
+      conflicts = packageConfig.conflicts,
+      files = packageConfig.files,
+      directories = packageConfig.directories,
+      config = packageConfig.config
+    }
+
+    local trackingFile = json.encode(packageData)
+
+    local success, errorMessage = handle:write(trackingFile)
     if not success then
       handle:close()
-      print(("\27[91mFailed to write to file '/ag2/store/%s.json': " .. errorMessage):format(package))
+      print(("\27[91mFailed to write to file '/ag2/pkg/%s.json': " .. errorMessage):format(package))
       local answer = terminal.read({prefix = "Abort, Retry, Skip? [a/R/s]"})
       if answer:lower() == "a" then
         print("Exiting.")
         return
       elseif answer:lower() == "s" then
-        print(("  \27[93mSkipped file /ag2/store/%s.json."):format(package))
+        print(("  \27[93mSkipped file /ag2/pkg/%s.json."):format(package))
         goto SKIP
       else
         goto RETRY
       end
+    else
+      handle:close()
     end
-
-    handle:close()
-
     ::SKIP::
   end
 end
