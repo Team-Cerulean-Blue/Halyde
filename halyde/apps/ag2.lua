@@ -131,22 +131,24 @@ end
 local failure = false
 local dependencyCounter = 0
 if command == "install" then
-  if #packages == 0 then
-    print("\27[91mNo packages specified.\n\27[0mExiting.")
-    return
-  end
-  for i, package in ipairs(packages) do
+  for i = 1, #packages do
+    if fs.exists(("/ag2/pkg/%s.json"):format(packages[i])) then
+      print(("\27[93mPackage %s is already installed, skipping"):format(packages[i]))
+      table.remove(packages, i)
+      i = i - 1
+      goto SKIP
+    end
     local source = parsed.s or parsed.source
-    if not registry[package] and not source then
-      print("\27[91mCould not find package in registry and no source provided: " .. package)
+    if not registry[packages[i]] and not source then
+      print("\27[91mCould not find package in registry and no source provided: " .. packages[i])
       failure = true
       goto SKIP
     else
-      source = registry[package]
+      source = registry[packages[i]]
     end
     local success, data = getFile(fs.concat(source, "/ag2.json"))
     if not success then
-      print(("\27[91mFailed to get package config (ag2.json) of package '%s': " .. data):format(package))
+      print(("\27[91mFailed to get package config (ag2.json) of package '%s': " .. data):format(packages[i]))
       failure = true
       goto SKIP
     end
@@ -154,11 +156,11 @@ if command == "install" then
       return json.decode(data)
     end)
     if not success then
-      print(("\27[91mFailed to parse package config (ag2.json) of package '%s': " .. packageConfig):format(package))
+      print(("\27[91mFailed to parse package config (ag2.json) of package '%s': " .. packageConfig):format(packages[i]))
       failure = true
       goto SKIP
     end
-    if not packageConfig[package] then
+    if not packageConfig[packages[i]] then
       print(("\27[91mRepository package config (ag2.json) does not contain package '%s'."):format(package))
       failure = true
       goto SKIP
@@ -170,8 +172,11 @@ if command == "install" then
         dependencyCounter = dependencyCounter + 1
       end
     end
-    -- TODO: Add check for if package exists
     ::SKIP::
+  end
+  if #packages == 0 then
+    print("\27[91mNo packages to install.\n\27[0mExiting.")
+    return
   end
 end
 -- TODO: Add checks for the other commands
