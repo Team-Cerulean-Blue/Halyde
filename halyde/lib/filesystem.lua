@@ -30,16 +30,16 @@ function filesystem.canonical(path)
   return "/" .. table.concat(segList, "/")
 end
 
-function filesystem.concat(path1, path2)
-  checkArg(1, path1, "string")
-  checkArg(2, path2, "string")
-  if path1:sub(-1, -1) == "/" then
-    path1 = path1:sub(1, -2)
+function filesystem.concat(...)
+  local paths = {...}
+  for i, path in ipairs(paths) do
+    checkArg(i, path, "string")
   end
-  if path2:sub(1, 1) ~= "/" then
-    path2 = "/" .. path2
+  local currentPath = paths[1]:match("(.+)/?$")
+  for i = 2, #paths do
+    currentPath = currentPath .. "/" .. paths[i]:match("^/?(.+)/?$")
   end
-  return path1 .. path2
+  return currentPath
 end
 
 function filesystem.absolutePath(path) -- returns the address and absolute path of an object
