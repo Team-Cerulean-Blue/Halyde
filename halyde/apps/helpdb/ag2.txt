@@ -22,6 +22,7 @@ Uses the Argentum 2 package manager.
       Use it at your own risk and only when truly necessary.
     -c, --clean          Clean up now-unnecessary packages (previous dependencies).
     -s, --source [URL]   Use a custom source for the operation.
+    -C, --cascade        When removing a package that other packages depend on, remove those packages too instead of aborting.
 
 Examples:
   ag2 install halyde       Installs the halyde package.
