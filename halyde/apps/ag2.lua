@@ -148,12 +148,6 @@ failure = false
 local dependencyCounter = 0
 if command == "install" then
   for i = 1, #packages do
-    if fs.exists(("/ag2/pkg/%s.json"):format(packages[i])) then
-      print(("\27[93mPackage %s is already installed, skipping"):format(packages[i]))
-      table.remove(packages, i)
-      i = i - 1
-      goto SKIP
-    end
     local source
     if parsed.s or parsed.source then
       source = parsed.s or parsed.source
@@ -169,6 +163,20 @@ if command == "install" then
     if not packageConfig then
       failure = true
       print(errorMessage)
+      goto SKIP
+    end
+    if packageConfig.type == "group" then
+      table.remove(packages, i)
+      for _, package in ipairs(packageConfig.packages) do
+        table.insert(packages, package)
+      end
+    elseif packageConfig.type == "virtual-package" then
+      -- Run into the forest
+    end
+    if fs.exists(("/ag2/pkg/%s.json"):format(packages[i])) then
+      print(("\27[93mPackage %s is already installed, skipping"):format(packages[i]))
+      table.remove(packages, i)
+      i = i - 1
       goto SKIP
     end
     if packageConfig.dependencies then
