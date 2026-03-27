@@ -310,7 +310,7 @@ if command == "install" then
     print(("\27[93m%d dependencies pulled in."):format(dependencyCounter))
   end
   print("Packages that will be installed:")
-  print(table.concat(packages))
+  print(table.concat(packages, ", "))
   local answer = terminal.read({prefix = "\nContinue? [Y/n] "})
   if answer:lower() == "n" then
     print("Exiting.")
