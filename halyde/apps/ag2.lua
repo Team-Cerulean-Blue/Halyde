@@ -171,7 +171,23 @@ if command == "install" then
         table.insert(packages, package)
       end
     elseif packageConfig.type == "virtual-package" then
-      -- Run into the forest
+      print(("Installing virtual package %s"):format(package))
+      local pkgAskText = ("Select a package by typing in its number: 1) %s"):format(packageConfig.packages[1])
+      -- This is all a silly workaround to place commas correctly
+      for i = 2, #packageConfig.packages do
+        pkgAskText = pkgAskText .. (", %d) %s"):format(i, packageConfig.packages[i])
+      end
+      print(pkgAskText)
+      ::RETRY::
+      local packageSel = terminal.read()
+      if not tonumber(packageSel) or tonumber(packageSel) % 1 ~= 0 then
+        -- Is there really no better way to check for an int..?
+        print("\27[91mNon-integer received - try again")
+        goto RETRY
+      end
+      packages[i] = packageConfig.packages[packageSel]
+      i = i - 1
+      goto SKIP
     end
     if fs.exists(("/ag2/pkg/%s.json"):format(packages[i])) then
       print(("\27[93mPackage %s is already installed, skipping"):format(packages[i]))
