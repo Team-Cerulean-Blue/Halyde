@@ -94,7 +94,7 @@ end
 local packages = parsed.args
 table.remove(packages, 1)
 -- Remove the command from the actual package list
-local result, data, failure
+-- local result, data, failure
 do
   local function check(condition, message)
     if not condition then
@@ -126,18 +126,18 @@ if not success then
   return
 end
 
-local function getServersidePackageConfig(source)
+local function getServersidePackageConfig(source, package)
   local success, data = getFile(fs.concat(source, "/ag2.json"))
   if not success then
-    return false, ("\27[91mFailed to get package config (ag2.json) of package '%s': " .. data):format(packages[i])
+    return false, ("\27[91mFailed to get package config (ag2.json) of package '%s': " .. data):format(package)
   end
   local success, packageConfig = pcall(function()
     return json.decode(data)
   end)
   if not success then
-    return false, ("\27[91mFailed to parse package config (ag2.json) of package '%s': " .. packageConfig):format(packages[i])
+    return false, ("\27[91mFailed to parse package config (ag2.json) of package '%s': " .. packageConfig):format(package)
   end
-  if not packageConfig[packages[i]] then
+  if not packageConfig[package] then
     return false, ("\27[91mRepository package config (ag2.json) does not contain package '%s'."):format(package)
   end
   return packageConfig[package]
@@ -152,14 +152,14 @@ if command == "install" then
     if parsed.s or parsed.source then
       source = parsed.s or parsed.source
     else
-      source = registry[package]
+      source = registry[packages[i]]
     end
     if not source then
       print("\27[91mCould not find package in registry and no source provided: " .. packages[i])
       failure = true
       goto SKIP
     end
-    local packageConfig, errorMessage = getServersidePackageConfig(source)
+    local packageConfig, errorMessage = getServersidePackageConfig(source, packages[i])
     if not packageConfig then
       failure = true
       print(errorMessage)
@@ -171,7 +171,7 @@ if command == "install" then
         table.insert(packages, package)
       end
     elseif packageConfig.type == "virtual-package" then
-      print(("Installing virtual package %s"):format(package))
+      print(("Installing virtual package %s"):format(packages[i]))
       local pkgAskText = ("Select a package by typing in its number: 1) %s"):format(packageConfig.packages[1])
       -- This is all a silly workaround to place commas correctly
       for i = 2, #packageConfig.packages do
@@ -182,10 +182,13 @@ if command == "install" then
       local packageSel = terminal.read()
       if not tonumber(packageSel) or tonumber(packageSel) % 1 ~= 0 then
         -- Is there really no better way to check for an int..?
-        print("\27[91mNon-integer received - try again")
+        print("\27[93mNon-integer received - try again\27[0m")
         goto RETRY
       end
-      packages[i] = packageConfig.packages[packageSel]
+      if tonumber(packageSel) < 1 or tonumber(packageSel) > #packageConfig.packages then
+        print("\27[93mInteger out of range - try again\27[0m")
+      end
+      packages[i] = packageConfig.packages[tonumber(packageSel)]
       i = i - 1
       goto SKIP
     end
@@ -215,7 +218,7 @@ elseif command == "remove" then
         source = registry[package]
       end
       if source then
-        local packageConfig = getServersidePackageConfig(source)
+        local packageConfig = getServersidePackageConfig(source, packages[i])
         if packageConfig then
           if packageConfig.type == "virtual-package" or packageConfig.type == "group" then
             table.remove(packages, i)
@@ -235,10 +238,10 @@ elseif command == "remove" then
 
   -- I was originally gonna add this in the dependency cascade section, but realized it could shorten the normal dependency check code a bit
   local dependencyList = {}
-  for _, packageConfig in fs.list("/ag2/pkg/") do
+  for _, packageConfig in ipairs(fs.list("/ag2/pkg/")) do
     local package = packageConfig:sub(1, -6)
     -- I'm not adding error handling here because if this fails then fuck you for touching the files by hand and good luck figuring this shit out
-    local _, data = getFile(("/ag2/pkg/%s.json"):format(packages[i]))
+    local _, data = getFile(("/ag2/pkg/%s.json"):format(package))
     data = json.decode(data)
     dependencyList[package] = data.dependencies
   end
