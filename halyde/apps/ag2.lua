@@ -146,8 +146,23 @@ end
 -- Check if everything is valid
 failure = false
 local dependencyCounter = 0
+local previousI = 1 -- See 190
+::RESETLOOP::
 if command == "install" then
-  for i = 1, #packages do
+  for i = previousI, #packages do
+    if not packages[i] then
+      -- When packages are removed, the last packages can end up reading as nil
+      goto SKIP
+    end
+    local otherPackages = table.copy(packages)
+    table.remove(otherPackages, i)
+    -- This is to check if the package can be found in the others, or in other words, checking for duplicates
+    if table.find(otherPackages, packages[i]) then
+      print(("\27[93mDuplicate package specified (%s), skipping"):format(packages[i]))
+      table.remove(packages, i)
+      i = i - 1
+      goto SKIP
+    end
     local source
     if parsed.s or parsed.source then
       source = parsed.s or parsed.source
@@ -170,6 +185,10 @@ if command == "install" then
       for _, package in ipairs(packageConfig.packages) do
         table.insert(packages, package)
       end
+      previousI = i
+      goto RESETLOOP
+      -- Apparently "for i = 1, n" loops don't change when n changes. So when the table gets extended, packages near the end won't get picked up.
+      -- This is why it is needed to restart the loop.
     elseif packageConfig.type == "virtual-package" then
       print(("Installing virtual package %s"):format(packages[i]))
       local pkgAskText = ("Select a package by typing in its number: 1) %s"):format(packageConfig.packages[1])
