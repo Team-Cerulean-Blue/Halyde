@@ -478,6 +478,43 @@ if command == "install" then
     ::SKIP::
   end
 elseif command == "remove" then
-
+  if dependencyCounter == 1 then
+    print("\27[93m1 orphaned dependency will be removed.")
+  elseif dependencyCounter >= 2 then
+    print(("\27[93m%d orphaned dependencies will be removed."):format(dependencyCounter))
+  end
+  print("Packages that will be removed:")
+  print(table.concat(packages, ", "))
+  local answer = terminal.read({prefix = "\nContinue? [Y/n] "})
+  if answer:lower() == "n" then
+    print("Exiting.")
+    return
+  end
+  for _, package in ipairs(packages) do
+    -- See line 263
+    local _, data = getFile(("/ag2/pkg/%s.json"):format(package))
+    data = json.decode(data)
+    if data.files then
+      for _, file in ipairs(data.files) do
+        print(("  Removing file %s..."):format(file))
+        fs.remove(file) -- I cannot think of how this could fail. If you can, please add error handling here
+      end
+    end
+    if data.directories then
+      for _, directory in ipairs(data.directories) do
+        if fs.isDirectory(directory) then
+          if next(fs.list(directory)) == nil then
+            -- Apparently THAT's the best way to check if a table is empty in Lua. Alright I guess.
+            print(("  Removing directory %s..."):format(directory))
+            fs.remove(directory)
+          else
+            print(("  Directory %s specified by package %s still has something in it, skipping"):format(directory))
+          end
+        end
+      end
+    end
+    print("  Removing tracking file...")
+    fs.remove(("/ag2/pkg/%s.json"):format(package)) -- See line 500
+  end
 end
 print("Operation completed successfully.")
