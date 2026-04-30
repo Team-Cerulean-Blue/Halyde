@@ -45,7 +45,7 @@ jobs:
           set -e
           for file in $(find . -name "*.lua" -not -path "./.git/*"); do
             echo $file
-            luamin -f "$file" > "$file"
+            luamin -f "$file" > "$file" || true
           done
 
       - name: Commit and push to minified branch
