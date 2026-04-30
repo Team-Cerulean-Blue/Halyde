@@ -1,1 +1,1 @@
-utf-8
+print("\27[93m"..tostring(#cormgr.corList).."\27[0m coroutines active")for a=1,#cormgr.corList do if a==#cormgr.corList then print("\27[93m└ "..a.."\27[0m - "..cormgr.labelList[a].." \27[0m")else print("\27[93m├ "..a.."\27[0m - "..cormgr.labelList[a].." \27[0m")end end

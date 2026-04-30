@@ -1,1 +1,1 @@
-utf-8
+local a=import("computer")if type(a)~="table"then return print("\x1b[91mComputer library returned '"..type(a).."' type\x1b[39m")end;local a=a.getBootAddress()print(a)

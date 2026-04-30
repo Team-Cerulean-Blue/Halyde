@@ -1,1 +1,1 @@
-utf-8
+local a={["bytes"]={["B"]=1,["KB"]=1000,["MB"]=1000000,["GB"]=1000000000},["bibytes"]={["B"]=1,["KiB"]=1024,["MiB"]=1048576,["GiB"]=1073741824}}function table.find(a,b)for a,c in pairs(a)do if c==b then return a end end end;function table.copy(a)local b=type(a)local c;if b=='table'then c={}for a,b in next,a,nil do c[table.copy(a)]=table.copy(b)end;setmetatable(c,table.copy(getmetatable(a)))else c=a end;return c end;function convert(b,c,d)for a,a in pairs(a)do if a[d]then return b/a[d]*a[c]end end;return false,"unit does not exist"end

@@ -1,1 +1,1 @@
-utf-8
+local a=...local b=import("filesystem")if not a then shell.run("help rm")return end;if a:sub(1,1)~="/"then a=b.concat(shell.workingDirectory,a)end;if not b.exists(a)then print("\27[91mFile does not exist.")return end;b.remove(a)

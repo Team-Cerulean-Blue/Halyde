@@ -1,1 +1,1 @@
-utf-8
+local a={...}local b=import("filesystem")if not a or not a[1]then shell.run("help cat")return end;for a,a in ipairs(a)do if a:sub(1,1)~="/"then a=b.concat(shell.workingDirectory,a)end;if not b.exists(a)then print("\27[91mFile does not exist.")end;local a=b.open(a,"r")local b;repeat b=a:read(math.huge or math.maxinteger)termlib.write(b)until not b end

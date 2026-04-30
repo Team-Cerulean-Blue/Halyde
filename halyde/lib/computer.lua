@@ -1,1 +1,1 @@
-utf-8
+local a=table.copy(computer)local b=table.copy(computer)function a.pullSignal(a)local c=b.uptime()local d;repeat d={b.pullSignal(0)}coroutine.yield()until d or a and b.uptime()>=c+a;return table.unpack(d)end;return a

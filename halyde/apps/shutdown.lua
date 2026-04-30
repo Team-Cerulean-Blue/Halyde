@@ -1,1 +1,1 @@
-utf-8
+import("computer").shutdown()

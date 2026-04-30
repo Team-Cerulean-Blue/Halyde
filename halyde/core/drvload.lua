@@ -1,1 +1,1 @@
-utf-8
+local a=import("filesystem")local b="/halyde/drivers"local c=a.list(b)local d={}local function e(f)local a=import(a.concat(b,f))table.remove(c,table.find(c,f))if a.dependencies then for a,a in pairs(a.dependencies)do if table.find(c,a)then e(a)elseif table.find(c,a..".lua")then e(a..".lua")else for b,c in pairs(d)do if c==a then e(b)end end end end end;if a.onStartup then a.onStartup()end end;for c,c in pairs(c)do local a=import(a.concat(b,c))if a.type then d[c]=a.type end end;for a,a in pairs(c)do if a:sub(-1,-1)~="/"then e(a)end end

@@ -1,1 +1,1 @@
-utf-8
+local a,b=...local c=import("filesystem")if not a or not b then shell.run("help mv")return end;if a:sub(1,1)~="/"then a=c.concat(shell.workingDirectory,a)end;if b:sub(1,1)~="/"then b=c.concat(shell.workingDirectory,b)end;if a==b then print("\27[91mSource and destination are the same.")end;if not c.exists(a)then print("\27[91mSource file does not exist.")end;if c.exists(b)and not(table.find({...},"-o")or table.find({...},"--overwrite"))then print("\27[91mDestination file already exists. Run this command again with -o to overwrite it.")return end;c.rename(a,b)

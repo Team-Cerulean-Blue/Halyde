@@ -1,1 +1,1 @@
-utf-8
+local a={...}local b=a[1]table.remove(a,1)for a,a in pairs(a)do b=b.." "..a end;print(b)

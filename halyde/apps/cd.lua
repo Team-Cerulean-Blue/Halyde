@@ -1,1 +1,1 @@
-utf-8
+local a=...local b=import("filesystem")if not a then return end;if a:sub(1,1)~="/"then a=b.concat(shell.workingDirectory,a)end;if b.exists(a)and b.isDirectory(a)then shell.workingDirectory=b.canonical(a)else print("\27[91mNo such directory.")end

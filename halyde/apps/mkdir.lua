@@ -1,1 +1,1 @@
-utf-8
+local a=...local b=import("filesystem")if not a then shell.run("help mkdir")return end;if a:sub(1,1)~="/"then a=b.concat(shell.workingDirectory,a)end;if b.exists(a)then print("\27[91mAn object already exists at the specified path.")end;b.makeDirectory(a)
