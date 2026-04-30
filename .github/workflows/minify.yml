@@ -26,8 +26,6 @@ jobs:
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
-        with:
-          node-version: '20'
 
       - name: Install luamin
         run: npm install -g luamin
@@ -39,6 +37,9 @@ jobs:
         run: |
           git checkout main -- .
           git reset HEAD
+
+      - name: Tetlajtlaj
+        run: luamin -c "2 + 2"
 
       - name: Minify all Lua files
         run: |
