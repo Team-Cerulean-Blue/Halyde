@@ -41,7 +41,7 @@ jobs:
           npm install lua-format
           for file in $(find ../.. -name "*.lua" -not -path "../../.git/*"); do
             echo $file
-            node .github/workflows/minify.js $file
+            node minify.js $file
           done
           cd ../..
 
