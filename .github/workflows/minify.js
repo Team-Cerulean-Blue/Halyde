@@ -5,7 +5,7 @@ const Code = fs.readFileSync(process.argv[2],"utf-8")
 const Settings = {
   RenameVariables: true,
   RenameGlobals: false,
-  SolveMath: true,
+  SolveMath: false,
   Indentation: '\t'
 }
 
