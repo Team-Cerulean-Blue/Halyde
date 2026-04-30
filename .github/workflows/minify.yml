@@ -1,0 +1,57 @@
+name: Minify all Lua files to minified branch
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  minify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout main branch
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Get latest commit info
+        id: commit
+        run: |
+          COMMIT_MSG=$(git log -1 --pretty=%s)
+          echo "message=${COMMIT_MSG}" >> $GITHUB_OUTPUT
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install luamin
+        run: npm install -g luamin
+
+      - name: Switch to minified branch
+        run: git checkout minified
+
+      - name: Copy files from main
+        run: |
+          git checkout main -- .
+          git reset HEAD
+
+      - name: Minify all Lua files
+        run: |
+          find . -name "*.lua" \
+            -not -path "./.git/*" \
+            | while read -r file; do
+              minified=$(luamin -f "$file")
+              echo "$minified" > "$file"
+            done
+
+      - name: Commit and push to minified branch
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git add -A
+          git commit -m "${{ steps.commit.outputs.message }} (minified)"
+          git push origin minified
