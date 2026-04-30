@@ -27,9 +27,6 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
 
-      - name: Install luamin
-        run: npm install -g lua-format
-
       - name: Switch to minified branch
         run: git checkout minified
 
@@ -38,12 +35,15 @@ jobs:
           git checkout main -- .
           git reset HEAD
 
-      - name: Minify all Lua files
+      - name: Just do the whole damn thing
         run: |
-          for file in $(find . -name "*.lua" -not -path "./.git/*"); do
+          cd .github/workflows
+          npm install lua-format
+          for file in $(find ../.. -name "*.lua" -not -path "../../.git/*"); do
             echo $file
             node .github/workflows/minify.js $file
           done
+          cd ../..
 
       - name: Commit and push to minified branch
         run: |
