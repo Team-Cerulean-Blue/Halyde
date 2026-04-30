@@ -42,7 +42,7 @@ jobs:
         run: |
           for file in $(find . -name "*.lua" -not -path "./.git/*"); do
             echo $file
-            node minify.js $file
+            node .github/workflows/minify.js $file
           done
 
       - name: Commit and push to minified branch
