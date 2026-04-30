@@ -38,6 +38,14 @@ jobs:
           git checkout main -- .
           git reset HEAD
 
+      - name: Does luamin even exist? Does it find the files?
+        run: |
+          which luamin
+          luamin --version
+          echo "gug"
+          find . -name "*.lua" -not -path "./.git/*"
+
+
       - name: Minify all Lua files
         run: |
           set -e
