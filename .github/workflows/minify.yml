@@ -40,7 +40,7 @@ jobs:
       - name: Just do the whole damn thing
         run: |
           cd .github/workflows
-          npm install lua-format
+          npm install github:Ponali/luamin.js
           for file in $(find ../.. -name "*.lua" -not -path "../../.git/*"); do
             echo $file
             node minify.js $file
