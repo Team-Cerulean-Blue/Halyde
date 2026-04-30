@@ -38,9 +38,6 @@ jobs:
           git checkout main -- .
           git reset HEAD
 
-      - name: Tetlajtlaj
-        run: luamin -c "2 + 2"
-
       - name: Minify all Lua files
         run: |
           for file in $(find . -name "*.lua" -not -path "./.git/*"); do
