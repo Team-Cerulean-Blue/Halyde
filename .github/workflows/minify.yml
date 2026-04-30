@@ -45,9 +45,7 @@ jobs:
           set -e
           for file in $(find . -name "*.lua" -not -path "./.git/*"); do
             echo $file
-            luamin -f "$file" > "$file.min" || true
-            # For some stupid fucking reason, luamin returns exit code 1
-            mv "$file.min" "$file"
+            luamin -f "$file" > "$file"
           done
 
       - name: Commit and push to minified branch
