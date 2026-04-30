@@ -41,7 +41,7 @@ jobs:
         run: |
           cd .github/workflows
           npm install github:Ponali/luamin.js
-          for file in $(find ../.. -name "*.lua" -not -path "../../.git/*"); do
+          for file in $(find ../.. -name "*.lua" -not -path "../../.git/*" -not -path "../../.github/*"); do
             echo $file
             node minify.js $file
           done
