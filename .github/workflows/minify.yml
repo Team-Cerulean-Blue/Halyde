@@ -42,10 +42,9 @@ jobs:
 
       - name: Minify all Lua files
         run: |
-          set -e
           for file in $(find . -name "*.lua" -not -path "./.git/*"); do
             echo $file
-            luamin -f "$file" > "$file" || true
+            cat "$file" | luamin -c > "$file"
           done
 
       - name: Commit and push to minified branch
