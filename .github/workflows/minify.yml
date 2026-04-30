@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      actions: write
+      workflows: write
 
     steps:
       - name: Checkout main branch
