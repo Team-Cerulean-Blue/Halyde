@@ -1,17 +1,41 @@
+-- local db = require("solvitdb")
 local db = {}
-local json = require("json")
 local fs = require("filesystem")
-function db.init()
-
+local json = require("json")
+local dbpath = "/ag2/testdb.json"
+function db.create()
+  local handle = fs.open(dbpath,"w")
+  handle:write("{}")
+  handle:close()
+end
+function db.readJSON()
+  local handle = fs.open(dbpath,"r")
+  local content = ""
+  while true do
+    local s = handle:read()
+    if not s then break end
+    content=content..s
+  end
+  handle:close()
+  return content
 end
 function db.get(pack)
-
+  local dbc = json.decode(db.readJSON())
+  return dbc[pack]
 end
 function db.set(pack,info)
-
+  local dbc = json.decode(db.readJSON())
+  dbc[pack]=info
+  local handle = fs.open(dbpath,"w")
+  handle:write(json.encode(dbc))
+  handle:close()
 end
 function db.remove(pack)
-
+  local dbc = json.decode(db.readJSON())
+  dbc[pack]=nil
+  local handle = fs.open(dbpath,"w")
+  handle:write(json.encode(dbc))
+  handle:close()
 end
 
 local avs = {}
@@ -45,6 +69,36 @@ function avs.parse(pack)
     end
   end
   return {name,verstr}
+end
+
+function avs.serializeSingle(ver)
+  local ver2 = table.copy(ver)
+  for i=1,3 do
+    if ver2[i]==-1 then
+      ver2[i]="*"
+    else
+      ver2[i]=tostring(ver2[i])
+    end
+  end
+  return ver2[1].."."..ver2[2].."."..ver2[3]
+end
+
+function avs.serializeVersion(ver)
+  out=""
+  for i=1,#ver do
+    out=out..avs.serializeSingle(ver[i])
+    if i~=#ver then
+      out=out.."-"
+    end
+  end
+  return out
+end
+
+function avs.serializePack(pack)
+  if #pack==1 then
+    return pack[1]
+  end
+  return pack[1].."="..avs.serializeVersion(pack[2])
 end
 
 function avs.singleGreater(ver1,ver2)
@@ -90,7 +144,9 @@ function avs.compatibleRange(vers)
 end
 
 local function startTransaction()
-  -- TODO: load from database
+  if not fs.exists(dbpath) then
+    db.create()
+  end
 
   local packInfo = {}
   local installPacks = {}
@@ -99,14 +155,22 @@ local function startTransaction()
     table.insert(installPacks,avs.parse(name))
   end
   function transaction.remove(name)
-    -- TODO: add reverse dependencies to database
-    -- TODO: add reverse conflicts to database
     -- TODO: implement removing packages
   end
   function transaction.addInfo(name,info)
-
+    packInfo[name]=info
   end
   function transaction.finalize()
+    local ins = table.copy(installPacks)
+
+    local foundDeps=false
+    local i=0
+    while i<=#ins do
+      -- TODO: continue here
+    end
+
+    return {install=ins}
+
     -- return "true, {["install"] = {"dep1", "package1", "package2"}, ["remove"] = {"package3"}}" on success
     -- return "false, {"dep1"}" when not enough data
     -- return "false, "[verbose string]"" when conflict found
@@ -123,9 +187,11 @@ local function startTransaction()
   end
   function transaction.resolveConflict()
     -- :whymustisuffer:
+    -- TODO: be able to resolve conflicts
   end
   function transaction.store()
     -- TODO: store to database
+    -- TODO: add reverse dependencies
   end
   return transaction
 end
