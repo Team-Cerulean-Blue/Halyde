@@ -175,6 +175,7 @@ local function startTransaction()
       return packInfo[avs.serializePack(pack)]
     end
 
+    -- installation dependencies
     local foundDeps=false
     repeat
       foundDeps=false
@@ -195,7 +196,7 @@ local function startTransaction()
         if deps and #deps>=1 then
           for j=1,#deps do
             local dep = avs.parse(deps[j])
-            if (not packageInArray(dep,ins)) and db.get(dep[1]) then
+            if (not packageInArray(dep,ins)) and type(db.get(dep[1]))=="nil" then
               foundDeps=true
               table.insert(ins,j,dep)
             end
@@ -206,12 +207,11 @@ local function startTransaction()
       end
     until not foundDeps
 
-    return {install=ins}
+    return true, {install=ins}
 
     -- return "true, {["install"] = {"dep1", "package1", "package2"}, ["remove"] = {"package3"}}" on success
     -- return "false, {"dep1"}" when not enough data
     -- return "false, "[verbose string]"" when conflict found
-    -- TODO: be able to resolve conflicts
     -- TODO: implement removing packages
     -- TODO: handle same constant AVS
     -- TODO: handle different constant AVS conflict
@@ -227,6 +227,19 @@ local function startTransaction()
     for i,v in pairs(packInfo) do
       db.set(i,v)
     end
+    for i,v in pairs(packInfo) do
+      if v.dependencies then
+        for _,dep in ipairs(v.dependencies) do
+          local dat = db.get(dep)
+          if type(dat.reverseDependencies)~="table" then
+            dat.reverseDependencies={}
+          end
+          table.insert(dat.reverseDependencies,i)
+          db.set(dep,dat)
+        end
+      end
+    end
+
     -- TODO: make and store reverse dependencies
   end
   return transaction
