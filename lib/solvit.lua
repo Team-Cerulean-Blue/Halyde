@@ -12,7 +12,7 @@ function db.readJSON()
   local handle = fs.open(dbpath,"r")
   local content = ""
   while true do
-    local s = handle:read()
+    local s = handle:read(math.huge or math.maxinteger)
     if not s then break end
     content=content..s
   end
@@ -143,38 +143,76 @@ function avs.compatibleRange(vers)
   return range
 end
 
+local function packageInArray(pack,arr)
+  for i=1,#arr do
+    if arr[i][1]==pack[1] then -- TODO: check for compatible package version
+      return true
+    end
+  end
+  return false
+end
+
 local function startTransaction()
   if not fs.exists(dbpath) then
     db.create()
   end
 
   local packInfo = {}
-  local installPacks = {}
+  local ins = {}
+  local rem = {}
   local transaction = {}
   function transaction.install(name)
-    table.insert(installPacks,avs.parse(name))
+    table.insert(ins,avs.parse(name))
   end
   function transaction.remove(name)
-    -- TODO: implement removing packages
   end
   function transaction.addInfo(name,info)
     packInfo[name]=info
+    -- print(require("serialize").table(packInfo))
   end
-  function transaction.finalize()
-    local ins = table.copy(installPacks)
+  function transaction.finalize(settings)
+    local function getPackInfo(pack)
+      return packInfo[avs.serializePack(pack)]
+    end
 
     local foundDeps=false
-    local i=0
-    while i<=#ins do
-      -- TODO: continue here
-    end
+    repeat
+      foundDeps=false
+      -- find missing package information
+      local missing = {}
+      for i=1,#ins do
+        if getPackInfo(ins[i])==nil then
+          table.insert(missing,avs.serializePack(ins[i]))
+        end
+      end
+      if #missing>0 then
+        return false,missing
+      end
+      -- find dependencies
+      local i=1
+      while i<=#ins do
+        local deps = getPackInfo(ins[i]).dependencies
+        if deps and #deps>=1 then
+          for j=1,#deps do
+            local dep = avs.parse(deps[j])
+            if (not packageInArray(dep,ins)) and db.get(dep[1]) then
+              foundDeps=true
+              table.insert(ins,j,dep)
+            end
+          end
+          i=i+#deps
+        end
+        i=i+1
+      end
+    until not foundDeps
 
     return {install=ins}
 
     -- return "true, {["install"] = {"dep1", "package1", "package2"}, ["remove"] = {"package3"}}" on success
     -- return "false, {"dep1"}" when not enough data
     -- return "false, "[verbose string]"" when conflict found
-    -- TODO: handle dependencies
+    -- TODO: be able to resolve conflicts
+    -- TODO: implement removing packages
     -- TODO: handle same constant AVS
     -- TODO: handle different constant AVS conflict
     -- TODO: handle same range AVS
@@ -185,13 +223,11 @@ local function startTransaction()
     -- TODO: handle conflicts from package info
     -- TODO: handle reverse conflicts from another package's info
   end
-  function transaction.resolveConflict()
-    -- :whymustisuffer:
-    -- TODO: be able to resolve conflicts
-  end
   function transaction.store()
-    -- TODO: store to database
-    -- TODO: add reverse dependencies
+    for i,v in pairs(packInfo) do
+      db.set(i,v)
+    end
+    -- TODO: make and store reverse dependencies
   end
   return transaction
 end
