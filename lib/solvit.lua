@@ -84,10 +84,17 @@ function avs.serializeSingle(ver)
 end
 
 function avs.serializeVersion(ver)
-  out=""
+  local singles = {}
   for i=1,#ver do
-    out=out..avs.serializeSingle(ver[i])
-    if i~=#ver then
+    table.insert(singles,avs.serializeSingle(ver[i]))
+  end
+  if singles[1]==singles[2] then
+    singles={singles[1]}
+  end
+  local out=""
+  for i=1,#singles do
+    out=out..singles[i]
+    if i~=#singles then
       out=out.."-"
     end
   end
