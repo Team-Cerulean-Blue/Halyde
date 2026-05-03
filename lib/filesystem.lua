@@ -350,7 +350,7 @@ function filesystem.open(path, mode, buffered) -- opens a file and returns its h
     end
   end
   function properHandle.seek(self, whence, offset)
-    checkArg(2, whence, "string", "number")
+    checkArg(2, whence, "string", "number", "nil")
     checkArg(3, offset, "number", "nil")
     if not offset then
       offset = 0
