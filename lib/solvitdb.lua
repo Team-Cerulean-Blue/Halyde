@@ -123,7 +123,28 @@ function solvitdb.set(path, name, data)
       -- The above is the 32 bit unsigned integer limit
       error("DB too large")
     end
-    writeHandle:write("Pdguess-what-time-it-is;its-soup-time.\n")
+
+    local encodedString
+    if data.type == "package" then
+      encodedString = "P"
+    elseif data.type == "group" then
+      encodedString = "G"
+    elseif data.type == "virtual-package" then
+      encodedString = "V"
+    end
+    if data.dependencies then
+      encodedString = encodedString .. "d" .. table.concat(data.dependencies, ";") .. "."
+    end
+    if data.reverseDependencies then
+      encodedString = encodedString .. "D" .. table.concat(data.reverseDependencies, ";") .. "."
+    end
+    if data.conflicts then
+      encodedString = encodedString .. "c" .. table.concat(data.conflicts, ";") .. "."
+    end
+    if data.packages then
+      encodedString = encodedString .. "p" .. table.concat(data.packages, ";") .. "."
+    end
+    writeHandle:write(encodedString .. "\n")
     writeHandle:seek("set", patLength + 8) -- + 8 because that's the length of the header
     local patData = ("%s.%s;"):format(name, string.pack("<I4", newPackageLocation))
     insert(readHandle, writeHandle, patData)
