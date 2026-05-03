@@ -144,6 +144,9 @@ function solvitdb.set(path, name, data)
     if data.packages then
       encodedString = encodedString .. "p" .. table.concat(data.packages, ";") .. "."
     end
+    if data.version then
+      encodedString = encodedString .. "v" .. data.version .. "."
+    end
     writeHandle:write(encodedString .. "\n")
     writeHandle:seek("set", patLength + 8) -- + 8 because that's the length of the header
     local patData = ("%s.%s;"):format(name, string.pack("<I4", newPackageLocation))
@@ -203,12 +206,16 @@ function solvitdb.get(path, name)
     elseif series:sub(1, 1) == "p" then
       output.packages = {}
       seriesOutput = output.packages
+    elseif series:sub(1, 1) == "v" then
+      output.version = series:sub(2, -1)
+      goto SkipSeries
     end
     -- Finally a case where Lua's weird table linking shenanigans are actually useful
     series = series:sub(2, -1)
     for seriesItem in series:gmatch("[^;]+") do
       table.insert(seriesOutput, seriesItem)
     end
+    ::SkipSeries::
   end
   return output
 end
