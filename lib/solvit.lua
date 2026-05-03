@@ -252,6 +252,30 @@ local function startTransaction(dbpath)
         i=i+1
       end
     end
+    -- get package info from database
+    for i=1,#rem do
+      if not getPackInfo(rem[i]) then
+        packInfo[avs.serializePack(rem[i])]=db.get(rem[i][1])
+      end
+    end
+    -- find if the main package is reverse dependant to another
+    i=1
+    while i<=#rem do
+      local dat = getPackInfo(rem[i])
+      if dat.reverseDependencies and #dat.reverseDependencies>0 then
+        for _,dep in ipairs(dat.reverseDependencies) do
+          if not packageInArray(avs.parse(dep),rem) then
+            if settings.cascade then
+              table.insert(rem,1,avs.parse(dep))
+              i=i+1
+            else
+              return false, "Package "..avs.serializePack(rem[i]).." is a dependency of "..dep
+            end
+          end
+        end
+      end
+      i=i+1
+    end
     -- look for dependencies if settings.autoremove is on
     if settings.autoremove then
       i=1
@@ -303,9 +327,6 @@ local function startTransaction(dbpath)
     -- return "true, {["install"] = {"dep1", "package1", "package2"}, ["remove"] = {"package3"}}" on success
     -- return "false, {"dep1"}" when not enough data
     -- return "false, "[verbose string]"" when conflict found
-    -- TODO: implement storing removal
-    -- TODO: implement storing reverse dependency removal
-    -- TODO: implement reverse dependency conflict when removing (don't conflict if the reverse dependencies are already in the list!)
     -- TODO: handle same constant AVS
     -- TODO: handle different constant AVS conflict
     -- TODO: handle same range AVS
@@ -315,6 +336,7 @@ local function startTransaction(dbpath)
     -- TODO: handle different incompatible 1.*.*-2.*.* range AVS
     -- TODO: handle conflicts from package info
     -- TODO: handle reverse conflicts from another package's info
+    -- TODO: handle automatic conflict resolving
     -- TODO: handle update of a single package with no dependencies
     -- TODO: handle update of a single package with dependencies that don't need updating
     -- TODO: handle update of a single package with dependencies that need updating
