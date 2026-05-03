@@ -2,13 +2,12 @@
 local db = {}
 local fs = require("filesystem")
 local json = require("json")
-local dbpath = "/ag2/testdb.json"
-function db.create()
+function db.create(dbpath)
   local handle = fs.open(dbpath,"w")
   handle:write("{}")
   handle:close()
 end
-function db.readJSON()
+function db.readJSON(dbpath)
   local handle = fs.open(dbpath,"r")
   local content = ""
   while true do
@@ -19,26 +18,26 @@ function db.readJSON()
   handle:close()
   return content
 end
-function db.get(pack)
-  local dbc = json.decode(db.readJSON())
+function db.get(dbpath,pack)
+  local dbc = json.decode(db.readJSON(dbpath))
   return dbc[pack]
 end
-function db.set(pack,info)
-  local dbc = json.decode(db.readJSON())
+function db.set(dbpath,pack,info)
+  local dbc = json.decode(db.readJSON(dbpath))
   dbc[pack]=info
   local handle = fs.open(dbpath,"w")
   handle:write(json.encode(dbc))
   handle:close()
 end
-function db.remove(pack)
-  local dbc = json.decode(db.readJSON())
+function db.remove(dbpath,pack)
+  local dbc = json.decode(db.readJSON(dbpath))
   dbc[pack]=nil
   local handle = fs.open(dbpath,"w")
   handle:write(json.encode(dbc))
   handle:close()
 end
-function db.list(pack)
-  local dbc = json.decode(db.readJSON())
+function db.list(dbpath,pack)
+  local dbc = json.decode(db.readJSON(dbpath))
   local keys = {}
   for i,_ in pairs(dbc) do
     table.insert(keys,i)
@@ -176,9 +175,10 @@ local function removeFromArray(el,arr)
   end
 end
 
-local function startTransaction()
+local function startTransaction(dbpath)
+  dbpath = dbpath or "/ag2/testdb.json"
   if not fs.exists(dbpath) then
-    db.create()
+    db.create(dbpath)
   end
 
   local installIncomplete = false
@@ -229,7 +229,7 @@ local function startTransaction()
       if deps and #deps>=1 then
         for j=1,#deps do
           local dep = avs.parse(deps[j])
-          if (not packageInArray(dep,ins)) and type(db.get(dep[1]))=="nil" then
+          if (not packageInArray(dep,ins)) and type(db.get(dbpath,dep[1]))=="nil" then
             installIncomplete=true
             table.insert(ins,j,dep)
           end
@@ -244,7 +244,7 @@ local function startTransaction()
     -- filter to only have packages in the database
     local i=1
     while i<=#rem do
-      local dat = db.get(rem[i][1])
+      local dat = db.get(dbpath,rem[i][1])
       if not dat then
         table.remove(rem,i)
       else
@@ -262,10 +262,10 @@ local function startTransaction()
             local dep = avs.parse(deps[j])
             local depdat = packInfo[deps[j]]
             if not depdat then
-              depdat = db.get(deps[j])
+              depdat = db.get(dbpath,deps[j])
               packInfo[deps[j]]=depdat
             end
-            if (not packageInArray(dep,rem)) and type(db.get(dep[1]))~="nil" and (#depdat.reverseDependencies==1 and depdat.reverseDependencies[1]==avs.serializePack(rem[i])) then
+            if (not packageInArray(dep,rem)) and type(db.get(dbpath,dep[1]))~="nil" and (#depdat.reverseDependencies==1 and depdat.reverseDependencies[1]==avs.serializePack(rem[i])) then
               removeIncomplete=true
               table.insert(rem,j,dep)
             end
@@ -320,6 +320,10 @@ local function startTransaction()
     -- TODO: handle update of a single package with dependencies that need updating
     -- TODO: handle update of a single package that has a set dependency version changed
     -- TODO: handle updating all packages in the database
+    -- TODO: handle installing virtual packages and store this vpack info to database
+    -- TODO: handle removing virtual packages from database info
+    -- TODO: handle installing groups and store this group info to database
+    -- TODO: handle removing groups and store this group info to database
   end
   local function storeInstall()
     -- directly set
@@ -327,7 +331,7 @@ local function startTransaction()
       if packInfo[pack[1]] then
         local info = table.copy(packInfo[pack[1]])
         info.version=pack[2]
-        db.set(pack[1],info)
+        db.set(dbpath,pack[1],info)
       end
     end
     -- set reverse dependencies
@@ -336,13 +340,13 @@ local function startTransaction()
       local v = packInfo[i]
       if v and v.dependencies then
         for _,dep in ipairs(v.dependencies) do
-          local dat = db.get(dep)
+          local dat = db.get(dbpath,dep)
           if not dat then goto continue end
           if type(dat.reverseDependencies)~="table" then
             dat.reverseDependencies={}
           end
           table.insert(dat.reverseDependencies,i)
-          db.set(dep,dat)
+          db.set(dbpath,dep,dat)
           ::continue::
         end
       end
@@ -351,16 +355,16 @@ local function startTransaction()
   local function storeRemove()
     -- directly remove
     for _,pack in ipairs(rem) do
-      db.remove(pack[1])
+      db.remove(dbpath,pack[1])
     end
     -- remove reverse dependencies
     for _,rdep in ipairs(rem) do
-      for _,pack in db.list() do
-        local dat = db.get(pack)
+      for _,pack in db.list(dbpath) do
+        local dat = db.get(dbpath,pack)
         if dat.reverseDependencies then
           removeFromArray(rdep[1],dat.reverseDependencies)
         end
-        db.set(pack,dat)
+        db.set(dbpath,pack,dat)
       end
     end
   end
