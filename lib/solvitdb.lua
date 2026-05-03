@@ -201,6 +201,12 @@ function solvitdb.list(path)
   for index, _ in pairs(pat) do
     table.insert(list, index)
   end
+  setmetatable(list, {
+    __call = function(self)
+    i, value = next(self, i)
+    return i, value
+    end,
+  })
   return list
 end
 
