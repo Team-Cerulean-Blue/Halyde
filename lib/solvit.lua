@@ -37,6 +37,14 @@ function db.remove(pack)
   handle:write(json.encode(dbc))
   handle:close()
 end
+function db.list(pack)
+  local dbc = json.decode(db.readJSON())
+  local keys = {}
+  for i,_ in pairs(dbc) do
+    table.insert(keys,i)
+  end
+  return ipairs(keys)
+end
 
 local avs = {}
 function avs.splitSingular(s)
@@ -159,6 +167,15 @@ local function packageInArray(pack,arr)
   return false
 end
 
+local function removeFromArray(el,arr)
+  for i=1,#arr do
+    if arr[i]==el then
+      table.remove(arr,i)
+      return i
+    end
+  end
+end
+
 local function startTransaction()
   if not fs.exists(dbpath) then
     db.create()
@@ -260,6 +277,8 @@ local function startTransaction()
     end
   end
   function transaction.finalize(settings)
+    settings = settings or {}
+
     while installIncomplete or removeIncomplete do
       while installIncomplete do
         local out = {finalizeInstall(settings)}
@@ -302,7 +321,7 @@ local function startTransaction()
     -- TODO: handle update of a single package that has a set dependency version changed
     -- TODO: handle updating all packages in the database
   end
-  function transaction.store()
+  local function storeInstall()
     -- directly set
     for _,pack in ipairs(ins) do
       if packInfo[pack[1]] then
@@ -327,6 +346,30 @@ local function startTransaction()
           ::continue::
         end
       end
+    end
+  end
+  local function storeRemove()
+    -- directly remove
+    for _,pack in ipairs(rem) do
+      db.remove(pack[1])
+    end
+    -- remove reverse dependencies
+    for _,rdep in ipairs(rem) do
+      for _,pack in db.list() do
+        local dat = db.get(pack)
+        if dat.reverseDependencies then
+          removeFromArray(rdep[1],dat.reverseDependencies)
+        end
+        db.set(pack,dat)
+      end
+    end
+  end
+  function transaction.store()
+    if #ins>0 then
+      storeInstall()
+    end
+    if #rem>0 then
+      storeRemove()
     end
   end
   return transaction
