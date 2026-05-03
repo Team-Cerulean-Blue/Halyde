@@ -164,62 +164,129 @@ local function startTransaction()
     db.create()
   end
 
+  local installIncomplete = false
+  local removeIncomplete = false
+
   local packInfo = {}
   local ins = {}
   local rem = {}
   local transaction = {}
   function transaction.install(name)
     table.insert(ins,avs.parse(name))
+    installIncomplete = true
   end
   function transaction.remove(name)
+    table.insert(rem,avs.parse(name))
+    removeIncomplete = true
+  end
+  function transaction.autoRemove()
+  end
+  function transaction.update(name)
+  end
+  function transaction.updateAll(name)
   end
   function transaction.addInfo(name,info)
     packInfo[name]=info
     -- print(require("serialize").table(packInfo))
   end
-  function transaction.finalize(settings)
-    local function getPackInfo(pack)
-      return packInfo[avs.serializePack(pack)]
-    end
 
-    -- installation dependencies
-    local foundDeps=false
-    repeat
-      foundDeps=false
-      -- find missing package information
-      local missing = {}
-      for i=1,#ins do
-        if getPackInfo(ins[i])==nil then
-          table.insert(missing,avs.serializePack(ins[i]))
+  local function getPackInfo(pack)
+    return packInfo[avs.serializePack(pack)]
+  end
+  local function finalizeInstall(settings)
+    installIncomplete=false
+    -- find missing package information
+    local missing = {}
+    for i=1,#ins do
+      if getPackInfo(ins[i])==nil then
+        table.insert(missing,avs.serializePack(ins[i]))
+      end
+    end
+    if #missing>0 then
+      return false,missing
+    end
+    -- find dependencies
+    local i=1
+    while i<=#ins do
+      local deps = getPackInfo(ins[i]).dependencies
+      if deps and #deps>=1 then
+        for j=1,#deps do
+          local dep = avs.parse(deps[j])
+          if (not packageInArray(dep,ins)) and type(db.get(dep[1]))=="nil" then
+            installIncomplete=true
+            table.insert(ins,j,dep)
+          end
         end
+        i=i+#deps
       end
-      if #missing>0 then
-        return false,missing
+      i=i+1
+    end
+  end
+  local function finalizeRemove(settings)
+    removeIncomplete=false
+    -- filter to only have packages in the database
+    local i=1
+    while i<=#rem do
+      local dat = db.get(rem[i][1])
+      if not dat then
+        table.remove(rem,i)
+      else
+        packInfo[avs.serializePack(rem[i])]=dat
+        i=i+1
       end
-      -- find dependencies
-      local i=1
-      while i<=#ins do
-        local deps = getPackInfo(ins[i]).dependencies
+    end
+    -- look for dependencies if settings.autoremove is on
+    if settings.autoremove then
+      i=1
+      while i<=#rem do
+        local deps = getPackInfo(rem[i]).dependencies
         if deps and #deps>=1 then
           for j=1,#deps do
             local dep = avs.parse(deps[j])
-            if (not packageInArray(dep,ins)) and type(db.get(dep[1]))=="nil" then
-              foundDeps=true
-              table.insert(ins,j,dep)
+            local depdat = packInfo[deps[j]]
+            if not depdat then
+              depdat = db.get(deps[j])
+              packInfo[deps[j]]=depdat
+            end
+            if (not packageInArray(dep,rem)) and type(db.get(dep[1]))~="nil" and (#depdat.reverseDependencies==1 and depdat.reverseDependencies[1]==avs.serializePack(rem[i])) then
+              removeIncomplete=true
+              table.insert(rem,j,dep)
             end
           end
           i=i+#deps
         end
         i=i+1
       end
-    until not foundDeps
+    end
+  end
+  function transaction.finalize(settings)
+    while installIncomplete or removeIncomplete do
+      while installIncomplete do
+        local out = {finalizeInstall(settings)}
+        if out[1]==false then return table.unpack(out) end
+      end
+      while removeIncomplete do
+        local out = {finalizeRemove(settings)}
+        if out[1]==false then return table.unpack(out) end
+      end
+    end
 
-    return true, {install=ins}
+    local install = {}
+    local remove = {}
+    for i=1,#ins do
+      table.insert(install,avs.serializePack(ins[i]))
+    end
+    for i=1,#rem do
+      table.insert(remove,avs.serializePack(rem[i]))
+    end
+    return true, {install=install,remove=remove}
 
     -- return "true, {["install"] = {"dep1", "package1", "package2"}, ["remove"] = {"package3"}}" on success
     -- return "false, {"dep1"}" when not enough data
     -- return "false, "[verbose string]"" when conflict found
-    -- TODO: implement removing packages
+    -- TODO: implement storing removal
+    -- TODO: implement storing reverse dependency removal
+    -- TODO: implement reverse dependency conflict when removing (don't conflict if the reverse dependencies are already in the list!)
     -- TODO: handle same constant AVS
     -- TODO: handle different constant AVS conflict
     -- TODO: handle same range AVS
@@ -229,25 +296,38 @@ local function startTransaction()
     -- TODO: handle different incompatible 1.*.*-2.*.* range AVS
     -- TODO: handle conflicts from package info
     -- TODO: handle reverse conflicts from another package's info
+    -- TODO: handle update of a single package with no dependencies
+    -- TODO: handle update of a single package with dependencies that don't need updating
+    -- TODO: handle update of a single package with dependencies that need updating
+    -- TODO: handle update of a single package that has a set dependency version changed
+    -- TODO: handle updating all packages in the database
   end
   function transaction.store()
-    for i,v in pairs(packInfo) do
-      db.set(i,v)
+    -- directly set
+    for _,pack in ipairs(ins) do
+      if packInfo[pack[1]] then
+        local info = table.copy(packInfo[pack[1]])
+        info.version=pack[2]
+        db.set(pack[1],info)
+      end
     end
-    for i,v in pairs(packInfo) do
-      if v.dependencies then
+    -- set reverse dependencies
+    for _,pack in pairs(ins) do
+      local i = pack[1]
+      local v = packInfo[i]
+      if v and v.dependencies then
         for _,dep in ipairs(v.dependencies) do
           local dat = db.get(dep)
+          if not dat then goto continue end
           if type(dat.reverseDependencies)~="table" then
             dat.reverseDependencies={}
           end
           table.insert(dat.reverseDependencies,i)
           db.set(dep,dat)
+          ::continue::
         end
       end
     end
-
-    -- TODO: make and store reverse dependencies
   end
   return transaction
 end
