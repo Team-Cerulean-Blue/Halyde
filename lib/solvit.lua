@@ -211,7 +211,6 @@ local function startTransaction(dbpath)
     return packInfo[avs.serializePack(pack)]
   end
   local function finalizeInstall(settings)
-    installIncomplete=false
     -- find missing package information
     local missing = {}
     for i=1,#ins do
@@ -223,6 +222,7 @@ local function startTransaction(dbpath)
       return false,missing
     end
     -- find dependencies
+    installIncomplete=false
     local i=1
     while i<=#ins do
       local deps = getPackInfo(ins[i]).dependencies
@@ -380,14 +380,17 @@ local function startTransaction(dbpath)
       db.remove(dbpath,pack[1])
     end
     -- remove reverse dependencies
-    for _,rdep in ipairs(rem) do
-      for _,pack in db.list(dbpath) do
-        local dat = db.get(dbpath,pack)
+    for _,pack in ipairs(rem) do
+      local pdat = getPackInfo(pack)
+      if not pdat.dependencies then goto continue end
+      for _,dep in ipairs(pdat.dependencies) do
+        local dat = db.get(dbpath,dep)
         if dat.reverseDependencies then
-          removeFromArray(rdep[1],dat.reverseDependencies)
+          removeFromArray(pack[1],dat.reverseDependencies)
         end
-        db.set(dbpath,pack,dat)
+        db.set(dbpath,dep,dat)
       end
+      ::continue::
     end
   end
   function transaction.store()
