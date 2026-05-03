@@ -93,10 +93,30 @@ function solvitdb.set(path, name, data)
   checkArg(3, data, "table")
   local readHandle, patLength = checkValidityAndOpen(path)
   local pat = readPat(readHandle, patLength)
+  local writeHandle = assert(fs.open(path, "a"))
   if pat[name] then
+    handle:seek(pat[name])
+    local data, tmpdata = ""
+    repeat
+      tmpdata = readHandle:read(math.huge)
+      oldData = oldData .. (tmpdata or "")
+    until oldData:find("\n", 1, true) or not tmpdata
+    readHandle:close()
+    if not oldData:find("\n", 1, true) and not tmpdata then
+      error("hit unexpected EOF")
+    end
+    oldData = oldData:match("^[^\n]+")
+    local difference = #data - #oldData
+    if difference == 0 then
+      writeHandle:seek("set", pat[name] + patLength + 8)
+      readHandle:close()
+      writeHandle:write(data)
+    elseif difference < 0 then
 
+    elseif difference > 0 then
+
+    end
   else
-    local writeHandle = assert(fs.open(path, "a"))
     writeHandle:seek("end")
     local newPackageLocation = writeHandle:seek() - patLength - 8
     if newPackageLocation > 4294967295 then
@@ -107,6 +127,7 @@ function solvitdb.set(path, name, data)
     writeHandle:seek("set", patLength + 8) -- + 8 because that's the length of the header
     local patData = ("%s.%s;"):format(name, string.pack("<I4", newPackageLocation))
     insert(readHandle, writeHandle, patData)
+    readHandle:close()
     local newPatLength = patLength + #patData
     writeHandle:seek("set", 0)
     if newPatLength > 4294967295 then
@@ -131,10 +152,11 @@ function solvitdb.get(path, name)
     tmpdata = handle:read(math.huge)
     data = data .. (tmpdata or "")
   until data:find("\n", 1, true) or not tmpdata
+  handle:close()
   if not data:find("\n", 1, true) and not tmpdata then
     error("hit unexpected EOF")
   end
-  data = data:match("^(.-)\n")
+  data = data:match("^[^\n]+")
   local output = {}
   if data:sub(1, 1) == "P" then
     output.type = "package"
@@ -167,7 +189,6 @@ function solvitdb.get(path, name)
       table.insert(seriesOutput, seriesItem)
     end
   end
-  handle:close()
   return output
 end
 
