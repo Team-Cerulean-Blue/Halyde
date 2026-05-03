@@ -192,6 +192,18 @@ function solvitdb.get(path, name)
   return output
 end
 
+function solvitdb.list(path)
+  checkArg(1, path, "string")
+  local handle, patLength = checkValidityAndOpen(path)
+  local pat = readPat(handle, patLength)
+  handle:close()
+  local list = {}
+  for index, _ in pairs(pat) do
+    table.insert(list, index)
+  end
+  return list
+end
+
 function solvitdb.remove()
 
 end
