@@ -1,6 +1,8 @@
+local defaultDBPath = "/ag2/testdb.json"
+
+local fs = require("filesystem")
 -- local db = require("solvitdb")
 local db = {}
-local fs = require("filesystem")
 local json = require("json")
 function db.create(dbpath)
   local handle = fs.open(dbpath,"w")
@@ -176,7 +178,7 @@ local function removeFromArray(el,arr)
 end
 
 local function startTransaction(dbpath)
-  dbpath = dbpath or "/ag2/testdb.json"
+  dbpath = dbpath or defaultDBPath
   if not fs.exists(dbpath) then
     db.create(dbpath)
   end
@@ -203,6 +205,7 @@ local function startTransaction(dbpath)
   function transaction.updateAll(name)
   end
   function transaction.addInfo(name,info)
+    if not info.type then info.type="package" end
     packInfo[name]=info
     -- print(require("serialize").table(packInfo))
   end
@@ -264,12 +267,12 @@ local function startTransaction(dbpath)
       local dat = getPackInfo(rem[i])
       if dat.reverseDependencies and #dat.reverseDependencies>0 then
         for _,dep in ipairs(dat.reverseDependencies) do
-          if not packageInArray(avs.parse(dep),rem) then
+          if not packageInArray({dep},rem) then
             if settings.cascade then
-              table.insert(rem,1,avs.parse(dep))
+              table.insert(rem,1,{dep})
               i=i+1
             else
-              return false, "Package "..avs.serializePack(rem[i]).." is a dependency of "..dep
+              return false, "Package "..rem[i][1].." is a dependency of "..dep
             end
           end
         end
@@ -286,10 +289,10 @@ local function startTransaction(dbpath)
             local dep = avs.parse(deps[j])
             local depdat = packInfo[deps[j]]
             if not depdat then
-              depdat = db.get(dbpath,deps[j])
+              depdat = db.get(dbpath,dep[1])
               packInfo[deps[j]]=depdat
             end
-            if (not packageInArray(dep,rem)) and type(db.get(dbpath,dep[1]))~="nil" and (#depdat.reverseDependencies==1 and depdat.reverseDependencies[1]==avs.serializePack(rem[i])) then
+            if (not packageInArray(dep,rem)) and type(db.get(dbpath,dep[1]))~="nil" and (#depdat.reverseDependencies==1 and depdat.reverseDependencies[1]==rem[i][1]) then
               removeIncomplete=true
               table.insert(rem,j,dep)
             end
@@ -327,8 +330,8 @@ local function startTransaction(dbpath)
     -- return "true, {["install"] = {"dep1", "package1", "package2"}, ["remove"] = {"package3"}}" on success
     -- return "false, {"dep1"}" when not enough data
     -- return "false, "[verbose string]"" when conflict found
-    -- TODO: handle same constant AVS
-    -- TODO: handle different constant AVS conflict
+    -- TODO: handle different constant AVS conflict (package1->dep1=1.0.0 + package2->dep1=1.2.3 where both are uninstalled)
+    -- TODO: handle different constant AVS conflict (package1->dep1=1.0.0 + package2->dep1=1.2.3 where package2 is on db)
     -- TODO: handle same range AVS
     -- TODO: handle different intercompatible 1.*.* range AVS
     -- TODO: handle different incompatible 1.*.* range AVS
@@ -350,25 +353,30 @@ local function startTransaction(dbpath)
   local function storeInstall()
     -- directly set
     for _,pack in ipairs(ins) do
-      if packInfo[pack[1]] then
-        local info = table.copy(packInfo[pack[1]])
-        info.version=pack[2]
+      if getPackInfo(pack) then
+        local info = table.copy(getPackInfo(pack))
+        if pack[2] then
+          info.version=avs.serializeVersion(pack[2])
+        else
+          info.version=info.latestVersion or info.version
+        end
         db.set(dbpath,pack[1],info)
       end
     end
     -- set reverse dependencies
     for _,pack in pairs(ins) do
-      local i = pack[1]
+      local i = avs.serializePack(pack)
       local v = packInfo[i]
       if v and v.dependencies then
         for _,dep in ipairs(v.dependencies) do
-          local dat = db.get(dbpath,dep)
+          local depname = avs.parse(dep)[1]
+          local dat = db.get(dbpath,depname)
           if not dat then goto continue end
           if type(dat.reverseDependencies)~="table" then
             dat.reverseDependencies={}
           end
-          table.insert(dat.reverseDependencies,i)
-          db.set(dbpath,dep,dat)
+          table.insert(dat.reverseDependencies,pack[1])
+          db.set(dbpath,depname,dat)
           ::continue::
         end
       end
@@ -384,11 +392,12 @@ local function startTransaction(dbpath)
       local pdat = getPackInfo(pack)
       if not pdat.dependencies then goto continue end
       for _,dep in ipairs(pdat.dependencies) do
-        local dat = db.get(dbpath,dep)
+        local depname = avs.parse(dep)[1]
+        local dat = db.get(dbpath,depname)
         if dat.reverseDependencies then
           removeFromArray(pack[1],dat.reverseDependencies)
         end
-        db.set(dbpath,dep,dat)
+        db.set(dbpath,depname,dat)
       end
       ::continue::
     end
