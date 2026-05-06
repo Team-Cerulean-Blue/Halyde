@@ -93,6 +93,43 @@ local function remove(filePath, location, length)
   fs.rename(tmpFilePath, filePath)
 end
 
+local function adjustPatLocationsAfterPackage(filePath, packageName, offset)
+  local readHandle, patLength = checkValidityAndOpen(filePath)
+  local pat = readPat(readHandle, patLength)
+  readHandle:close()
+  local modifiedLocation = pat[packageName]
+  local toAdjust = {}
+  for name, location in pairs(pat) do
+    if location > modifiedLocation then
+      table.insert(toAdjust, { name = name, location = location })
+    end
+  end
+
+  if #toAdjust == 0 then
+    return
+  end
+
+  local readHandle = assert(fs.open(filePath, "r"))
+  readHandle:seek(8)  -- Skip header
+  local patBytes = assert(readHandle:read(patLength))
+  readHandle:close()
+
+  local patFieldPositions = {}
+  for _, entry in ipairs(toAdjust) do
+    local needle = entry.name .. "."
+    local startPos = patBytes:find(needle, 1, true)
+    patFieldPositions[entry.name] = 8 + startPos + #needle - 1
+  end
+
+  local writeHandle = assert(fs.open(filePath, "a"))
+  for _, entry in ipairs(toAdjust) do
+    local newLocation = entry.location + offset
+    writeHandle:seek("set", patFieldPositions[entry.name])
+    writeHandle:write(string.pack("<I4", newLocation))
+  end
+  writeHandle:close()
+end
+
 function solvitdb.create(path)
   checkArg(1, path, "string")
   local handle = assert(fs.open(path, "w"))
@@ -104,12 +141,50 @@ function solvitdb.set(path, name, data)
   checkArg(1, path, "string")
   checkArg(2, name, "string")
   checkArg(3, data, "table")
+
+  local function sanitize(tab)
+    for _, item in pairs(tab) do
+      if type(item) == "string" then
+        item = item:gsub("[;|]", "-")
+      elseif type(item) == "table" then
+        sanitize(item)
+      end
+    end
+  end
+
+  data = sanitize(data)
+
   local readHandle, patLength = checkValidityAndOpen(path)
   local pat = readPat(readHandle, patLength)
   local writeHandle = assert(fs.open(path, "a"))
+
+  local encodedString = ""
+  if data.type == "package" then
+    encodedString = "P"
+  elseif data.type == "group" then
+    encodedString = "G"
+  elseif data.type == "virtual-package" then
+    encodedString = "V"
+  end
+  if data.dependencies then
+    encodedString = encodedString .. "d" .. table.concat(data.dependencies, ";") .. "|"
+  end
+  if data.reverseDependencies then
+    encodedString = encodedString .. "D" .. table.concat(data.reverseDependencies, ";") .. "|"
+  end
+  if data.conflicts then
+    encodedString = encodedString .. "c" .. table.concat(data.conflicts, ";") .. "|"
+  end
+  if data.packages then
+    encodedString = encodedString .. "p" .. table.concat(data.packages, ";") .. "|"
+  end
+  if data.version then
+    encodedString = encodedString .. "v" .. data.version .. "|"
+  end
+
   if pat[name] then
-    handle:seek(pat[name])
-    local data, tmpdata = ""
+    readHandle:seek(pat[name])
+    local oldData, tmpdata = ""
     repeat
       tmpdata = readHandle:read(math.huge)
       oldData = oldData .. (tmpdata or "")
@@ -119,57 +194,37 @@ function solvitdb.set(path, name, data)
       error("hit unexpected EOF")
     end
     oldData = oldData:match("^[^\n]+")
-    local difference = #data - #oldData
+    local difference = #encodedString - #oldData
+    writeHandle:seek("set", pat[name] + patLength + 8)
     if difference == 0 then
-      writeHandle:seek("set", pat[name] + patLength + 8)
       readHandle:close()
-      writeHandle:write(data)
+      writeHandle:write(encodedString)
+      writeHandle:close()
     elseif difference < 0 then
-
+      writeHandle:write(encodedString)
+      local currentSeek = writeHandle:seek()
+      writeHandle:close()
+      remove(path, currentSeek, -difference)
+      adjustPatLocationsAfterPackage(path, name, difference)
     elseif difference > 0 then
-
+      writeHandle:write(encodedString:sub(1, #encodedString - difference))
+      local currentSeek = writeHandle:seek()
+      writeHandle:close()
+      insert(path, currentSeek + 1, encodedString:sub(#data - difference, -1))
+      adjustPatLocationsAfterPackage(path, name, difference)
     end
   else
+    readHandle:close()
     writeHandle:seek("end")
     local newPackageLocation = writeHandle:seek() - patLength - 8
-    if newPackageLocation > 4294967295 then
-      -- The above is the 32 bit unsigned integer limit
-      error("DB too large")
-    end
-
-    local encodedString
-    if data.type == "package" then
-      encodedString = "P"
-    elseif data.type == "group" then
-      encodedString = "G"
-    elseif data.type == "virtual-package" then
-      encodedString = "V"
-    end
-    if data.dependencies then
-      encodedString = encodedString .. "d" .. table.concat(data.dependencies, ";") .. "."
-    end
-    if data.reverseDependencies then
-      encodedString = encodedString .. "D" .. table.concat(data.reverseDependencies, ";") .. "."
-    end
-    if data.conflicts then
-      encodedString = encodedString .. "c" .. table.concat(data.conflicts, ";") .. "."
-    end
-    if data.packages then
-      encodedString = encodedString .. "p" .. table.concat(data.packages, ";") .. "."
-    end
-    if data.version then
-      encodedString = encodedString .. "v" .. data.version .. "."
-    end
     writeHandle:write(encodedString .. "\n")
+    writeHandle:close()
     local patData = ("%s.%s;"):format(name, string.pack("<I4", newPackageLocation))
     insert(path, patLength + 8, patData)
-    readHandle:close()
     local newPatLength = patLength + #patData
+    local writeHandle = assert(fs.open(path, "a")) -- If this works, that means handles must be reopened after insert() or remove()
     writeHandle:seek("set", 0)
-    if newPatLength > 4294967295 then
-      error("PAT too large")
-    end
-    writeHandle:write(string.pack("<I4", newPatLength))
+    assert(writeHandle:write(string.pack("<I4", newPatLength)))
     writeHandle:close()
   end
 end
