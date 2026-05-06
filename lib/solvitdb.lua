@@ -27,21 +27,35 @@ local function readPat(handle, patLength)
   return packages
 end
 
-local function insert(readHandle, writeHandle, data)
-  --NOTE: writeHandle must be in append ("a") mode
+local function insert(filePath, location, bytes)
   local chunkLength = 512
-  if #data > 512 then
-    chunkLength = #data
-  end
-  buf2 = data
+  local readHandle = assert(fs.open(filePath, "r"))
+  local tmpFilePath = filePath .. ".tmp"
+  local writeHandle = assert(fs.open(tmpFilePath, "w"))
+  local i = 0
   while true do
-    buf1 = readHandle:read(chunkLength)
-    writeHandle:write(buf2)
-    if not buf1 then
+    local readAmount = chunkLength
+    if readAmount > location - i then
+      readAmount = location - i
+    end
+    if readAmount == 0 then
       break
     end
-    buf2 = buf1
+    local data = readHandle:read(readAmount)
+    i = i + readAmount
+    assert(writeHandle:write(data))
   end
+  assert(writeHandle:write(bytes))
+  while true do
+    local data = readHandle:read(chunkLength)
+    if not data then
+      break
+    end
+    assert(writeHandle:write(data))
+  end
+  readHandle:close()
+  writeHandle:close()
+  fs.rename(tmpFilePath, filePath)
 end
 
 local function remove(filePath, location, length)
@@ -77,7 +91,6 @@ local function remove(filePath, location, length)
   readHandle:close()
   writeHandle:close()
   fs.rename(tmpFilePath, filePath)
-  fs.remove(tmpFilePath)
 end
 
 function solvitdb.create(path)
@@ -148,9 +161,8 @@ function solvitdb.set(path, name, data)
       encodedString = encodedString .. "v" .. data.version .. "."
     end
     writeHandle:write(encodedString .. "\n")
-    writeHandle:seek("set", patLength + 8) -- + 8 because that's the length of the header
     local patData = ("%s.%s;"):format(name, string.pack("<I4", newPackageLocation))
-    insert(readHandle, writeHandle, patData)
+    insert(path, patLength + 8, patData)
     readHandle:close()
     local newPatLength = patLength + #patData
     writeHandle:seek("set", 0)
