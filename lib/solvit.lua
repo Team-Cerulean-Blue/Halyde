@@ -159,10 +159,28 @@ function avs.compatibleRange(vers)
   return range
 end
 
+function avs.matching(pack1,pack2)
+  if pack1[1]~=pack2[1] then return false end
+  local ver1 = pack1[2] or {{-1,-1,-1}}
+  local ver2 = pack2[2] or {{-1,-1,-1}}
+  if #ver1==1 then ver1={ver1[1],ver1[1]} end
+  if #ver2==1 then ver2={ver2[1],ver2[1]} end
+  return avs.compatibleRange({ver1,ver2})~=nil
+end
+
 local function packageInArray(pack,arr)
   for i=1,#arr do
-    if arr[i][1]==pack[1] then -- TODO: check for compatible package version
-      return true
+    if avs.matching(avs.parse(arr[i]),pack) then
+      return true,arr[i]
+    end
+  end
+  return false
+end
+
+local function packageNameInArray(pack,arr)
+  for i=1,#arr do
+    if arr[i][1]==pack[1] then
+      return true,arr[i]
     end
   end
   return false
@@ -213,6 +231,15 @@ local function startTransaction(dbpath)
   local function getPackInfo(pack)
     return packInfo[avs.serializePack(pack)]
   end
+  local function findReverseDependencies(pack)
+    local out={}
+    for i,info in pairs(packInfo) do
+      if info.dependencies and packageInArray(pack,info.dependencies) then
+        table.insert(out,avs.parse(i))
+      end
+    end
+    return out
+  end
   local function finalizeInstall(settings)
     -- find missing package information
     local missing = {}
@@ -232,7 +259,28 @@ local function startTransaction(dbpath)
       if deps and #deps>=1 then
         for j=1,#deps do
           local dep = avs.parse(deps[j])
-          if (not packageInArray(dep,ins)) and type(db.get(dbpath,dep[1]))=="nil" then
+          local inArr,arrPack = packageNameInArray(dep,ins)
+          if inArr then
+            if not avs.matching(dep,arrPack) then
+              local rev = findReverseDependencies(arrPack)
+              if #rev==0 then
+                return false, "Package "..avs.serializePack(ins[i]).." depends on "..avs.serializePack(dep)..", but one or more packages depend on "..avs.serializePack(arrPack)
+              elseif #rev==1 then
+                return false, "Package "..avs.serializePack(ins[i]).." depends on "..avs.serializePack(dep)..", but package "..avs.serializePack(rev[1]).." depends on "..avs.serializePack(arrPack)
+              else
+                local revstr = ""
+                for i=1,#rev do
+                  if i>1 and i~=#rev then
+                    revstr=revstr..", "
+                  elseif i==#rev then
+                    revstr=revstr.." and "
+                  end
+                  revstr=revstr..avs.serializePack(rev[i])
+                end
+                return false, "Package "..avs.serializePack(ins[i]).." depends on "..avs.serializePack(dep)..", but packages "..revstr.." depend on "..avs.serializePack(arrPack)
+              end
+            end
+          elseif type(db.get(dbpath,dep[1]))=="nil" then
             installIncomplete=true
             table.insert(ins,j,dep)
           end
@@ -267,7 +315,7 @@ local function startTransaction(dbpath)
       local dat = getPackInfo(rem[i])
       if dat.reverseDependencies and #dat.reverseDependencies>0 then
         for _,dep in ipairs(dat.reverseDependencies) do
-          if not packageInArray({dep},rem) then
+          if not packageNameInArray({dep},rem) then
             if settings.cascade then
               table.insert(rem,1,{dep})
               i=i+1
@@ -292,7 +340,7 @@ local function startTransaction(dbpath)
               depdat = db.get(dbpath,dep[1])
               packInfo[deps[j]]=depdat
             end
-            if (not packageInArray(dep,rem)) and type(db.get(dbpath,dep[1]))~="nil" and (#depdat.reverseDependencies==1 and depdat.reverseDependencies[1]==rem[i][1]) then
+            if (not packageNameInArray(dep,rem)) and type(db.get(dbpath,dep[1]))~="nil" and (#depdat.reverseDependencies==1 and depdat.reverseDependencies[1]==rem[i][1]) then
               removeIncomplete=true
               table.insert(rem,j,dep)
             end
@@ -330,8 +378,8 @@ local function startTransaction(dbpath)
     -- return "true, {["install"] = {"dep1", "package1", "package2"}, ["remove"] = {"package3"}}" on success
     -- return "false, {"dep1"}" when not enough data
     -- return "false, "[verbose string]"" when conflict found
-    -- TODO: handle different constant AVS conflict (package1->dep1=1.0.0 + package2->dep1=1.2.3 where both are uninstalled)
-    -- TODO: handle different constant AVS conflict (package1->dep1=1.0.0 + package2->dep1=1.2.3 where package2 is on db)
+    -- TODO: handle resolving different constant AVS conflict (package1->dep1=1.0.0 + package2->dep1=1.2.3 where both are uninstalled)
+    -- TODO: handle different constant AVS conflict (package1->dep1=1.0.0 + package2->dep1=1.2.3 where package2 and dep1 is on db)
     -- TODO: handle same range AVS
     -- TODO: handle different intercompatible 1.*.* range AVS
     -- TODO: handle different incompatible 1.*.* range AVS
