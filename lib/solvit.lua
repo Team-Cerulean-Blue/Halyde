@@ -262,22 +262,29 @@ local function startTransaction(dbpath)
           local inArr,arrPack = packageNameInArray(dep,ins)
           if inArr then
             if not avs.matching(dep,arrPack) then
+              local msg = ""
+              if settings.resolveConflict then
+                msg="Cannot resolve conflict: "..msg
+              end
               local rev = findReverseDependencies(arrPack)
               if #rev==0 then
-                return false, "Package "..avs.serializePack(ins[i]).." depends on "..avs.serializePack(dep)..", but one or more packages depend on "..avs.serializePack(arrPack)
+                msg=msg.."Package "..avs.serializePack(ins[i]).." depends on "..avs.serializePack(dep)..", but one or more packages depend on "..avs.serializePack(arrPack)
+                return false, msg
               elseif #rev==1 then
-                return false, "Package "..avs.serializePack(ins[i]).." depends on "..avs.serializePack(dep)..", but package "..avs.serializePack(rev[1]).." depends on "..avs.serializePack(arrPack)
+                msg=msg.."Package "..avs.serializePack(ins[i]).." depends on "..avs.serializePack(dep)..", but package "..avs.serializePack(rev[1]).." depends on "..avs.serializePack(arrPack)
+                return false, msg
               else
-                local revstr = ""
+                msg=msg.."Package "..avs.serializePack(ins[i]).." depends on "..avs.serializePack(dep)..", but packages "
                 for i=1,#rev do
                   if i>1 and i~=#rev then
-                    revstr=revstr..", "
+                    msg=msg..", "
                   elseif i==#rev then
-                    revstr=revstr.." and "
+                    msg=msg.." and "
                   end
-                  revstr=revstr..avs.serializePack(rev[i])
+                  msg=msg..avs.serializePack(rev[i])
                 end
-                return false, "Package "..avs.serializePack(ins[i]).." depends on "..avs.serializePack(dep)..", but packages "..revstr.." depend on "..avs.serializePack(arrPack)
+                msg=msg.." depend on "..avs.serializePack(arrPack)
+                return false, msg
               end
             end
           elseif type(db.get(dbpath,dep[1]))=="nil" then
@@ -393,6 +400,7 @@ local function startTransaction(dbpath)
     -- TODO: handle update of a single package with dependencies that need updating
     -- TODO: handle update of a single package that has a set dependency version changed
     -- TODO: handle updating all packages in the database
+    -- TODO: handle installing optional packages
     -- TODO: handle installing virtual packages and store this vpack info to database
     -- TODO: handle removing virtual packages from database info
     -- TODO: handle installing groups and store this group info to database
