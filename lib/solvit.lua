@@ -1,6 +1,8 @@
 local defaultDBPath = "/ag2/testdb.json"
 
+local computer = require("computer")
 local fs = require("filesystem")
+
 -- local db = require("solvitdb")
 local db = {}
 local json = require("json")
@@ -201,6 +203,15 @@ local function startTransaction(dbpath)
     db.create(dbpath)
   end
 
+  local yieldClock = computer.uptime()
+  local function yieldIfNecessary()
+    if computer.uptime()-yieldClock>=0.1 then
+      coroutine.yield()
+      yieldClock = computer.uptime()
+    end
+  end
+
+
   local installIncomplete = false
   local removeIncomplete = false
 
@@ -383,10 +394,12 @@ local function startTransaction(dbpath)
       while installIncomplete do
         local out = {finalizeInstall(settings)}
         if out[1]==false then return table.unpack(out) end
+        yieldIfNecessary()
       end
       while removeIncomplete do
         local out = {finalizeRemove(settings)}
         if out[1]==false then return table.unpack(out) end
+        yieldIfNecessary()
       end
     end
 
@@ -403,9 +416,6 @@ local function startTransaction(dbpath)
     -- return "true, {["install"] = {"dep1", "package1", "package2"}, ["remove"] = {"package3"}}" on success
     -- return "false, {"dep1"}" when not enough data
     -- return "false, "[verbose string]"" when conflict found
-    -- TODO: handle resolving different constant AVS conflict (package1->dep1=1.0.0 + package2->dep1=1.2.3 where package2 and dep1=1.2.3 is on db)
-    -- TODO: handle resolving different constant AVS conflict (package1->dep1=1.0.0 + package2->dep1=1.2.3 where package1 and dep1=1.0.0 is on db)
-    -- TODO: make solvit yield every 0.1s
     -- TODO: handle same range AVS
     -- TODO: handle different intercompatible 1.*.* range AVS
     -- TODO: handle different incompatible 1.*.* range AVS
