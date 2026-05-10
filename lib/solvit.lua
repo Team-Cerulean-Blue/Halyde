@@ -290,6 +290,20 @@ local function startTransaction(dbpath)
           elseif type(db.get(dbpath,dep[1]))=="nil" then
             installIncomplete=true
             table.insert(ins,j,dep)
+          else
+            local dbinfo = db.get(dbpath,dep[1])
+            local dbpack = {dep[1]}
+            if dbinfo.version then
+              dbpack = avs.parse(dep[1].."="..dbinfo.version)
+            end
+            if not avs.matching(dep,dbpack) then
+              local msg = ""
+              if settings.resolveConflict then
+                msg="Cannot resolve conflict: "..msg
+              end
+              msg=msg.."Package "..avs.serializePack(ins[i]).." depends on "..avs.serializePack(dep)..", but another version ("..avs.serializePack(dbpack)..") is installed"
+              return false, msg
+            end
           end
         end
         i=i+#deps
@@ -385,8 +399,8 @@ local function startTransaction(dbpath)
     -- return "true, {["install"] = {"dep1", "package1", "package2"}, ["remove"] = {"package3"}}" on success
     -- return "false, {"dep1"}" when not enough data
     -- return "false, "[verbose string]"" when conflict found
-    -- TODO: handle resolving different constant AVS conflict (package1->dep1=1.0.0 + package2->dep1=1.2.3 where both are uninstalled)
-    -- TODO: handle different constant AVS conflict (package1->dep1=1.0.0 + package2->dep1=1.2.3 where package2 and dep1 is on db)
+    -- TODO: handle resolving different constant AVS conflict (package1->dep1=1.0.0 + package2->dep1=1.2.3 where package2 and dep1=1.2.3 is on db)
+    -- TODO: handle resolving different constant AVS conflict (package1->dep1=1.0.0 + package2->dep1=1.2.3 where package1 and dep1=1.0.0 is on db)
     -- TODO: handle same range AVS
     -- TODO: handle different intercompatible 1.*.* range AVS
     -- TODO: handle different incompatible 1.*.* range AVS
