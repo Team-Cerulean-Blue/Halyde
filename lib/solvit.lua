@@ -297,12 +297,16 @@ local function startTransaction(dbpath)
               dbpack = avs.parse(dep[1].."="..dbinfo.version)
             end
             if not avs.matching(dep,dbpack) then
-              local msg = ""
               if settings.resolveConflict then
-                msg="Cannot resolve conflict: "..msg
+                removeIncomplete=true
+                table.insert(rem,1,dbpack)
+
+                installIncomplete=true
+                table.insert(ins,j,dep)
+              else
+                local msg = "Package "..avs.serializePack(ins[i]).." depends on "..avs.serializePack(dep)..", but another version ("..avs.serializePack(dbpack)..") is installed"
+                return false, msg
               end
-              msg=msg.."Package "..avs.serializePack(ins[i]).." depends on "..avs.serializePack(dep)..", but another version ("..avs.serializePack(dbpack)..") is installed"
-              return false, msg
             end
           end
         end
@@ -401,6 +405,7 @@ local function startTransaction(dbpath)
     -- return "false, "[verbose string]"" when conflict found
     -- TODO: handle resolving different constant AVS conflict (package1->dep1=1.0.0 + package2->dep1=1.2.3 where package2 and dep1=1.2.3 is on db)
     -- TODO: handle resolving different constant AVS conflict (package1->dep1=1.0.0 + package2->dep1=1.2.3 where package1 and dep1=1.0.0 is on db)
+    -- TODO: make solvit yield every 0.1s
     -- TODO: handle same range AVS
     -- TODO: handle different intercompatible 1.*.* range AVS
     -- TODO: handle different incompatible 1.*.* range AVS
