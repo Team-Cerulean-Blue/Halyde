@@ -152,7 +152,7 @@ function solvitdb.set(path, name, data)
     end
   end
 
-  data = sanitize(data)
+  sanitize(data)
 
   local readHandle, patLength = checkValidityAndOpen(path)
   local pat = readPat(readHandle, patLength)
