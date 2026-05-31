@@ -145,7 +145,7 @@ function solvitdb.set(path, name, data)
   local function sanitize(tab)
     for _, item in pairs(tab) do
       if type(item) == "string" then
-        item = item:gsub("[;|]", "-")
+        item = item:lower():gsub("[;|]", "-")
       elseif type(item) == "table" then
         sanitize(item)
       end
