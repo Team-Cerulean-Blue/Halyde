@@ -17,7 +17,7 @@ local function handleError(errorMessage)
   return (errorMessage .. "\n \n" .. debug.traceback())
 end
 
-function loadBoot()
+function loadthething()
   local foundArchitecture = false
   for _, arch in pairs(computer.getArchitectures()) do
     if arch == "Lua 5.3" then
@@ -49,7 +49,7 @@ local pullSignal = computer.pullSignal
 local beep = computer.beep
 local unicode = unicode
 
-local result, reason = xpcall(loadBoot, handleError)
+local result, reason = xpcall(loadthething, handleError)
 local lines = {}
 if not result then
   resX, resY = gpu.getResolution() -- doing it again because boot.lua changes the resolution
