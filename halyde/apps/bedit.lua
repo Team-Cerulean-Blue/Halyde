@@ -1,6 +1,7 @@
 local fs = require("filesystem")
 local shell = require("shell")
 local gpu = require("component").gpu
+local event = require("event")
 
 local resX, resY = gpu.getResolution()
 local textBuffer = gpu.allocateBuffer(resX, resY - 1)
@@ -47,8 +48,34 @@ local function renderText(xOffset, yOffset)
   gpu.bitblt(0, 1, 1, resX, resY - 1, textBuffer, 1, 1)
 end
 
-renderText(args[2], args[3])
+-- Initialize screen
+renderText(0, 0)
+gpu.setForeground(0x000000)
+gpu.setBackground(0xFFFFFF)
+gpu.set(1, resY, "^X")
+gpu.set(10, resY, "^S")
+gpu.setForeground(0xFFFFFF)
+gpu.setBackground(0x000000)
+gpu.set(4, resY, "Exit")
+gpu.set(13, resY, "Save")
+while true do
+  -- Handle events
+  local eventArgs = {event.pull("key_down")}
+
+  if eventArgs[1] == "key_down" then
+    -- Mouse events might be added later, that's why this if statement is here
+    if keyboard.getCtrlDown() then
+      -- Special commands
+      print(eventArgs[4], keyboard.keys[eventArgs[4]])
+      if keyboard.keys[eventArgs[4]] == "x" then
+        break
+      end
+    end
+  end
+  renderText(0, 0)
+end
 
 -- Cleanup
 gpu.freeBuffer(textBuffer)
 gpu.setActiveBuffer(0)
+terminal.clear()
