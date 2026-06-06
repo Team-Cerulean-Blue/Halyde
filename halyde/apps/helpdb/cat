@@ -1,0 +1,9 @@
+COMMAND cat
+USAGE [FILES]...
+DESCRIPTION Concatenates and prints a file.
+ARG1 FILES
+ARG1DESCRIPTION Specifies the paths to the files to print.
+EXAMPLE1 cat /init.lua
+EXAMPLE2 cat help.lua cat.lua
+EXAMPLE1DESCRIPTION Concatenates and prints init.lua in the root directory.
+EXAMPLE2DESCRIPTION Concatenates and prints help.lua and cat.lua in the current working directory.

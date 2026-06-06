@@ -1,8 +1,0 @@
-Usage: edit [PATH]
-Opens a file with the text editor, or a new blank file if not specified.
-
-  PATH*  Specifies the file to be opened.
-
-Examples:
-  edit           Opens a new blank file in the text editor.
-  edit /LICENSE  Opens /LICENSE in the text editor.

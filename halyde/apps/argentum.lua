@@ -9,7 +9,7 @@ if not command then
   return
 end
 if not component.list("internet")() then
-  print("\27[91mThis program requires an internet card to run.")
+  print("\27[91mThis program requires an internet card to run.\27[0m")
   return
 end
 local internet = component.internet
@@ -69,12 +69,12 @@ local function getAgConfig(package, source)
   source = source or agReg[package]
   local data, errorMessage = getFile(source .. "argentum.cfg")
   if not data or data == "" then
-    print("\27[91mCould not fetch Ag config: " .. (errorMessage or "returned nil data"))
+    print("\27[91mCould not fetch Ag config: " .. (errorMessage or "returned nil data") .. "\27[0m")
     return false
   end
   local func, errorMessage = load(data, "=argentum.cfg", "bt", {})
   if not func then
-    print("\27[91mCould not fetch Ag config: " .. errorMessage .. "\nPlease contact the package owner.")
+    print("\27[91mCould not fetch Ag config: " .. errorMessage .. "\nPlease contact the package owner.\27[0m")
     return false
   end
   local agcfg
@@ -82,22 +82,22 @@ local function getAgConfig(package, source)
     agcfg = func()
   end)
   if not status then
-    print("\27[91mCould not fetch Ag config: " .. errorMessage .. "\nPlease contact the package owner.")
+    print("\27[91mCould not fetch Ag config: " .. errorMessage .. "\nPlease contact the package owner.\27[0m")
     return false
   end
   if not agcfg[package] or not agcfg[package].maindir or not agcfg[package].directories or not agcfg[package].files or not agcfg[package].version then
-    local response = ("\27[91mAg config of " .. package .. " is improperly configured.\nPlease contact the package owner.")
+    local response = "\27[91mAg config of " .. package .. " is improperly configured.\nPlease contact the package owner.\27[0m"
   end
   return agcfg
 end
 
 local function doChecks(package)
   if not agReg[package] and not source then
-    print("\27[91mPackage " .. package .. " does not exist.")
+    print("\27[91mPackage " .. package .. " does not exist.\27[0m")
     return false
   end
   if fs.exists("/argentum/store/" .. package) then
-    print("\27[91mPackage " .. package .. " is already installed.")
+    print("\27[91mPackage " .. package .. " is already installed.\27[0m")
     return false
   end
   agcfg = getAgConfig(package, source)
@@ -107,7 +107,7 @@ local function doChecks(package)
   if agcfg[package].dependencies then
     for _, dependency in ipairs(agcfg[package].dependencies) do
       if not agReg[dependency] and not agcfg[dependency] then
-        local response = terminal.read({prefix = "\27[91mPackage " .. package .. " requires dependency " .. dependency .. " that does not exist.\n[A - Abort/s - Skip]"})
+        local response = terminal.read({prefix = "\27[91mPackage " .. package .. " requires dependency " .. dependency .. " that does not exist.\n[A - Abort/s - Skip]\27[0m"})
         if response:lower() ~= "s" then
           fs.remove("/argentum/store/" .. package)
           return false
@@ -132,24 +132,21 @@ local function lpad(str, len, char)
   return string.rep(char, len - #str) .. str
 end
 
-local gpu = component.gpu
-local width,height = gpu.getResolution()
-local function progress(package,progress)
-  local info = string.format("%s %s%%",package,lpad(math.floor(progress*100),2))
+local width, height = terminal.getResolution()
 
-  info=info..string.rep(" ",width-#info)
-  local progX = math.floor(progress*width)
-  gpu.setBackground(0x00FF00)
-  gpu.setForeground(0x000000)
-  gpu.set(1,height,info:sub(1,progX))
-  gpu.setBackground(0x000000)
-  gpu.setForeground(0xFFFFFF)
-  gpu.set(progX+1,height,info:sub(progX+1))
+local function progress(package, progress)
+  terminal.write("\x1b[s")
+  local info = string.format("%s %s%%", package, lpad(math.floor(progress * 100), 2))
+  info = info .. string.rep(" ", width - #info)
+  local progX = math.floor(progress * width)
+  terminal.write("\x1b[42m\x1b[30m" .. info:sub(1, progX) .. "\x1b[40m\x1b[37m" .. info:sub(progX + 1) .. "\x1b[0m")
+  terminal.write("\x1b[u")
 end
 
 local function clearProgress()
-  gpu.setBackground(0x000000)
-  gpu.fill(1,height,width,1," ")
+  terminal.write("\x1b[s")
+  terminal.write("\r\x1b[40m" .. string.rep(" ", width) .. "\x1b[0m\r")
+  terminal.write("\x1b[u")
 end
 
 local function installPackage(package, overwriteFlag)
@@ -166,7 +163,7 @@ local function installPackage(package, overwriteFlag)
   if agcfg[package].dependencies then
     for _, dependency in ipairs(agcfg[package].dependencies) do
       if not agReg[dependency] and not agcfg[dependency] then
-        local response = terminal.read({prefix = "\27[91mPackage " .. package .. " requires dependency " .. dependency .. " that does not exist.\n[A - Abort/s - Skip]"})
+        local response = terminal.read({prefix = "\27[91mPackage " .. package .. " requires dependency " .. dependency .. " that does not exist.\n[A - Abort/s - Skip]\27[0m"})
         if response:lower() ~= "s" then
           fs.remove("/argentum/store/" .. package)
           return false
@@ -218,7 +215,7 @@ local function installPackage(package, overwriteFlag)
     else
       packageStore = packageStore .. "\nA" .. file
     end
-    local handle = fs.open(file, "w")
+    local handle, err = fs.open(file, "w")
     handle:write(data)
     handle:close()
     ::skip::
@@ -234,7 +231,7 @@ end
 local function removePackage(package)
   print("Removing " .. package .. "...")
   if not fs.exists("/argentum/store/" .. package .. "/package.cfg") then
-    print("\27[91mLocal Ag config of " .. package .. " does not exist.")
+    print("\27[91mLocal Ag config of " .. package .. " does not exist.\27[0m")
     return false
   end
   local handle, data, tmpdata = fs.open("/argentum/store/" .. package .. "/package.cfg", "r"), "", nil
@@ -344,7 +341,7 @@ if command == "install" then
     handle:write(newRegistry)
     handle:close()
   else
-    print("\27[91mFailed to fetch Ag registry: " .. (errorMessage or "returned nil"))
+    print("\27[91mFailed to fetch Ag registry: " .. (errorMessage or "returned nil") .. "\27[0m")
   end
   agReg = require("/argentum/registry.cfg")
   while true do
@@ -402,19 +399,19 @@ elseif command == "remove" then
   end
   while true do
     if not fs.exists("/argentum/store/" .. packages[i]) then
-      print("\27[91mPackage " .. packages[i] .. " is not installed.")
+      print("\27[91mPackage " .. packages[i] .. " is not installed.\27[0m")
       table.insert(fails, packages[i])
       table.remove(packageList, table.find(packageList, packages[i]))
       table.remove(packages, table.find(packages, packages[i]))
       i = i - 1
     elseif packages[i] == "halyde" then -- yes, this stuff is hard-coded.
-      print("\27[91mFor obvious reasons, you can't uninstall Halyde.")
+      print("\27[91mFor obvious reasons, you can't uninstall Halyde.\27[0m")
       table.insert(fails, packages[i])
       table.remove(packageList, table.find(packageList, packages[i]))
       table.remove(packages, table.find(packages, packages[i]))
       i = i - 1
     elseif packages[i] == "argentum" then
-      print("\27[91mFor obvious reasons, you can't uninstall Argentum.")
+      print("\27[91mFor obvious reasons, you can't uninstall Argentum.\27[0m")
       table.insert(fails, packages[i])
       table.remove(packageList, table.find(packageList, packages[i]))
       table.remove(packages, table.find(packages, packages[i]))
@@ -495,7 +492,7 @@ elseif command == "update" then
     handle:write(newRegistry)
     handle:close()
   else
-    print("\27[91mFailed to fetch Ag registry: " .. (errorMessage or "returned nil"))
+    print("\27[91mFailed to fetch Ag registry: " .. (errorMessage or "returned nil") .. "\27[0m")
   end
   agReg = require("/argentum/registry.cfg")
   if not packages[1] then
@@ -541,7 +538,7 @@ elseif command == "update" then
         table.remove(packages, table.find(packages, packages[i]))
         i = i - 1
       else
-        print(packages[i].." is out of date [\x1b[93m"..version.."\x1b[39m < \x1b[92m"..agcfg[packages[i]].version.."\x1b[39m]")
+        print(packages[i].." is out of date [\x1b[93m"..version.."\x1b[0m < \x1b[92m"..agcfg[packages[i]].version.."\x1b[0m")
       end
     end
     i = i + 1
@@ -630,7 +627,7 @@ elseif command == "info" then
     handle:write(newRegistry)
     handle:close()
   else
-    print("\27[91mFailed to fetch Ag registry: " .. (errorMessage or "returned nil"))
+    print("\27[91mFailed to fetch Ag registry: " .. (errorMessage or "returned nil") .. "\27[0m")
   end
   agReg = require("/argentum/registry.cfg")
   if not agReg[packages[1]] and not source then
@@ -677,7 +674,7 @@ elseif command == "list" then
     handle:write(newRegistry)
     handle:close()
   else
-    print("\27[91mFailed to fetch Ag registry: " .. (errorMessage or "returned nil"))
+    print("\27[91mFailed to fetch Ag registry: " .. (errorMessage or "returned nil") .. "\27[0m")
   end
   agReg = require("/argentum/registry.cfg")
   local sortedPackages = {}

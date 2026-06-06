@@ -1,0 +1,11 @@
+COMMAND cp
+USAGE [SOURCES]... [DESTINATION]
+DESCRIPTION Copy files and directories.
+ARG1 SOURCES
+ARG2 DESTINATION
+ARG1DESCRIPTION Specifies the files and directories to be copied.
+ARG2DESCRIPTION Specifies the path or a directory to copy to.
+EXAMPLE1 cp /home/a.txt /b.txt
+EXAMPLE2 cp c.lua /halyde/apps .
+EXAMPLE1DESCRIPTION Copies the file at /home/a.txt to /b.txt.
+EXAMPLE2DESCRIPTION Copies c.lua and /halyde/apps to the shell working directory.

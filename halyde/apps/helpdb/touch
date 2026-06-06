@@ -1,0 +1,5 @@
+COMMAND touch
+USAGE [FILE]...
+DESCRIPTION Create an empty file.
+ARG1 FILE
+ARG1DESCRIPTION The path of the files to create.

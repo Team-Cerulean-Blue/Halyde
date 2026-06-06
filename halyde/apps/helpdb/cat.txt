@@ -1,8 +1,0 @@
-Usage: cat [FILES]...
-Concatenates and prints a file.
-
-  FILES   Specifies the paths to the files to print.
-
-Examples:
-  cat /init.lua           Concatenates and prints init.lua in the root directory.
-  cat help.lua cat.lua    Concatenates and prints help.lua and cat.lua in the current working directory.

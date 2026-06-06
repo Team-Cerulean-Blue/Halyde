@@ -1,0 +1,13 @@
+COMMAND cd
+USAGE [PATH]
+DESCRIPTION Sets the shell working directory.
+ARG1 PATH
+ARG1DESCRIPTION Specifies the path to set the shell working directory to.
+EXAMPLE1 cd /home/
+EXAMPLE2 cd halyde
+EXAMPLE3 cd ..
+EXAMPLE4 ..
+EXAMPLE1DESCRIPTION Sets the shell working directory to /home/.
+EXAMPLE2DESCRIPTION Sets the shell working directory to a directory named "halyde" in the current working directory.
+EXAMPLE3DESCRIPTION Sets the shell working directory back one directory.
+EXAMPLE4DESCRIPTION Equivalent of "cd ..".

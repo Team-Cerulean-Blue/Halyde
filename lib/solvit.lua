@@ -236,7 +236,7 @@ local function startTransaction(dbpath)
   function transaction.addInfo(name,info)
     if not info.type then info.type="package" end
     packInfo[name]=info
-    -- print(require("serialize").table(packInfo))
+    -- print(require("serialize")(packInfo))
   end
 
   local function getPackInfo(pack)

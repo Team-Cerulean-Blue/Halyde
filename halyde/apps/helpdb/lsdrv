@@ -1,0 +1,37 @@
+COMMAND lsdrv
+USAGE [FLAGS]
+DESCRIPTION Shows all drives that are inserted into the computer.
+ARG1 FLAGS
+ARG1SUB1 -a, --all
+ARG1SUB2 -o, --output [COLS]
+ARG1SUB3 -s, --show [EXPR]
+ARG1SUB4 -S, --sort [EXPR]
+ARG1SUB5 EXPR
+ARG2 PACKAGES
+ARG1DESCRIPTION Specifies extra options when executing the command.
+ARG1SUB1DESCRIPTION Shows every column and every component. Acts the same as '-o all -s all'. Possible columns are: "slot", "capacity", "managed", "readOnly", "id", "mount", "bootable", and "label". If the list of columns start with a "+", the default columns will appear first. Default columns are slots, capacity, the entire ID, the mount point, and the drive label.
+ARG1SUB2DESCRIPTION Specifies the columns to output in the output table.
+ARG1SUB3DESCRIPTION Only list drives when the expression returns 'true'.
+ARG1SUB4DESCRIPTION Sort the output by an expression that returns a number. The higher the number, the lower the drive is displayed, and vice-versa.
+ARG1SUB5DESCRIPTION An expression in Lua, for filtering or sorting output. If this expression contains spaces, make sure to put quotation marks on them!
+ARG1SUB6DESCRIPTION Built-in variables are: "component", "computer", "type", "id", "readonly", "capacity", "managed", "eeprom", "halyde", "tmp", "proxy", "slot", and "all" (true).
+EXAMPLE1 lsdrv
+EXAMPLE2 lsdrv -a
+EXAMPLE3 lsdrv -o +bootable
+EXAMPLE4 lsdrv -o slot,label -s halyde
+EXAMPLE5 lsdrv -o mount,capacity,label -s "not halyde"
+EXAMPLE6 lsdrv -s type=='filesystem'
+EXAMPLE7 lsdrv -s slot==1
+EXAMPLE8 lsdrv -S capacity
+EXAMPLE9 lsdrv -S -capacity
+EXAMPLE10 lsdrv -o +managed -S managed
+EXAMPLE1DESCRIPTION Show regular drives, with the default columns.
+EXAMPLE2DESCRIPTION Show all storage components, with every column.
+EXAMPLE3DESCRIPTION Show drives, with an added "bootable" category.
+EXAMPLE4DESCRIPTION Show the slot and the label of the drive where Halyde is installed.
+EXAMPLE5DESCRIPTION Show the mount points, capacities and labels of all drives other than Halyde.
+EXAMPLE6DESCRIPTION Only show managed drives.
+EXAMPLE7DESCRIPTION Show all drives that aren't physical (Virtual components, tmpfs)
+EXAMPLE8DESCRIPTION Sort the drives by capacity, in ascending order.
+EXAMPLE9DESCRIPTION Sort the drives by capacity, in descending order.
+EXAMPLE10DESCRIPTION Show managed drives first, then unmanaged drives second, with an extra "managed" column.

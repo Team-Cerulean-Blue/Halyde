@@ -1,5 +1,0 @@
-Usage: clear
-Clears the screen.
-
-Examples:
-  clear   Clears the screen.

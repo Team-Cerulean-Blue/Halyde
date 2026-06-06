@@ -22,6 +22,11 @@ function _G.shell.getWorkingDirectory()
   return workingDirectory
 end
 
+function _G.shell.resolvePath(path)
+  if path:sub(1, 1) == "/" then return path end
+  return fs.concat(workingDirectory, path)
+end
+
 function _G.shell.setWorkingDirectory(dir)
   checkArg(1, dir, "string")
   workingDirectory = dir

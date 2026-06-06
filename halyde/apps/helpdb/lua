@@ -1,0 +1,4 @@
+COMMAND lua
+DESCRIPTION Starts the Lua shell, where you can type commands to interpret them in real time.
+EXAMPLE1 lua
+EXAMPLE1DESCRIPTION Starts the Lua shell.

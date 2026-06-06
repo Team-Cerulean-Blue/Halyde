@@ -1,7 +1,7 @@
 local component = require("component")
 local computer = require("computer")
 local args = {...}
-if not args then return print("\x1b[91mCannot get arguments.") end
+if not args then return print("\x1b[91mCannot get arguments.\x1b[0m") end
 if not args[1] then
   return require("shell").run("help label")
 end
@@ -29,27 +29,27 @@ elseif inputID:sub(1,1)=="#" and tonumber(inputID:sub(2)) then
   componentFromSlot(slotNum)
 elseif #inputID>=3 then
   local fullID = component.get(inputID)
-  if not fullID then return print("\x1b[91mCould not find entire component ID from \""..inputID.."\".") end
+  if not fullID then return print("\x1b[91mCould not find entire component ID from \""..inputID.."\".\x1b[0m") end
   comp = component.proxy(fullID)
 else
-  print("\x1b[91mAddress must have atleast 3 characters")
+  print("\x1b[91mAddress must have atleast 3 characters\x1b[0m")
   return require("shell").run("help label")
 end
 if not comp then
-  return print("\x1b[91mCould not find component from \""..inputID.."\".")
+  return print("\x1b[91mCould not find component from \""..inputID.."\".\x1b[0m")
 end
 local compID = comp.address
 
 local function formatID(id)
-  return id:sub(1,8).."\x1b[37m"..id:sub(9).."\x1b[39m"
+  return id:sub(1,8).."\x1b[37m"..id:sub(9).."\x1b[0m"
 end
 
 local function unsupported(act)
-  print("This \x1b[92m"..(comp.type or "unknown").."\x1b[39m component doesn't support "..act.." labels.\nID: "..formatID(compID))
+  print("This \x1b[92m"..(comp.type or "unknown").."\x1b[0m component doesn't support "..act.." labels.\nID: "..formatID(compID).."\x1b[0m")
 end
 
 local function compError(act,reason)
-  print("\x1b[91mAn error occured while "..act.." the label of this component.\nComponent: "..(compID or "unknown id").." ("..((comp or {}).type or "unknown type")..")\n\n"..reason)
+  print("\x1b[91mAn error occured while "..act.." the label of this component.\nComponent: "..(compID or "unknown id").." ("..((comp or {}).type or "unknown type")..")\n\n"..reason.."\x1b[0m")
 end
 
 local function formatLabel(label)
@@ -67,7 +67,7 @@ if type(args[2])~="string" then
     label = comp.getLabel()
   end)
   if success then
-    print("Label of "..formatID(compID)..((comp.type and comp.type~="filesystem") and " ("..comp.type..")" or "")..":\n  \x1b[92m"..formatLabel(label).."\x1b[39m")
+    print("Label of "..formatID(compID)..((comp.type and comp.type~="filesystem") and " ("..comp.type..")" or "")..":\n  \x1b[92m"..formatLabel(label).."\x1b[0m")
   else
     compError("getting",reason)
   end
@@ -85,7 +85,7 @@ else
     label = comp.setLabel(newLabel)
   end)
   if success then
-    print("Successfully set label of "..formatID(compID)..(comp.type and " ("..comp.type..")" or "").." to:\n  \x1b[92m"..formatLabel(label).."\x1b[39m")
+    print("Successfully set label of "..formatID(compID)..(comp.type and " ("..comp.type..")" or "").." to:\n  \x1b[92m"..formatLabel(label).."\x1b[0m")
   else
     compError("setting",reason)
   end

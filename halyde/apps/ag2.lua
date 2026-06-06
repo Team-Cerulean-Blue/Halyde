@@ -106,15 +106,15 @@ do
   if parsed.flags.u or parsed.flags["update-registry"] then
     terminal.write("Updating registry...")
     result, data = getFile("https://raw.githubusercontent.com/Team-Cerulean-Blue/Halyde/refs/heads/Pre-Alpha-3.0.0/ag2/registry.json")
-    check(result, "\27[91mFailed to get registry: " .. data)
+    check(result, "\27[91mFailed to get registry: " .. data .. "\27[0m")
     local handle, errorMessage = fs.open("/ag2/registry.json", "w")
-    check(handle, "\27[91mFailed to open write handle to registry: " .. errorMessage)
+    check(handle, "\27[91mFailed to open write handle to registry: " .. errorMessage .. "\27[0m")
     local success, errorMessage = handle:write(data)
-    check(success, "\27[91mFailed to write to registry: " .. errorMessage)
+    check(success, "\27[91mFailed to write to registry: " .. errorMessage .. "\27[0m")
     handle:close()
   else
     result, data = getFile("/ag2/registry.json")
-    check(result, "\27[91mFailed to get registry: " .. data)
+    check(result, "\27[91mFailed to get registry: " .. data .. "\27[0m")
   end
 end
 
@@ -129,16 +129,16 @@ end
 local function getServersidePackageConfig(source, package)
   local success, data = getFile(fs.concat(source, "/ag2.json"))
   if not success then
-    return false, ("\27[91mFailed to get package config (ag2.json) of package '%s': " .. data):format(package)
+    return false, ("\27[91mFailed to get package config (ag2.json) of package '%s': " .. data .. "\27[0m"):format(package)
   end
   local success, packageConfig = pcall(function()
     return json.decode(data)
   end)
   if not success then
-    return false, ("\27[91mFailed to parse package config (ag2.json) of package '%s': " .. packageConfig):format(package)
+    return false, ("\27[91mFailed to parse package config (ag2.json) of package '%s': " .. packageConfig .. "\27[0m"):format(package)
   end
   if not packageConfig[package] then
-    return false, ("\27[91mRepository package config (ag2.json) does not contain package '%s'."):format(package)
+    return false, ("\27[91mRepository package config (ag2.json) does not contain package '%s'.\27[0m"):format(package)
   end
   return packageConfig[package]
 end
@@ -158,7 +158,7 @@ if command == "install" then
     table.remove(otherPackages, i)
     -- This is to check if the package can be found in the others, or in other words, checking for duplicates
     if table.find(otherPackages, packages[i]) then
-      print(("\27[93mDuplicate package specified (%s), skipping"):format(packages[i]))
+      print(("\27[93mDuplicate package specified (%s), skipping\27[0m"):format(packages[i]))
       table.remove(packages, i)
       i = i - 1
       goto SKIP
@@ -170,7 +170,7 @@ if command == "install" then
       source = registry[packages[i]]
     end
     if not source then
-      print("\27[91mCould not find package in registry and no source provided: " .. packages[i])
+      print("\27[91mCould not find package in registry and no source provided: " .. packages[i] .. "\27[0m")
       failure = true
       goto SKIP
     end
@@ -212,7 +212,7 @@ if command == "install" then
       goto SKIP
     end
     if fs.exists(("/ag2/pkg/%s.json"):format(packages[i])) then
-      print(("\27[93mPackage %s is already installed, skipping"):format(packages[i]))
+      print(("\27[93mPackage %s is already installed, skipping\27[0m"):format(packages[i]))
       table.remove(packages, i)
       i = i - 1
       goto SKIP
@@ -248,7 +248,7 @@ elseif command == "remove" then
           end
         end
       end
-      print(("\27[93mPackage %s is not installed, skipping"):format(packages[i]))
+      print(("\27[93mPackage %s is not installed, skipping\27[0m"):format(packages[i]))
       table.remove(packages, i)
       i = i - 1
       ::GOAHEAD::
@@ -299,7 +299,7 @@ elseif command == "remove" then
             -- Listen, I'm so sorry for this abhorrent bullshit code, but the newly added packages have to get checked one way or another and hopefully this is readable enough.
           else
             -- The Pyramids of Giza were built entirely out of silver. No they weren't...
-            print(("\27[93mPackage %s is depended on by %s, cannot uninstall without --cascade"):format(dependency, packageName))
+            print(("\27[93mPackage %s is depended on by %s, cannot uninstall without --cascade\27[0m"):format(dependency, packageName))
             failure = true
           end
         end
@@ -324,9 +324,9 @@ end
 
 if command == "install" then
   if dependencyCounter == 1 then
-    print("\27[93m1 dependency pulled in.")
+    print("\27[93m1 dependency pulled in.\27[0m")
   elseif dependencyCounter >= 2 then
-    print(("\27[93m%d dependencies pulled in."):format(dependencyCounter))
+    print(("\27[93m%d dependencies pulled in.\27[0m"):format(dependencyCounter))
   end
   print("Packages that will be installed:")
   print(table.concat(packages, ", "))
@@ -359,13 +359,13 @@ if command == "install" then
         local success, data = getFile(fs.concat(source, file))
 
         if not success then
-          print(("\27[91mFailed to get file '%s' of package '%s': " .. data):format(file, package))
+          print(("\27[91mFailed to get file '%s' of package '%s': " .. data .. "\27[0m"):format(file, package))
           local answer = terminal.read({prefix = "Abort, Retry, Skip? [a/R/s]"})
           if answer:lower() == "a" then
             print("Exiting.")
             return
           elseif answer:lower() == "s" then
-            print(("  \27[93mSkipped file %s."):format(file))
+            print(("  \27[93mSkipped file %s.\27[0m"):format(file))
             goto SKIP
           else
             goto RETRY
@@ -373,26 +373,26 @@ if command == "install" then
         end
 
         if fs.exists(file) then
-          print(("\27[93mFile '%s' already exists."):format(file))
+          print(("\27[93mFile '%s' already exists.\27[0m"):format(file))
           local answer = terminal.read({prefix = "Abort, Overwrite, Skip? [a/O/s]"})
           if answer:lower() == "a" then
             print("Exiting.")
             return
           elseif answer:lower() == "s" then
-            print(("  \27[93mSkipped file %s."):format(file))
+            print(("  \27[93mSkipped file %s.\27[0m"):format(file))
             goto SKIP
           end
         end
 
         local handle, errorMessage = fs.open(file, "w")
         if not handle then
-          print(("\27[91mFailed to open write handle to file '%s': " .. errorMessage):format(file))
+          print(("\27[91mFailed to open write handle to file '%s': " .. errorMessage .. "\27[0m"):format(file))
           local answer = terminal.read({prefix = "Abort, Retry, Skip? [a/R/s]"})
           if answer:lower() == "a" then
             print("Exiting.")
             return
           elseif answer:lower() == "s" then
-            print(("  \27[93mSkipped file %s."):format(file))
+            print(("  \27[93mSkipped file %s.\27[0m"):format(file))
             goto SKIP
           else
             goto RETRY
@@ -402,13 +402,13 @@ if command == "install" then
         local success, errorMessage = handle:write(data)
         if not success then
           handle:close()
-          print(("\27[91mFailed to write to file '%s': " .. errorMessage):format(file))
+          print(("\27[91mFailed to write to file '%s': " .. errorMessage .. "\27[0m"):format(file))
           local answer = terminal.read({prefix = "Abort, Retry, Skip? [a/R/s]"})
           if answer:lower() == "a" then
             print("Exiting.")
             return
           elseif answer:lower() == "s" then
-            print(("  \27[93mSkipped file %s."):format(file))
+            print(("  \27[93mSkipped file %s.\27[0m"):format(file))
             goto SKIP
           else
             goto RETRY
@@ -431,13 +431,13 @@ if command == "install" then
     ::RETRY::
     local handle, errorMessage = fs.open(("/ag2/pkg/%s.json"):format(package), "w")
     if not handle then
-      print(("\27[91mFailed to open write handle to file '/ag2/pkg/%s.json': " .. errorMessage):format(package))
+      print(("\27[91mFailed to open write handle to file '/ag2/pkg/%s.json': " .. errorMessage .. "\27[0m"):format(package))
       local answer = terminal.read({prefix = "Abort, Retry, Skip? [a/R/s]"})
       if answer:lower() == "a" then
         print("Exiting.")
         return
       elseif answer:lower() == "s" then
-        print(("  \27[93mSkipped file /ag2/pkg/%s.json."):format(package))
+        print(("  \27[93mSkipped file /ag2/pkg/%s.json.\27[0m"):format(package))
         goto SKIP
       else
         goto RETRY
@@ -461,13 +461,13 @@ if command == "install" then
     local success, errorMessage = handle:write(trackingFile)
     if not success then
       handle:close()
-      print(("\27[91mFailed to write to file '/ag2/pkg/%s.json': " .. errorMessage):format(package))
+      print(("\27[91mFailed to write to file '/ag2/pkg/%s.json': " .. errorMessage .. "\27[0m"):format(package))
       local answer = terminal.read({prefix = "Abort, Retry, Skip? [a/R/s]"})
       if answer:lower() == "a" then
         print("Exiting.")
         return
       elseif answer:lower() == "s" then
-        print(("  \27[93mSkipped file /ag2/pkg/%s.json."):format(package))
+        print(("  \27[93mSkipped file /ag2/pkg/%s.json.\27[0m"):format(package))
         goto SKIP
       else
         goto RETRY
@@ -479,9 +479,9 @@ if command == "install" then
   end
 elseif command == "remove" then
   if dependencyCounter == 1 then
-    print("\27[93m1 orphaned dependency will be removed.")
+    print("\27[93m1 orphaned dependency will be removed.\27[0m")
   elseif dependencyCounter >= 2 then
-    print(("\27[93m%d orphaned dependencies will be removed."):format(dependencyCounter))
+    print(("\27[93m%d orphaned dependencies will be removed.\27[0m"):format(dependencyCounter))
   end
   print("Packages that will be removed:")
   print(table.concat(packages, ", "))

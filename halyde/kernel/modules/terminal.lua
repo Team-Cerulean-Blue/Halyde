@@ -1,3 +1,10 @@
+--[[
+TODO:
+```bash
+echo -e "\033[?25l" # hide
+echo -e "\033[?25h" # show
+```
+]]
 local module = {}
 
 function module.check()
@@ -9,23 +16,11 @@ function module.init()
   local unicode = require("unicode")
   local event = require("event")
 
-  --local ocelot = component.proxy(component.list("ocelot")())
   local component = require("component")
   local computer = require("computer")
   local gpu = component.gpu
   _G._PUBLIC.terminal = {}
-  local cursorPosX = 1
-  local cursorPosY = 1
-  local width, height = gpu.getResolution()
-  function _PUBLIC.terminal.getCursorPos()
-    return cursorPosX,cursorPosY
-  end
-  function _PUBLIC.terminal.setCursorPos(x,y)
-    checkArg(1,x,"number","nil")
-    checkArg(2,y,"number","nil")
-    if type(x)~=nil then cursorPosX=math.min(math.max(x,1),width) end
-    if type(y)~=nil then cursorPosY=math.min(math.max(y,1),height) end
-  end
+
   local readHistory = {}
   function _PUBLIC.terminal.getHistory(id)
     checkArg(1,id,"string")
@@ -47,6 +42,28 @@ function module.init()
 
   local ANSIColorPalette = {
     ["dark"] = {
+      [0] = 0x171421,
+      [1] = 0xc01c28,
+      [2] = 0x26a269,
+      [3] = 0xa2734c,
+      [4] = 0x12488b,
+      [5] = 0xa347ba,
+      [6] = 0x2aa1b3,
+      [7] = 0xd0cfcc
+    },
+    ["bright"] = {
+      [0] = 0x5e5c64,
+      [1] = 0xf66151,
+      [2] = 0x33d17a,
+      [3] = 0xe9ad0c,
+      [4] = 0x2a7bde,
+      [5] = 0xc061cb,
+      [6] = 0x33c7de,
+      [7] = 0xffffff
+    }
+  }
+  --[[local ANSIColorPalette = {
+    ["dark"] = {
       [0] = 0x000000,
       [1] = 0x800000,
       [2] = 0x008000,
@@ -66,172 +83,405 @@ function module.init()
       [6] = 0x00FFFF,
       [7] = 0xFFFFFF
     }
+  }]]
+
+  local expecting_unicode_bytes = 0
+  local unicode_bytes_left = 0
+  local unicode_codepoint = 0
+  local cursor = { x = 1, y = 1, X = nil, Y = nil } -- X and Y are managed by ESC s and ESC u
+  local printState = 0 -- 0:none 1:in ESC 2:in CSI
+  local color = {
+    FG = ANSIColorPalette["bright"][7], BG = ANSIColorPalette["dark"][0],
+    fg = nil, bg = nil, reverse = false
   }
+  color.fg = color.FG
+  color.bg = color.BG
+  local current_codepoint = 0
+  local bytes_remaining = 0
+  local seq = {}
 
-  defaultForegroundColor = ANSIColorPalette["bright"][7]
-  defaultBackgroundColor = ANSIColorPalette["dark"][0]
+  local function update_gpu_colors()
+    if color.reverse then
+      gpu.setForeground(color.bg)
+      gpu.setBackground(color.fg)
+    else
+      gpu.setForeground(color.fg)
+      gpu.setBackground(color.bg)
+    end
+  end
 
-  gpu.setForeground(defaultForegroundColor)
-  gpu.setBackground(defaultBackgroundColor)
+  local width, height = gpu.getResolution()
 
-  local function scrollDown()
-    if gpu.copy(1,1,width,height,0,-1) then
-      local prevForeground = gpu.getForeground()
-      local prevBackground = gpu.getBackground()
-      gpu.setForeground(defaultForegroundColor)
-      gpu.setBackground(defaultBackgroundColor)
+  function _G._PUBLIC.terminal.getResolution()
+    return width, height
+  end
+
+  gpu.setForeground(color.fg)
+  gpu.setBackground(color.bg)
+
+  local function scroll()
+    if gpu.copy(1, 2, width, height - 1, 0, -1) then
+      gpu.setForeground(color.FG)
+      gpu.setBackground(color.BG)
       gpu.fill(1, height, width, 1, " ")
-      gpu.setForeground(prevForeground)
-      gpu.setBackground(prevBackground)
-      cursorPosY=height
+      gpu.setForeground(color.fg)
+      gpu.setBackground(color.bg)
+      cursor.y = height
     end
   end
 
-  local function newLine()
-    cursorPosX=1
-    cursorPosY = cursorPosY + 1
-    if cursorPosY>height then
-      scrollDown()
+  local function check_wrap_and_scroll()
+    if cursor.x > width then
+      cursor.x = 1
+      cursor.y = cursor.y + 1
+    end
+
+    while cursor.y > height do
+      scroll()
     end
   end
 
-  local function parseCodeNumbers(code)
-    local o = {}
-    for num in code:sub(3,-2):gmatch("[^;]+") do
-      table.insert(o,tonumber(num))
-    end
-    return o
-  end
+  local function exec_csi()
+    local params = {}
+    local op = 0
+    local current_num = 0
+    local have_num = false
 
-  local function from8BitColor(num)
-    num=math.floor(num)&255
-    if num<16 then return 0x444444*((num>>3)&1)+(0xBB0000*((num>>2)&1)|0x00BB00*((num>>1)&1)|0x0000BB*(num&1)) end
-    if num>=232 then return 0x10101*(8+(num-232)*10) end
-    num=num-16
-    local palette = {0,95,135,175,215,255}
-    return (palette[(num//36)%6+1]<<16)|(palette[(num//6)%6+1]<<8)|palette[num%6+1]
-  end
+    for i = 1, #seq do
+      local byte = seq[i]
 
-  local function from24BitColor(r,g,b)
-    r,g,b=math.floor(r)&255,math.floor(g)&255,math.floor(b)&255
-    return (r<<16)|(g<<8)|b
-  end
-
-  local function findCodeEnd(text,i)
-    local function inRange(v,min,max)
-      return v>=min and v<=max
-    end
-    i=i+2
-    while i<=#text and not inRange(text:byte(i),0x40,0x7F) do i=i+1 end
-    return i
-  end
-
-  function _PUBLIC.terminal.write(text, textWrap)
-    -- you don't know how tiring this was just for ANSI escape code support
-
-    if textWrap == nil then
-      textWrap = true
+      if 0x30 <= byte and byte <= 0x39 then
+        current_num = current_num * 10 + (byte - 0x30)
+        have_num = true
+      elseif byte == 0x3b then
+        table.insert(params, have_num and current_num or 0)
+        current_num = 0
+        have_num = false
+      else
+        if have_num then
+          table.insert(params, current_num)
+        end
+        if 0x40 <= byte and byte <= 0x7e then
+          op = byte
+        end
+        break
+      end
     end
 
-    if not text or not tostring(text) then
+    local function get_param(idx, default)
+      if idx <= #params and params[idx] ~= nil then
+        return params[idx]
+      end
+      return default
+    end
+
+    if op == 0x48 or op == 0x66 then
+      local row = get_param(1, 1)
+      local col = get_param(2, 1)
+      cursor.y = row
+      cursor.x = col
+      if cursor.x < 1 then cursor.x = 1 end
+      if cursor.y < 1 then cursor.y = 1 end
+      if cursor.x > width then cursor.x = width end
+      if cursor.y > height then cursor.y = height end
       return
     end
-    if text:find("\a") then
-      computer.beep()
-    end
-    text = tostring(text)
-    text = "\27[0m" .. text:gsub("\t", "  ")
-    local readBreak = 0
-    -- readBreak is for when, inside the for loop, there normally would have been an increase in the "i" variable because it has read more than one character.
-    -- unfortunately, changing the "i" variable would have unpredictable effects, so to not risk anything, this workaround was done.
-    local section = ""
 
-    local function printSection()
-      if #section==0 then
+    if op == 0x41 then
+      local n = get_param(1, 1)
+      cursor.y = cursor.y - n
+      if cursor.y < 1 then cursor.y = 1 end
+      return
+    end
+
+    if op == 0x42 then
+      local n = get_param(1, 1)
+      cursor.y = cursor.y + n
+      if cursor.y > height then cursor.y = height end
+      return
+    end
+
+    if op == 0x43 then
+      local n = get_param(1, 1)
+      cursor.x = cursor.x + n
+      if cursor.x > width then cursor.x = width end
+      return
+    end
+
+    if op == 0x44 then
+      local n = get_param(1, 1)
+      cursor.x = cursor.x - n
+      if cursor.x < 1 then cursor.x = 1 end
+      return
+    end
+
+    if op == 0x47 then
+      local col = get_param(1, 1)
+      cursor.x = col
+      if cursor.x < 1 then cursor.x = 1 end
+      if cursor.x > width then cursor.x = width end
+      return
+    end
+
+    if op == 0x4a then
+      local mode = get_param(1, 0)
+
+      if mode == 0 then
+        update_gpu_colors()
+        gpu.fill(cursor.x, cursor.y, width - cursor.x + 1, height - cursor.y + 1, " ")
+      elseif mode == 1 then
+        update_gpu_colors()
+        gpu.fill(1, 1, cursor.x, cursor.y, " ")
+      elseif mode == 2 then
+        update_gpu_colors()
+        gpu.fill(1, 1, width, height, " ")
+        cursor.x = 1
+        cursor.y = 1
+      end
+      return
+    end
+
+    if op == 0x4b then
+      local mode = get_param(1, 0)
+
+      if mode == 0 then
+        update_gpu_colors()
+        gpu.fill(cursor.x, cursor.y, width - cursor.x + 1, 1, " ")
+      elseif mode == 1 then
+        update_gpu_colors()
+        gpu.fill(1, cursor.y, cursor.x, 1, " ")
+      elseif mode == 2 then
+        update_gpu_colors()
+        gpu.fill(1, cursor.y, width, 1, " ")
+      end
+      return
+    end
+
+    if op == 0x60 then
+      local col = get_param(1, 1)
+      cursor.x = col
+      if cursor.x < 1 then cursor.x = 1 end
+      if cursor.x > width then cursor.x = width end
+      return
+    end
+
+    if op == 0x64 then
+      local row = get_param(1, 1)
+      cursor.y = row
+      if cursor.y < 1 then cursor.y = 1 end
+      if cursor.y > height then cursor.y = height end
+      return
+    end
+
+    if op == 0x6d then
+      local j = 1
+      local function parse_extended_color()
+        local mode = get_param(j + 1, -1)
+        if mode == 5 then
+          local idx = get_param(j + 2, 0)
+          j = j + 2
+          if idx < 8 then
+            return ANSIColorPalette["dark"][idx]
+          elseif idx < 16 then
+            return ANSIColorPalette["bright"][idx - 8]
+          elseif idx < 232 then
+            local i = idx - 16
+            local b = (i % 6) * 51
+            local g = ((i // 6) % 6) * 51
+            local r = (i // 36) * 51
+            return (r << 16) | (g << 8) | b
+          else
+            local v = (idx - 232) * 10 + 8
+            return (v << 16) | (v << 8) | v
+          end
+        elseif mode == 2 then
+          local r = get_param(j + 2, 0)
+          local g = get_param(j + 3, 0)
+          local b = get_param(j + 4, 0)
+          j = j + 4
+          return (r << 16) | (g << 8) | b
+        end
+        return nil
+      end
+
+      if #params == 0 then
+        color.reverse = false
+        color.fg = color.FG
+        color.bg = color.BG
+        update_gpu_colors()
         return
       end
-      while true do
-        gpu.set(cursorPosX,cursorPosY,section)
-        if unicode.wlen(section) > width - cursorPosX + 1 and textWrap then
-          section = section:sub(width - cursorPosX + 2)
-          newLine()
-        else
-          cursorPosX = cursorPosX+unicode.wlen(section)
-          break
+
+      while j <= #params do
+        local p = params[j] or 0
+
+        if p == 0 then
+          color.reverse = false
+          color.fg = color.FG
+          color.bg = color.BG
+        elseif p == 1 then
+        elseif p == 2 then
+        elseif p == 3 then
+        elseif p == 4 then
+        elseif p == 5 or p == 6 then
+        elseif p == 7 then
+          color.reverse = true
+        elseif p == 8 then
+          color.fg = color.bg
+        elseif p == 9 then
+        elseif p == 21 then
+        elseif p == 22 then
+        elseif p == 23 then
+        elseif p == 24 then
+        elseif p == 25 then
+        elseif p == 27 then
+          color.reverse = false
+        elseif p == 28 then
+          color.fg = color.FG
+        elseif p == 29 then
+        elseif 30 <= p and p <= 37 then
+          color.fg = ANSIColorPalette["dark"][p - 30]
+        elseif p == 38 then
+          local c = parse_extended_color()
+          if c then color.fg = c end
+        elseif p == 39 then
+          color.fg = color.FG
+        elseif 40 <= p and p <= 47 then
+          color.bg = ANSIColorPalette["dark"][p - 40]
+        elseif p == 48 then
+          local c = parse_extended_color()
+          if c then color.bg = c end
+        elseif p == 49 then
+          color.bg = color.BG
+        elseif p == 58 then
+          parse_extended_color()
+        elseif p == 59 then
+        elseif 90 <= p and p <= 97 then
+          color.fg = ANSIColorPalette["bright"][p - 90]
+        elseif 100 <= p and p <= 107 then
+          color.bg = ANSIColorPalette["bright"][p - 100]
         end
+
+        j = j + 1
       end
-      section = ""
+      update_gpu_colors()
+      return
     end
 
-    for i=1,#text do
-      if readBreak>0 then
-        readBreak = readBreak - 1
-        goto continue
-      end
+    if op == 0x73 then
+      cursor.X = cursor.x
+      cursor.Y = cursor.y
+      return
+    end
 
-      if string.byte(text,i)==10 then
-        printSection()
-        newLine()
-      elseif string.byte(text,i)==13 then
-        printSection()
-        cursorPosX=1
-      elseif string.byte(text,i)==0x1b and i<=#text-2 then
-        printSection()
-        --ocelot.log("0x1b char detected")
-        local codeType = string.sub(text,i+1,i+1)
-        if codeType=="[" then
-          -- Control Sequence Introducer
-          --ocelot.log("Control Sequence Introducer")
-          local codeEndIdx = findCodeEnd(text,i)
-          -- codeEndIdx = string.find(text,"m",i)
-          local code = string.sub(text,i,codeEndIdx)
-          --ocelot.log("Code: "..code.." ("..i..", "..codeEndIdx..")")
-          readBreak = readBreak + #code - 1
-          local nums = parseCodeNumbers(code)
-          local codeEnd = code:sub(-1)
-          --ocelot.log("Code end: "..codeEnd..", "..#codeEnd)
-          if codeEnd == "m" then
-            -- Select Graphic Rendition
-            --ocelot.log("Select Graphic Rendition, ID "..nums[1])
-            if nums[1]>=30 and nums[1]<=37 then
-              gpu.setForeground(ANSIColorPalette["dark"][nums[1]%10])
-            end
-            if nums[1]==38 and nums[2]==5 then
-              gpu.setForeground(from8BitColor(nums[3]))
-            end
-            if nums[1]==38 and nums[2]==2 then
-              gpu.setForeground(from24BitColor(nums[3],nums[4],nums[5]))
-            end
-            if nums[1]==39 or nums[1]==0 then
-              gpu.setForeground(defaultForegroundColor)
-            end
-            if nums[1]>=40 and nums[1]<=47 then
-              gpu.setBackground(ANSIColorPalette["dark"][nums[1]%10])
-            end
-            if nums[1]==48 and nums[2]==5 then
-              gpu.setBackground(from8BitColor(nums[3]))
-            end
-            if nums[1]==48 and nums[2]==2 then
-              gpu.setBackground(from24BitColor(nums[3],nums[4],nums[5]))
-            end
-            if nums[1]==49 or nums[1]==0 then
-              gpu.setBackground(defaultBackgroundColor)
-            end
-            if nums[1]>=90 and nums[1]<=97 then
-              gpu.setForeground(ANSIColorPalette["bright"][nums[1]%10])
-            end
-            if nums[1]>=100 and nums[1]<=107 then
-              gpu.setBackground(ANSIColorPalette["bright"][nums[1]%10])
-            end
-          end
-        end
+    if op == 0x75 then
+      if cursor.X and cursor.Y then
+        cursor.x = cursor.X
+        cursor.y = cursor.Y
+        if cursor.x < 1 then cursor.x = 1 end
+        if cursor.y < 1 then cursor.y = 1 end
+        if cursor.x > width then cursor.x = width end
+        if cursor.y > height then cursor.y = height end
+      end
+      return
+    end
+  end
+
+  function _G._PUBLIC.terminal.writec(byte)
+    if byte == 0x1b then
+      printState = 1
+      seq = {}
+      return
+    end
+
+    if printState == 1 then
+      if byte == 0x5b then
+        printState = 2
       else
-        --gpu.set(cursorPosX,cursorPosY,string.sub(text,i,i))
-        section = section..string.sub(text,i,i)
+        printState = 0
       end
-      ::continue::
+      return
     end
-    printSection()
+
+    if printState == 2 then
+      table.insert(seq, byte)
+      if 0x40 <= byte and byte <= 0x7e then
+        exec_csi()
+        printState = 0
+        seq = {}
+      end
+      return
+    end
+
+    if byte == 0xa then
+      cursor.y = cursor.y + 1
+      cursor.x = 1
+      check_wrap_and_scroll()
+      return
+    end
+
+    if byte == 0xd then
+      cursor.x = 1
+      return
+    end
+
+    if byte == 0x8 then
+      if cursor.x > 1 then
+        cursor.x = cursor.x - 1
+      end
+      return
+    end
+
+    if byte == 0x9 then
+      cursor.x = ((cursor.x - 1) // 8) * 8 + 9
+      if cursor.x < 1 then cursor.x = 1 end
+      if cursor.x > width then cursor.x = width end
+      return
+    end
+
+    if byte >= 0x00 and byte <= 0x7F then
+      update_gpu_colors()
+      gpu.set(cursor.x, cursor.y, string.char(byte))
+      cursor.x = cursor.x + 1
+      check_wrap_and_scroll()
+    elseif byte >= 0xC2 and byte <= 0xDF then
+      current_codepoint = (byte & 0x1F)
+      bytes_remaining = 1
+    elseif byte >= 0xE0 and byte <= 0xEF then
+      current_codepoint = (byte & 0x0F)
+      bytes_remaining = 2
+    elseif byte >= 0xF0 and byte <= 0xF7 then
+      current_codepoint = (byte & 0x07)
+      bytes_remaining = 3
+    elseif byte >= 0x80 and byte <= 0xBF and bytes_remaining > 0 then
+      current_codepoint = (current_codepoint << 6) | (byte & 0x3F)
+      bytes_remaining = bytes_remaining - 1
+      if bytes_remaining == 0 then
+        local char = utf8.char(current_codepoint)
+        update_gpu_colors()
+        gpu.set(cursor.x, cursor.y, char)
+        cursor.x = cursor.x + 1
+        check_wrap_and_scroll()
+        current_codepoint = 0
+      end
+    else
+      current_codepoint = 0
+      bytes_remaining = 0
+    end
+  end
+
+  function _G._PUBLIC.terminal.write(text)
+    text = tostring(text)
+    for i = 1, #text do
+      _PUBLIC.terminal.writec(string.byte(text, i))
+    end
+  end
+
+  function _G._PUBLIC.terminal.clear()
+    update_gpu_colors()
+    gpu.fill(1, 1, width, height, " ")
+    cursor.x = 1
+    cursor.y = 1
   end
 
   function _G.print(...)
@@ -239,19 +489,12 @@ function module.init()
     local stringArgs = {}
     for _, arg in pairs(args) do
       if type(arg)=="table" then
-        table.insert(stringArgs, serialize.table(arg,true))
+        table.insert(stringArgs, serialize(arg))
       elseif tostring(arg) then
         table.insert(stringArgs, tostring(arg))
       end
     end
-    _PUBLIC.terminal.write(table.concat(stringArgs, "   ") .. "\n")
-  end
-
-  function _G._PUBLIC.terminal.clear()
-    gpu.setForeground(defaultForegroundColor)
-    gpu.setBackground(defaultBackgroundColor)
-    gpu.fill(1,1,width,height," ")
-    cursorPosX, cursorPosY = 1, 1
+    _PUBLIC.terminal.write(table.concat(stringArgs, "\t") .. "\n")
   end
 
   function _G._PUBLIC.terminal.read(options)
@@ -289,7 +532,7 @@ function module.init()
 
     local cur = unicode.len(text)+1
     if options.prefix then _PUBLIC.terminal.write(options.prefix) end
-    local startX, startY = cursorPosX, cursorPosY
+    local startX, startY = cursor.x, cursor.y
     local fg, bg = gpu.getForeground(), gpu.getBackground()
     local cursorBlink = true
     local function checkScroll(y)
@@ -482,9 +725,9 @@ function module.init()
       end
     end
 
-    cursorPosX=1
-    cursorPosY=cursorPosY+math.ceil((unicode.wlen(text)+startX-1)/width)
-    if cursorPosY>height then scrollDown() end
+    cursor.x=1
+    cursor.y=cursor.y+math.ceil((unicode.wlen(text)+startX-1)/width)
+    if cursor.y>height then scroll() end
 
     return text
   end

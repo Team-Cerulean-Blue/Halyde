@@ -32,6 +32,11 @@ function filesystem.canonical(path)
   return "/" .. table.concat(segList, "/")
 end
 
+function filesystem.basename(path)
+  checkArg(1, path, "string")
+  return path:match("/([^/]+)/?$") or ""
+end
+
 function filesystem.concat(path1, path2)
   checkArg(1, path1, "string")
   checkArg(2, path2, "string")
@@ -65,6 +70,13 @@ function filesystem.absolutePath(path) -- returns the address and absolute path 
     return nil, "no such component"
   end
   return address, path
+end
+
+function filesystem.parent(path)
+  checkArg(1, path, "string")
+  local p = filesystem.canonical(path)
+  -- return "/" on "/"
+  return p == "/" and "/" or (p:match("^(.*)/[^/]+/?$") or "/")
 end
 
 function filesystem.exists(path) -- check if path exists
@@ -475,14 +487,12 @@ local function copyContent(fromHandle, toHandle)
   if not (fromHandle and toHandle) then
     return
   end
-  local memory = math.floor(computer.freeMemory() * 0.8)
-  local tmpdata
   while true do
-    tmpdata = fromHandle:read(memory)
+    local tmpdata = fromHandle.read(2048)
     if not tmpdata then
       break
     end
-    local status, reason = toHandle:write(tmpdata)
+    local status, reason = toHandle.write(tmpdata)
     if status ~= true then
       break
     end
@@ -492,7 +502,6 @@ local function copyContent(fromHandle, toHandle)
 end
 
 local function copyRecursive(fromAddress, fromAbsPath, toAddress, toAbsPath)
-  -- TODO: make this use copyContent
   if fromAbsPath:sub(-1) == "/" then
     fromAbsPath = fromAbsPath:sub(1, -2)
   end
@@ -506,31 +515,21 @@ local function copyRecursive(fromAddress, fromAbsPath, toAddress, toAbsPath)
   end
   for i = 1, #fileList do
     local fromFile, toFile = fromAbsPath .. "/" .. fileList[i], toAbsPath .. "/" .. fileList[i]
-    --[[ local handle = component.invoke(fromAddress, "open", fromFile, "r")
-    local data, tmpdata = "", nil
-    repeat
-      tmpdata = component.invoke(fromAddress, "read", handle, math.huge or math.maxinteger)
-      data = data .. (tmpdata or "")
-    until not tmpdata
-    tmpdata = component.invoke(fromAddress, "close", handle)
-    local handle = component.invoke(toAddress, "open", toFile, "w")
-    component.invoke(toAddress, "write", handle, data)
-    component.invoke(toAddress, "close", handle) ]]
     local fromHandle = component.invoke(fromAddress, "open", fromFile, "r")
     local toHandle = component.invoke(toAddress, "open", toFile, "w")
     copyContent({
       ["read"] = function(...)
-        return component.invoke(fromAddress, "read", handle, ...)
+        return component.invoke(fromAddress, "read", fromHandle, ...)
       end,
       ["close"] = function(...)
-        return component.invoke(fromAddress, "close", handle, ...)
+        return component.invoke(fromAddress, "close", fromHandle, ...)
       end,
     }, {
       ["write"] = function(...)
-        return component.invoke(fromAddress, "write", handle, ...)
+        return component.invoke(toAddress, "write", toHandle, ...)
       end,
       ["close"] = function(...)
-        return component.invoke(fromAddress, "close", handle, ...)
+        return component.invoke(toAddress, "close", toHandle, ...)
       end,
     })
   end
@@ -543,6 +542,10 @@ function filesystem.isDirectory(path)
     return false
   end
   return component.invoke(address, "isDirectory", absPath)
+end
+
+function filesystem.isFile(path)
+  return not filesystem.isDirectory(path) and filesystem.exists(path)
 end
 
 function filesystem.rename(fromPath, toPath)

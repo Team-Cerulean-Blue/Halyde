@@ -1,0 +1,7 @@
+COMMAND rm
+USAGE [PATH]...
+DESCRIPTION Removes files and directories.
+ARG1 PATH
+ARG1DESCRIPTION Specifies the files and directories to be moved/renamed.
+EXAMPLE1 rm a.txt
+EXAMPLE1DESCRIPTION Removes a.txt in the current shell working directory.

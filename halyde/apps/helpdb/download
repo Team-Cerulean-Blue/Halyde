@@ -1,0 +1,7 @@
+COMMAND download
+USAGE [URL]
+DESCRIPTION Downloads a file from the internet.
+ARG1 URL
+ARG1DESCRIPTION Specifies the URL from which to download the file from.
+EXAMPLE1 download https://github.com/
+EXAMPLE1DESCRIPTION Downloads github.com.

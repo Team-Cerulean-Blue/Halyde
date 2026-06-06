@@ -1,8 +1,0 @@
-Usage: echo [TEXT]...
-Concatenates and prints text to the terminal.
-
-  TEXT   Text to print.
-
-Examples:
-  echo test           Prints "test" to the terminal.
-  echo Hello World!   Prints "Hello World!" to the terminal.

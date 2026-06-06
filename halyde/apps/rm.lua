@@ -1,16 +1,17 @@
-local file = ...
-local shell = require("shell")
 local fs = require("filesystem")
+local shell = require("shell")
 
-if not file then
-  shell.run("help rm")
-  return
+local args = {...}
+
+if not args[1] then
+  return shell.run("help rm")
 end
-if file:sub(1, 1) ~= "/" then
-  file = fs.concat(shell.getWorkingDirectory(), file)
+
+for _, file in pairs(args) do
+  file = shell.resolvePath(file)
+
+  local result = fs.remove(file)
+  if result == false then
+    terminal.write("\27[91mError: cannot delete " .. file .. "\27[0m\n")
+  end
 end
-if not fs.exists(file) then
-  print("\27[91mFile does not exist.")
-  return
-end
-fs.remove(file)

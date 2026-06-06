@@ -1,0 +1,24 @@
+COMMAND label
+USAGE [ADDRESS] [LABEL]
+DESCRIPTION Get or set a label of a component that supports labelling.
+ARG1 ADDRESS
+ARG1SUB1 eeprom
+ARG1SUB2 halyde
+ARG1SUB3 slotN
+ARG1SUB4 #N
+ARG2 LABEL
+ARG1DESCRIPTION The component to use for getting or setting the label.
+ARG1SUB1DESCRIPTION The computer's EEPROM.
+ARG1SUB2DESCRIPTION The drive where the Halyde installation resides in.
+ARG1SUB3DESCRIPTION The slot number of the drive, in top-to-bottom order (range 7-9)
+ARG1SUB4DESCRIPTION The slot number of the drive, in drive space (range 1-3)
+ARG1SUB5DESCRIPTION The ID of the component, abbreviated. Must have three or more characters.
+ARG2DESCRIPTION The label to set the component to. If not found, the current label will be printed out.
+EXAMPLE1 label #3
+EXAMPLE2 label eeprom
+EXAMPLE3 label slot8 Storage
+EXAMPLE4 label halyde Halyde
+EXAMPLE1DESCRIPTION Get the label of the third drive in the computer.
+EXAMPLE2DESCRIPTION Get the label of the EEPROM inserted in the computer.
+EXAMPLE3DESCRIPTION Set the drive at slot 8 to have the label "Storage"
+EXAMPLE4DESCRIPTION Set the label of the Halyde installation to "Halyde"

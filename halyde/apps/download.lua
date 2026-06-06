@@ -4,7 +4,7 @@ local component = require("component")
 local fs = require("filesystem")
 
 if not component.list("internet")() then
-  print("\27[91mThis program requires an internet card to run.")
+  print("\27[91mThis program requires an internet card to run.\27[0m")
   return
 end
 
@@ -26,11 +26,11 @@ local status, errorMessage = pcall(function()
   request:finishConnect()
 end)
 if not status then
-  print("\27[91mDownload failed: " .. errorMessage)
+  print("\27[91mDownload failed: " .. errorMessage .. "\27[0m")
 end
 local responseCode = request:response()
 if responseCode and responseCode ~= 200 then
-  print("\27[91mDownload failed: " .. tostring(responseCode))
+  print("\27[91mDownload failed: " .. tostring(responseCode) .. "\27[0m")
 end
 repeat
   tmpdata = request.read(math.huge)
@@ -41,9 +41,9 @@ local saveLocationOK = false
 repeat
   saveLocation = terminal.read(nil, "File save location: ", fs.concat(require("shell").getWorkingDirectory(), url:match("/([^/]+)$")))
   if fs.isDirectory(saveLocation) then
-    print("\27[91mThe specified location is a directory.")
+    print("\27[91mThe specified location is a directory.\27[0m")
   elseif fs.exists(saveLocation) then
-    local answer = terminal.read({prefix = "\27[91mThere is already a file at the specified directory. Overwrite it? [Y/n]"})
+    local answer = terminal.read({prefix = "\27[91mThere is already a file at the specified directory. Overwrite it? [Y/n]\27[0m"})
     if answer:lower() ~= "n" then
       saveLocationOK = true
     end

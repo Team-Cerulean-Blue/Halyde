@@ -1,8 +1,0 @@
-Usage: help [COMMAND]
-Displays info on the command specified, or a list of commands if one is not specified.
-
-  COMMAND*   Command to display information on.
-
-Examples:
-  help      Displays a list of all default commands available.
-  help cp   Displays information about the cp command.

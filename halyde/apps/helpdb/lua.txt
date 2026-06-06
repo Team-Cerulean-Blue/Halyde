@@ -1,5 +1,0 @@
-Usage: lua
-Starts the Lua shell, where you can type commands to interpret them in real time.
-
-Examples:
-  lua   Starts the Lua shell.

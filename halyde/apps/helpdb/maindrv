@@ -1,0 +1,2 @@
+COMMAND maindrv
+DESCRIPTION Shows the entire ID of the drive where Halyde is installed to.

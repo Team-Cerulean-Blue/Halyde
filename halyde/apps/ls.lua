@@ -1,71 +1,58 @@
-local args = {...}
-local target = args[1]
-args = nil
 local fs = require("filesystem")
-local unicode = require("unicode")
-local maxLength = 0
-local margin = 2 -- minimum space between filename and size
-local dirTable = {}
-local fileTable = {}
-local workingDirectory = require("shell").getWorkingDirectory()
+local shell = require("shell")
 
-if target then
-  if target:sub(1, 1) ~= "/" then
-    target = fs.concat(workingDirectory, target)
-  end
-else
-  target = workingDirectory
+local function formatSize(size, isDir)
+  if isDir then return "[DIR]" end
+  if size >= 1024^3 then return string.format("%.1fGiB", size / 1024^3) end
+  if size >= 1024^2 then return string.format("%.1fMiB", size / 1024^2) end
+  if size >= 1024 then return string.format("%.1fKiB", size / 1024) end
+  return size.."B"
 end
 
-local files = fs.list(target)
+local function getFileColor(name, isDir)
+  if isDir then return "\27[93m" end
+  if name:match("%.lua$") then return "\27[92m" end
+  return "\27[0m"
+end
 
-if files then
+local args = {...}
+if not args[1] then
+  args = {require("shell").getWorkingDirectory()}
+end
+
+for _, path in pairs(args) do
+  path = shell.resolvePath(path)
+  local files = fs.list(path)
+
+  if not files then
+    terminal.write("\27[91mError: " .. path .. ": No such file or directory\27[0m\n")
+    goto continue
+  end
+
+  local fileList = {}
   for _, file in pairs(files) do
-    if file:sub(-1, -1) == "/" then
-      table.insert(dirTable, file)
-      file = file:sub(1, -2)
-    else
-      table.insert(fileTable, file)
-    end
-    if unicode.wlen(file) > maxLength then
-      maxLength = unicode.wlen(file)
-    end
+    local isDir = file:sub(-1) == "/"
+    local name = isDir and file:sub(1, -2) or file
+    local size = isDir and 0 or fs.size(fs.concat(path, file))
+    table.insert(fileList, {name = name, isDir = isDir, size = size})
   end
-  table.sort(dirTable)
-  table.sort(fileTable)
-  files = {}
-  for _, v in ipairs(dirTable) do
-    table.insert(files, v)
+  -- directories first
+  -- then files
+  table.sort(fileList, function(a, b)
+  if a.isDir ~= b.isDir then return a.isDir end
+    return a.name < b.name
+  end)
+  local maxSizeLen = 0
+  for _, item in ipairs(fileList) do
+    maxSizeLen = math.max(maxSizeLen, #formatSize(item.size, item.isDir))
   end
-  for _, v in ipairs(fileTable) do
-    table.insert(files, v)
+
+  terminal.write(path.."\n")
+  for _, item in ipairs(fileList) do
+    local sizeStr = formatSize(item.size, item.isDir)
+    sizeStr = string.rep(" ", maxSizeLen - #sizeStr) .. sizeStr
+    local color = getFileColor(item.name, item.isDir)
+    terminal.write(string.format("%s  %s%s\27[0m\n", sizeStr, color, item.name))
   end
-  dirTable, fileTable = nil, nil
-  for _, file in ipairs(files) do
-    local dir = false
-    local filetext
-    if file:sub(-1, -1) == "/" then
-      dir = true
-      filetext = "\27[93m"..file:sub(1, -2)
-    elseif file:find(".") and file:match("[^.]+$") == "lua" then
-      filetext = "\27[92m"..file
-    end
-    filetext = (filetext or file)..string.rep(" ", maxLength - unicode.wlen(file) + margin)
-    if dir then
-      print(filetext.." \27[0m[DIR]")
-    else
-      local size = fs.size(fs.concat(target, file))
-      local sizeString
-      if convert(size, "B", "GiB") >= 1 then
-        sizeString = tostring(math.floor(convert(size, "B", "GiB") * 100 + 0.5) / 100).." GiB"
-      elseif convert(size, "B", "MiB") >= 1 then
-        sizeString = tostring(math.floor(convert(size, "B", "MiB") * 100 + 0.5) / 100).." MiB"
-      elseif convert(size, "B", "KiB") >= 1 then
-        sizeString = tostring(math.floor(convert(size, "B", "KiB") * 100 + 0.5) / 100).." KiB"
-      else
-        sizeString = tostring(size).." B"
-      end
-      print(filetext.."\27[0m"..sizeString)
-    end
-  end
+  ::continue::
 end

@@ -1,0 +1,7 @@
+COMMAND mkdir
+USAGE [PATH]...
+DESCRIPTION Makes a directory.
+ARG1 PATH
+ARG1DESCRIPTION Specifies the path to create the directory in.
+EXAMPLE1 mkdir a
+EXAMPLE1DESCRIPTION Creates a directory named a in the current shell working directory.
