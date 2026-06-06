@@ -40,50 +40,83 @@ function module.init()
     table.insert(readHistory[id],hist)
   end
 
-  local ANSIColorPalette = {
-    ["dark"] = {
-      [0] = 0x171421,
-      [1] = 0xc01c28,
-      [2] = 0x26a269,
-      [3] = 0xa2734c,
-      [4] = 0x12488b,
-      [5] = 0xa347ba,
-      [6] = 0x2aa1b3,
-      [7] = 0xd0cfcc
-    },
-    ["bright"] = {
-      [0] = 0x5e5c64,
-      [1] = 0xf66151,
-      [2] = 0x33d17a,
-      [3] = 0xe9ad0c,
-      [4] = 0x2a7bde,
-      [5] = 0xc061cb,
-      [6] = 0x33c7de,
-      [7] = 0xffffff
-    }
-  }
-  --[[local ANSIColorPalette = {
-    ["dark"] = {
-      [0] = 0x000000,
-      [1] = 0x800000,
-      [2] = 0x008000,
-      [3] = 0x808000,
-      [4] = 0x000080,
-      [5] = 0x800080,
-      [6] = 0x008080,
-      [7] = 0xC0C0C0
-    },
-    ["bright"] = {
-      [0] = 0x808080,
-      [1] = 0xFF0000,
-      [2] = 0x00FF00,
-      [3] = 0xFFFF00,
-      [4] = 0x0000FF,
-      [5] = 0xFF00FF,
-      [6] = 0x00FFFF,
-      [7] = 0xFFFFFF
-    }
-  }]]
+  local function getColorPalette(depth)
+    if depth == 1 then
+      return {
+        ["dark"] = {
+          [0] = 0x000000,
+          [1] = 0xffffff,
+          [2] = 0xffffff,
+          [3] = 0xffffff,
+          [4] = 0xffffff,
+          [5] = 0xffffff,
+          [6] = 0xffffff,
+          [7] = 0xffffff,
+        },
+        ["bright"] = {
+          [0] = 0x000000,
+          [1] = 0xffffff,
+          [2] = 0xffffff,
+          [3] = 0xffffff,
+          [4] = 0xffffff,
+          [5] = 0xffffff,
+          [6] = 0xffffff,
+          [7] = 0xffffff,
+        }
+      }
+    end
+    if depth == 4 then
+      return {
+        ["dark"] = {
+          [0] = 0x000000,
+          [1] = 0x800000,
+          [2] = 0x008000,
+          [3] = 0x808000,
+          [4] = 0x000080,
+          [5] = 0x800080,
+          [6] = 0x008080,
+          [7] = 0xC0C0C0
+        },
+        ["bright"] = {
+          [0] = 0x808080,
+          [1] = 0xFF0000,
+          [2] = 0x00FF00,
+          [3] = 0xFFFF00,
+          [4] = 0x0000FF,
+          [5] = 0xFF00FF,
+          [6] = 0x00FFFF,
+          [7] = 0xFFFFFF
+        }
+      }
+    end
+    if depth == 8 then
+      return {
+        ["dark"] = {
+          [0] = 0x171421,
+          [1] = 0xc01c28,
+          [2] = 0x26a269,
+          [3] = 0xa2734c,
+          [4] = 0x12488b,
+          [5] = 0xa347ba,
+          [6] = 0x2aa1b3,
+          [7] = 0xd0cfcc
+        },
+        ["bright"] = {
+          [0] = 0x5e5c64,
+          [1] = 0xf66151,
+          [2] = 0x33d17a,
+          [3] = 0xe9ad0c,
+          [4] = 0x2a7bde,
+          [5] = 0xc061cb,
+          [6] = 0x33c7de,
+          [7] = 0xffffff
+        }
+      }
+    end
+    error()
+  end
+
+  local ANSIColorPalette = getColorPalette(gpu.maxDepth())
 
   local expecting_unicode_bytes = 0
   local unicode_bytes_left = 0
