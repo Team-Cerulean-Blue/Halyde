@@ -55,14 +55,11 @@ local logFileSizeLimit = 16384
 
 local function writeToLog(path, text)
   fs.makeDirectory("halyde/logs") -- Git likes to not clone empty directories
-  local handle
-  if fs.exists(path) then
-    handle = assert(fs.open(path, "a"))
-  else
-    handle = assert(fs.open(path, "w"))
+  local handle = fs.open(path, "a")
+  if handle then
+    handle:write(text .. "\n")
+    handle:close()
   end
-  handle:write(text .. "\n")
-  handle:close()
 
   -- Log trimming if it gets too long
   if fs.size(path) > logFileSizeLimit then
