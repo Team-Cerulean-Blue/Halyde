@@ -3,6 +3,7 @@ local shell = require("shell")
 local gpu = require("component").gpu
 local event = require("event")
 local computer = require("computer")
+local ocelot = require("component").ocelot
 
 local resX, resY = gpu.getResolution()
 local textBuffer = gpu.allocateBuffer(resX, resY - 1)
@@ -70,6 +71,8 @@ local oldTime = computer.uptime()
 while true do
   local renderBufferFlag = false -- Flag to render the whole text buffer
   -- Handle events
+  local previousCursorX -- Used for blackening the previous cursor location when the cursor is moved
+  local previousCursorY
   repeat
     local eventArgs = {event.pull("key_down", 0.05)}
     -- The logical solution here for flashing the cursor would be to set the timeout to 0.5, and, if the timeout is reached, change the color.
@@ -95,21 +98,33 @@ while true do
         end
       end
 
-      if keyboard.keys[eventArgs[4]] == "up" and textOffsetY > 0 then
-        textOffsetY = textOffsetY - 1
-        renderBufferFlag = true
+      if keyboard.keys[eventArgs[4]] == "up" and cursorY > 1 then
+        if not previousCursorX and not previousCursorY then
+          previousCursorX = cursorX
+          previousCursorY = cursorY
+        end
+        cursorY = cursorY - 1
       end
       if keyboard.keys[eventArgs[4]] == "down" then
-        textOffsetY = textOffsetY + 1
-        renderBufferFlag = true
+        if not previousCursorX and not previousCursorY then
+          previousCursorX = cursorX
+          previousCursorY = cursorY
+        end
+        cursorY = cursorY + 1
       end
-      if keyboard.keys[eventArgs[4]] == "left" and textOffsetX > 0 then
-        textOffsetX = textOffsetX - 1
-        renderBufferFlag = true
+      if keyboard.keys[eventArgs[4]] == "left" and cursorX > 1 then
+        if not previousCursorX and not previousCursorY then
+          previousCursorX = cursorX
+          previousCursorY = cursorY
+        end
+        cursorX = cursorX - 1
       end
       if keyboard.keys[eventArgs[4]] == "right" then
-        textOffsetX = textOffsetX + 1
-        renderBufferFlag = true
+        if not previousCursorX and not previousCursorY then
+          previousCursorX = cursorX
+          previousCursorY = cursorY
+        end
+        cursorX = cursorX + 1
       end
     end
   until not next(eventArgs)
@@ -125,16 +140,24 @@ while true do
     end
   else
     if cursorWhite then
+      if previousCursorX or previousCursorY then
+        -- Remove old cursor
+        gpu.setForeground(0xFFFFFF)
+        gpu.setBackground(0x000000)
+        local letter = gpu.get(previousCursorX, previousCursorY)
+        gpu.set(previousCursorX, previousCursorY, letter)
+      end
+
       gpu.setForeground(0x000000)
       gpu.setBackground(0xFFFFFF)
       local letter = gpu.get(cursorX, cursorY)
       gpu.set(cursorX, cursorY, letter)
     else
+      -- If renderText() hasn't been called, the cursor may still be white and need to be turned black.
       gpu.setForeground(0xFFFFFF)
       gpu.setBackground(0x000000)
       local letter = gpu.get(cursorX, cursorY)
       gpu.set(cursorX, cursorY, letter)
-      -- If renderText() hasn't been called, the cursor may still be white and need to be turned black.
     end
   end
 end
