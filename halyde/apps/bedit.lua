@@ -62,18 +62,34 @@ gpu.set(13, resY, "Save")
 
 local textOffsetX = 0
 local textOffsetY = 0
+local cursorX = 1 -- Absolute position, not accounting for scrolling
+local cursorY = 1
+local cursorWhite = true
+local oldTime = computer.uptime()
 
 while true do
   local renderBufferFlag = false -- Flag to render the whole text buffer
   -- Handle events
   repeat
     local eventArgs = {event.pull("key_down", 0.05)}
+    -- The logical solution here for flashing the cursor would be to set the timeout to 0.5, and, if the timeout is reached, change the color.
+    -- However, that makes scrolling freeze the screen up completely.
+    -- Thus, for flashing the cursor, a timer is needed.
+
+    if computer.uptime() >= oldTime + 0.5 then
+      oldTime = computer.uptime()
+      cursorWhite = not cursorWhite
+    end
+
+    if next(eventArgs) ~= nil then
+      cursorWhite = true
+      oldTime = computer.uptime()
+    end
 
     if eventArgs[1] == "key_down" then
       -- Mouse events might be added later, that's why this if statement is here
       if keyboard.getCtrlDown() then
         -- Special commands
-        print(eventArgs[4], keyboard.keys[eventArgs[4]])
         if keyboard.keys[eventArgs[4]] == "x" then
           goto exit
         end
@@ -99,6 +115,27 @@ while true do
   until not next(eventArgs)
   if renderBufferFlag then
     renderText(textOffsetX, textOffsetY)
+    if cursorWhite then
+      -- If the cursor is black, then there's no need to do anything because there is no cursor after calling renderText().
+      gpu.setForeground(0x000000)
+      gpu.setBackground(0xFFFFFF)
+      local letter = gpu.get(cursorX, cursorY)
+      gpu.set(cursorX, cursorY, letter)
+      -- TODO: Account for scrolling
+    end
+  else
+    if cursorWhite then
+      gpu.setForeground(0x000000)
+      gpu.setBackground(0xFFFFFF)
+      local letter = gpu.get(cursorX, cursorY)
+      gpu.set(cursorX, cursorY, letter)
+    else
+      gpu.setForeground(0xFFFFFF)
+      gpu.setBackground(0x000000)
+      local letter = gpu.get(cursorX, cursorY)
+      gpu.set(cursorX, cursorY, letter)
+      -- If renderText() hasn't been called, the cursor may still be white and need to be turned black.
+    end
   end
 end
 
