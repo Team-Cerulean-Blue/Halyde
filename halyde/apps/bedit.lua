@@ -61,8 +61,8 @@ gpu.setBackground(0x000000)
 gpu.set(4, resY, "Exit")
 gpu.set(13, resY, "Save")
 
-local textOffsetX = 0
-local textOffsetY = 0
+local scrollX = 0
+local scrollY = 0
 local cursorX = 1 -- Absolute position, not accounting for scrolling
 local cursorY = 1
 local cursorWhite = true
@@ -73,8 +73,11 @@ while true do
   -- Handle events
   local previousCursorX -- Used for blackening the previous cursor location when the cursor is moved
   local previousCursorY
+  coroutine.yield()
+  local eventArgs = {}
   repeat
-    local eventArgs = {event.pull("key_down", 0.05)}
+    eventArgs = {event.pull("key_down", 0)}
+
     -- The logical solution here for flashing the cursor would be to set the timeout to 0.5, and, if the timeout is reached, change the color.
     -- However, that makes scrolling freeze the screen up completely.
     -- Thus, for flashing the cursor, a timer is needed.
@@ -99,43 +102,73 @@ while true do
       end
 
       if keyboard.keys[eventArgs[4]] == "up" and cursorY > 1 then
-        if not previousCursorX and not previousCursorY then
-          previousCursorX = cursorX
-          previousCursorY = cursorY
+        if cursorY - scrollY <= 1 then
+          renderBufferFlag = true
+          scrollY = scrollY - 1
+        else
+          if not previousCursorX and not previousCursorY then
+            previousCursorX = cursorX
+            previousCursorY = cursorY
+          end
         end
         cursorY = cursorY - 1
+        -- The cursor absolute position still has to be moved, even if on-screen it won't move
       end
       if keyboard.keys[eventArgs[4]] == "down" then
-        if not previousCursorX and not previousCursorY then
-          previousCursorX = cursorX
-          previousCursorY = cursorY
+        if cursorY - scrollY >= resY - 1 then
+          renderBufferFlag = true
+          scrollY = scrollY + 1
+        else
+          if not previousCursorX and not previousCursorY then
+            previousCursorX = cursorX
+            previousCursorY = cursorY
+          end
         end
         cursorY = cursorY + 1
       end
       if keyboard.keys[eventArgs[4]] == "left" and cursorX > 1 then
-        if not previousCursorX and not previousCursorY then
-          previousCursorX = cursorX
-          previousCursorY = cursorY
+        if cursorX - scrollX <= 1 then
+          renderBufferFlag = true
+          scrollX = scrollX - 1
+        else
+          if not previousCursorX and not previousCursorY then
+            previousCursorX = cursorX
+            previousCursorY = cursorY
+          end
         end
         cursorX = cursorX - 1
       end
       if keyboard.keys[eventArgs[4]] == "right" then
-        if not previousCursorX and not previousCursorY then
-          previousCursorX = cursorX
-          previousCursorY = cursorY
+        if cursorX - scrollX >= resX then
+          renderBufferFlag = true
+          scrollX = scrollX + 1
+        else
+          if not previousCursorX and not previousCursorY then
+            previousCursorX = cursorX
+            previousCursorY = cursorY
+          end
         end
         cursorX = cursorX + 1
       end
     end
-  until not next(eventArgs)
+  until next(eventArgs) == nil
+  local displayedCursorX = cursorX - scrollX
+  local displayedCursorY = cursorY - scrollY
+  local previousDisplayedCursorX -- What a mouthful
+  local previousDisplayedCursorY
+  if previousCursorX and previousCursorY then
+    previousDisplayedCursorX = previousCursorX - scrollX
+    previousDisplayedCursorY = previousCursorY - scrollY
+  end
+
   if renderBufferFlag then
-    renderText(textOffsetX, textOffsetY)
+    renderText(scrollX, scrollY)
     if cursorWhite then
       -- If the cursor is black, then there's no need to do anything because there is no cursor after calling renderText().
       gpu.setForeground(0x000000)
       gpu.setBackground(0xFFFFFF)
-      local letter = gpu.get(cursorX, cursorY)
-      gpu.set(cursorX, cursorY, letter)
+      local letter = gpu.get(displayedCursorX, displayedCursorY)
+      gpu.set(displayedCursorX, displayedCursorY, letter)
       -- TODO: Account for scrolling
     end
   else
@@ -144,20 +177,20 @@ while true do
         -- Remove old cursor
         gpu.setForeground(0xFFFFFF)
         gpu.setBackground(0x000000)
-        local letter = gpu.get(previousCursorX, previousCursorY)
-        gpu.set(previousCursorX, previousCursorY, letter)
+        local letter = gpu.get(previousDisplayedCursorX, previousDisplayedCursorY)
+        gpu.set(previousDisplayedCursorX, previousDisplayedCursorY, letter)
       end
 
       gpu.setForeground(0x000000)
       gpu.setBackground(0xFFFFFF)
-      local letter = gpu.get(cursorX, cursorY)
-      gpu.set(cursorX, cursorY, letter)
+      local letter = gpu.get(displayedCursorX, displayedCursorY)
+      gpu.set(displayedCursorX, displayedCursorY, letter)
     else
       -- If renderText() hasn't been called, the cursor may still be white and need to be turned black.
       gpu.setForeground(0xFFFFFF)
       gpu.setBackground(0x000000)
-      local letter = gpu.get(cursorX, cursorY)
-      gpu.set(cursorX, cursorY, letter)
+      local letter = gpu.get(displayedCursorX, displayedCursorY)
+      gpu.set(displayedCursorX, displayedCursorY, letter)
     end
   end
 end
