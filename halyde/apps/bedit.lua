@@ -113,6 +113,9 @@ while true do
         end
         cursorY = cursorY - 1
         -- The cursor absolute position still has to be moved, even if on-screen it won't move
+        if cursorX > string.len(lines[cursorY]) then -- cursor snapping
+            cursorX = string.len(lines[cursorY])
+        end
       end
       if keyboard.keys[eventArgs[4]] == "down" then
         if cursorY - scrollY >= resY - 1 then
@@ -125,6 +128,9 @@ while true do
           end
         end
         cursorY = cursorY + 1
+        if cursorX > string.len(lines[cursorY]) then -- cursor snapping
+            cursorX = string.len(lines[cursorY])
+        end
       end
       if keyboard.keys[eventArgs[4]] == "left" and cursorX > 1 then
         if cursorX - scrollX <= 1 then
@@ -138,7 +144,7 @@ while true do
         end
         cursorX = cursorX - 1
       end
-      if keyboard.keys[eventArgs[4]] == "right" then
+      if keyboard.keys[eventArgs[4]] == "right" and cursorX < string.len(lines[cursorY]) then -- TODO: make scrolling up and down lines that are shorter than cursorX snap to the end of the line
         if cursorX - scrollX >= resX then
           renderBufferFlag = true
           scrollX = scrollX + 1
