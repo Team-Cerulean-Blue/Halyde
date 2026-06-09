@@ -136,8 +136,67 @@ function module.init()
   _PUBLIC.keyboard.keys.numpadenter     = 0x9C
   _PUBLIC.keyboard.keys.numpadequals    = 0x8D
 
+  -- Separate list for special keys
+  _PUBLIC.keyboard.keys.special = {}
+  _PUBLIC.keyboard.keys.special.back            = 0x0E -- backspace
+  _PUBLIC.keyboard.keys.special.capital         = 0x3A -- capslock
+  _PUBLIC.keyboard.keys.special.enter           = 0x1C
+  _PUBLIC.keyboard.keys.special.lcontrol        = 0x1D
+  _PUBLIC.keyboard.keys.special.lmenu           = 0x38 -- left Alt
+  _PUBLIC.keyboard.keys.special.lshift          = 0x2A
+  _PUBLIC.keyboard.keys.special.rcontrol        = 0x9D
+  _PUBLIC.keyboard.keys.special.rmenu           = 0xB8 -- right Alt
+  _PUBLIC.keyboard.keys.special.rshift          = 0x36
+  _PUBLIC.keyboard.keys.special.scroll          = 0x46 -- Scroll Lock
+  _PUBLIC.keyboard.keys.special.stop            = 0x95
+
+  _PUBLIC.keyboard.keys.special.up              = 0xC8
+  _PUBLIC.keyboard.keys.special.down            = 0xD0
+  _PUBLIC.keyboard.keys.special.left            = 0xCB
+  _PUBLIC.keyboard.keys.special.right           = 0xCD
+  _PUBLIC.keyboard.keys.special.home            = 0xC7
+  _PUBLIC.keyboard.keys.special["end"]         = 0xCF
+  _PUBLIC.keyboard.keys.special.pageUp          = 0xC9
+  _PUBLIC.keyboard.keys.special.pageDown        = 0xD1
+  _PUBLIC.keyboard.keys.special.insert          = 0xD2
+  _PUBLIC.keyboard.keys.special.delete          = 0xD3
+
+  _PUBLIC.keyboard.keys.special.f1              = 0x3B
+  _PUBLIC.keyboard.keys.special.f2              = 0x3C
+  _PUBLIC.keyboard.keys.special.f3              = 0x3D
+  _PUBLIC.keyboard.keys.special.f4              = 0x3E
+  _PUBLIC.keyboard.keys.special.f5              = 0x3F
+  _PUBLIC.keyboard.keys.special.f6              = 0x40
+  _PUBLIC.keyboard.keys.special.f7              = 0x41
+  _PUBLIC.keyboard.keys.special.f8              = 0x42
+  _PUBLIC.keyboard.keys.special.f9              = 0x43
+  _PUBLIC.keyboard.keys.special.f10             = 0x44
+  _PUBLIC.keyboard.keys.special.f11             = 0x57
+  _PUBLIC.keyboard.keys.special.f12             = 0x58
+  _PUBLIC.keyboard.keys.special.f13             = 0x64
+  _PUBLIC.keyboard.keys.special.f14             = 0x65
+  _PUBLIC.keyboard.keys.special.f15             = 0x66
+  _PUBLIC.keyboard.keys.special.f16             = 0x67
+  _PUBLIC.keyboard.keys.special.f17             = 0x68
+  _PUBLIC.keyboard.keys.special.f18             = 0x69
+  _PUBLIC.keyboard.keys.special.f19             = 0x71
+
+  _PUBLIC.keyboard.keys.special.numpadenter     = 0x9C
+
   -- Create inverse mapping for name lookup.
   setmetatable(_PUBLIC.keyboard.keys,
+  {
+    __index = function(tbl, k)
+      if type(k) ~= "number" then return end
+      for name,value in pairs(tbl) do
+        if value == k then
+          return name
+        end
+      end
+    end
+  })
+
+  setmetatable(_PUBLIC.keyboard.keys.special,
   {
     __index = function(tbl, k)
       if type(k) ~= "number" then return end
