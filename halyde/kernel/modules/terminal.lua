@@ -284,6 +284,7 @@ function module.init()
 
     local function updateHistory()
       if not options.readHistoryType then return end
+      if historyIdx ~= #readHistory[options.readHistoryType] then return end
       readHistory[options.readHistoryType][historyIdx]=text
     end
 
@@ -474,7 +475,7 @@ function module.init()
         table.remove(readHistory[options.readHistoryType],#readHistory[options.readHistoryType])
       end
       if historyIdx<#readHistory[options.readHistoryType] then
-        table.remove(readHistory[options.readHistoryType],historyIdx)
+        -- table.remove(readHistory[options.readHistoryType],historyIdx)
         table.insert(readHistory[options.readHistoryType],text)
       end
       while #readHistory[options.readHistoryType] > 50 do
