@@ -47,6 +47,7 @@ gpu.fill(1, 1, resX, resY, " ")
 -- Copying low-level functions in case of post-preload failure
 local pullSignal = computer.pullSignal
 local beep = computer.beep
+local shutdown = computer.shutdown
 local unicode = unicode
 
 local result, reason = xpcall(loadthething, handleError)
@@ -180,7 +181,9 @@ if not result then
         scrollRight()
       end
       if ev[4] == 28 then
-        computer.shutdown(true)
+        -- Next time copy this function too doofus
+        -- computer.shutdown(true)
+        shutdown(true)
       end
     end
     if ev[1] == "scroll" then
