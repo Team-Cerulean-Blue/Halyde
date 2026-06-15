@@ -1,3 +1,11 @@
+local computer
+if require then
+  -- libcomponent can get loaded early enough in the boot process where require is not present
+  computer = require("computer")
+else
+  computer = _G.computer
+end
+
 local compLib
 local LLcomponent
 if table.copy then
@@ -27,13 +35,17 @@ function compLib.virtual.add(address, componentType, proxy)
   if componentlib.removals[address] then
     componentlib.removals[address] = nil
   end
+  computer.pushSignal("component_added", address, componentType)
 end
 
 function compLib.virtual.remove(address)
   checkArg(1, address, "string")
   if componentlib.additions[address] then
+    computer.pushSignal("component_removed", address, componentlib.additions[address].componentType)
     componentlib.additions[address] = nil
   else
+    local componentTypeOutput = compLib.type(address)
+    computer.pushSignal("component_removed", address, componentTypeOutput or "unknown")
     table.insert(componentlib.removals, address)
   end
 end
