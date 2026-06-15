@@ -16,8 +16,8 @@ else
   LLcomponent = component
 end
 
---local ocelot = LLcomponent.proxy(LLcomponent.list("ocelot")())
---ocelot.log("loaded")
+-- local ocelot = LLcomponent.proxy(LLcomponent.list("ocelot")())
+-- ocelot.log("loaded")
 
 _G.componentlib = { ["additions"] = {}, ["removals"] = {} }
 compLib.virtual = {}
@@ -130,7 +130,9 @@ setmetatable(compLib, {
     if LLcomponent.list(item)() then
       return compLib.proxy(compLib.list(item)())
     else
-      return compLib[item]
+      -- Why did I ever fucking write this??
+      -- return compLib[item]
+      return nil
     end
   end,
 })
