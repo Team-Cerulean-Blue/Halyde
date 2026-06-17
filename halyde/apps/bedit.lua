@@ -50,6 +50,25 @@ local function renderText(xOffset, yOffset)
   gpu.bitblt(0, 1, 1, resX, resY - 1, textBuffer, 1, 1)
 end
 
+local function addLine(pos)
+  if pos <= #lines then
+    for i = #lines, pos, -1 do
+      lines[i + 1] = lines[i]
+    end
+    lines[pos] = ""
+  else
+    table.insert(lines, "")
+  end
+end
+
+local function removeLine(pos)
+  length = #lines
+  for i = pos + 1, length do
+    lines[i - 1] = lines[i]
+  end
+  lines[length] = nil
+end
+
 -- Initialize screen
 renderText(0, 0)
 gpu.setForeground(0x000000)
@@ -113,8 +132,8 @@ while true do
         end
         cursorY = cursorY - 1
         -- The cursor absolute position still has to be moved, even if on-screen it won't move
-        if cursorX > string.len(lines[cursorY]) then -- cursor snapping
-            cursorX = string.len(lines[cursorY])
+        if cursorX > string.len(lines[cursorY]) + 1 then -- cursor snapping, +1 to be 1 char in front of end of line
+            cursorX = string.len(lines[cursorY]) + 1
         end
       end
       if keyboard.keys[eventArgs[4]] == "down" then
@@ -128,8 +147,8 @@ while true do
           end
         end
         cursorY = cursorY + 1
-        if cursorX > string.len(lines[cursorY]) then -- cursor snapping
-            cursorX = string.len(lines[cursorY])
+        if cursorX > string.len(lines[cursorY]) + 1 then
+            cursorX = string.len(lines[cursorY]) + 1
         end
       end
       if keyboard.keys[eventArgs[4]] == "left" and cursorX > 1 then
@@ -144,7 +163,7 @@ while true do
         end
         cursorX = cursorX - 1
       end
-      if keyboard.keys[eventArgs[4]] == "right" and cursorX < string.len(lines[cursorY]) then
+      if keyboard.keys[eventArgs[4]] == "right" and cursorX < string.len(lines[cursorY]) + 1 then
         if cursorX - scrollX >= resX then
           renderBufferFlag = true
           scrollX = scrollX + 1
@@ -155,6 +174,43 @@ while true do
           end
         end
         cursorX = cursorX + 1
+      end
+      if not keyboard.keys.special[eventArgs[4]] then
+        local line = lines[cursorY] or ""
+        line = string.sub(line, 1, cursorX - 1) .. string.char(eventArgs[3]) .. string.sub(line, cursorX, -1)
+        lines[cursorY] = line
+        cursorX = cursorX + 1
+        renderBufferFlag = true
+      end
+      if keyboard.keys[eventArgs[4]] == "back" then
+        local line = lines[cursorY]
+        local prevline = lines[cursorY - 1]
+        if cursorX > 1 then
+          line = string.sub(line, 1, cursorX - 2) .. string.sub(line, cursorX, -1) -- remove 1 char
+        elseif prevline then
+          prevline = prevline .. line -- copy line up to the next before removing it
+          ocelot.log(prevline)
+          line = nil
+        end
+        if line then
+          lines[cursorY] = line
+        else
+          removeLine(cursorY)
+        end
+        lines[cursorY - 1] = prevline
+        if not line then
+          cursorY = cursorY - 1 -- this can only trigger if the line is not the first
+        end
+        if cursorX > 1 then
+          cursorX = cursorX - 1
+        end
+        renderBufferFlag = true
+      end
+      if keyboard.keys[eventArgs[4]] == "enter" then
+        addLine(cursorY + 1)
+        cursorY = cursorY + 1
+        cursorX = 1
+        renderBufferFlag = true
       end
     end
   until next(eventArgs) == nil
