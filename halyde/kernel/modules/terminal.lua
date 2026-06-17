@@ -67,52 +67,79 @@ function module.init()
     end
     if depth == 4 then
       return {
+        -- Closest colors to the 4 bit OC pallete
+        -- Better than outright failure
         ["dark"] = {
-          [0] = 0x000000,
-          [1] = 0x800000,
-          [2] = 0x008000,
-          [3] = 0x808000,
-          [4] = 0x000080,
-          [5] = 0x800080,
-          [6] = 0x008080,
-          [7] = 0xC0C0C0
+          [0] = 0x000000, -- black
+          [1] = 0x663300, -- brown (dark red)
+          [2] = 0x336600, -- green (dark green)
+          [3] = 0x336600, -- green (dark yellow)
+          [4] = 0x333399, -- blue (dark blue)
+          [5] = 0x9933CC, -- purple (dark purple)
+          [6] = 0x333399, -- blue (dark cyan)
+          [7] = 0xCCCCCC  -- silver (dark white)
         },
         ["bright"] = {
-          [0] = 0x808080,
-          [1] = 0xFF0000,
-          [2] = 0x00FF00,
-          [3] = 0xFFFF00,
-          [4] = 0x0000FF,
-          [5] = 0xFF00FF,
-          [6] = 0x00FFFF,
-          [7] = 0xFFFFFF
+          [0] = 0x333333, -- gray (bright black)
+          [1] = 0xff3333, -- red
+          [2] = 0x33cc33, -- lime (green)
+          [3] = 0xffff33, -- yellow
+          [4] = 0x333399, -- blue
+          [5] = 0xcc66cc, -- magenta (purple)
+          [6] = 0x336699, -- cyan
+          [7] = 0xffffff  -- white
         }
       }
     end
     if depth == 8 then
       return {
         ["dark"] = {
-          [0] = 0x171421,
-          [1] = 0xc01c28,
-          [2] = 0x26a269,
-          [3] = 0xa2734c,
-          [4] = 0x12488b,
-          [5] = 0xa347ba,
-          [6] = 0x2aa1b3,
-          [7] = 0xd0cfcc
+          [0] = 0x0f0f0f, -- black
+          [1] = 0xcc2424, -- dark red
+          [2] = 0x339280, -- dark green
+          [3] = 0x996d00, -- dark yellow
+          [4] = 0x004980, -- dark blue
+          [5] = 0x9949c0, -- dark purple
+          [6] = 0x33b6c0, -- dark cyan
+          [7] = 0xffcccc  -- dark white
         },
         ["bright"] = {
-          [0] = 0x5e5c64,
-          [1] = 0xf66151,
-          [2] = 0x33d17a,
-          [3] = 0xe9ad0c,
-          [4] = 0x2a7bde,
-          [5] = 0xc061cb,
-          [6] = 0x33c7de,
-          [7] = 0xffffff
+          [0] = 0x666d80, -- brighter black
+          [1] = 0xff6d40, -- red
+          [2] = 0x33db80, -- green
+          [3] = 0xffb600, -- yellow
+          [4] = 0x336dff, -- blue
+          [5] = 0xcc6dc0, -- purple
+          [6] = 0x33dbc0, -- cyan
+          [7] = 0xffffff  -- white
         }
       }
     end
+    --[[ Original color palette:
+    {
+      ["dark"] = {
+        [0] = 0x171421,
+        [1] = 0xc01c28,
+        [2] = 0x26a269,
+        [3] = 0xa2734c,
+        [4] = 0x12488b,
+        [5] = 0xa347ba,
+        [6] = 0x2aa1b3,
+        [7] = 0xd0cfcc
+      },
+      ["bright"] = {
+        [0] = 0x5e5c64,
+        [1] = 0xf66151,
+        [2] = 0x33d17a,
+        [3] = 0xe9ad0c,
+        [4] = 0x2a7bde,
+        [5] = 0xc061cb,
+        [6] = 0x33c7de,
+        [7] = 0xffffff
+      }
+    }
+    ]]
+    -- Shouldn't reach here
     error()
   end
 
@@ -132,6 +159,8 @@ function module.init()
   local current_codepoint = 0
   local bytes_remaining = 0
   local seq = {}
+
+  local writeBuf = {}
 
   local function update_gpu_colors()
     if color.reverse then
@@ -422,6 +451,7 @@ function module.init()
 
   function _G._PUBLIC.terminal.writec(byte)
     if byte == 0x1b then
+      _PUBLIC.terminal.flush()
       printState = 1
       seq = {}
       return
@@ -447,6 +477,7 @@ function module.init()
     end
 
     if byte == 0xa then
+      _PUBLIC.terminal.flush()
       cursor.y = cursor.y + 1
       cursor.x = 1
       check_wrap_and_scroll()
@@ -454,11 +485,13 @@ function module.init()
     end
 
     if byte == 0xd then
+      _PUBLIC.terminal.flush()
       cursor.x = 1
       return
     end
 
     if byte == 0x8 then
+      _PUBLIC.terminal.flush()
       if cursor.x > 1 then
         cursor.x = cursor.x - 1
       end
@@ -466,17 +499,20 @@ function module.init()
     end
 
     if byte == 0x9 then
+      _PUBLIC.terminal.flush()
       cursor.x = ((cursor.x - 1) // 8) * 8 + 9
       if cursor.x < 1 then cursor.x = 1 end
       if cursor.x > width then cursor.x = width end
       return
     end
 
-    if byte >= 0x00 and byte <= 0x7F then
-      update_gpu_colors()
-      gpu.set(cursor.x, cursor.y, string.char(byte))
+    if byte >= 0x20 and byte <= 0x7F then
+      table.insert(writeBuf, string.char(byte))
       cursor.x = cursor.x + 1
       check_wrap_and_scroll()
+      if cursor.y ~= writeBufY or #writeBuf >= 32 then
+        _PUBLIC.terminal.flush()
+      end
     elseif byte >= 0xC2 and byte <= 0xDF then
       current_codepoint = (byte & 0x1F)
       bytes_remaining = 1
@@ -490,11 +526,12 @@ function module.init()
       current_codepoint = (current_codepoint << 6) | (byte & 0x3F)
       bytes_remaining = bytes_remaining - 1
       if bytes_remaining == 0 then
-        local char = utf8.char(current_codepoint)
-        update_gpu_colors()
-        gpu.set(cursor.x, cursor.y, char)
+        table.insert(writeBuf, utf8.char(current_codepoint))
         cursor.x = cursor.x + 1
         check_wrap_and_scroll()
+        if cursor.y ~= writeBufY or #writeBuf >= 32 then
+          _PUBLIC.terminal.flush()
+        end
         current_codepoint = 0
       end
     else
@@ -513,8 +550,16 @@ function module.init()
   function _G._PUBLIC.terminal.clear()
     update_gpu_colors()
     gpu.fill(1, 1, width, height, " ")
+    writeBuf = {}
     cursor.x = 1
     cursor.y = 1
+  end
+
+  function _G._PUBLIC.terminal.flush()
+    if #writeBuf == 0 then return end
+    update_gpu_colors()
+    gpu.set(cursor.x - #writeBuf, cursor.y, table.concat(writeBuf))
+    writeBuf = {}
   end
 
   function _G.print(...)
@@ -547,6 +592,8 @@ function module.init()
     options.maxChars = options.maxChars or math.huge
 
     local text = options.defaultText or ""
+
+    _G._PUBLIC.terminal.flush()
 
     local historyIdx
     if options.readHistoryType then
