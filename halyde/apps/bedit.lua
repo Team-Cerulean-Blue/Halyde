@@ -144,7 +144,7 @@ while true do
         end
         cursorX = cursorX - 1
       end
-      if keyboard.keys[eventArgs[4]] == "right" and cursorX < string.len(lines[cursorY]) then -- TODO: make scrolling up and down lines that are shorter than cursorX snap to the end of the line
+      if keyboard.keys[eventArgs[4]] == "right" and cursorX < string.len(lines[cursorY]) then
         if cursorX - scrollX >= resX then
           renderBufferFlag = true
           scrollX = scrollX + 1
