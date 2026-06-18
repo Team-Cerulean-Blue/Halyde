@@ -1,7 +1,0 @@
-Usage: rm [PATH]
-Removes files and directories.
-
-  PATH   Specifies the file to be moved/renamed.
-
-Examples:
-  rm a.txt   Removes a.txt in the current shell working directory.

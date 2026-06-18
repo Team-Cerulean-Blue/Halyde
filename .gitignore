@@ -1,3 +1,5 @@
 .stfolder
+.idea
 home/*
 halyde/logs/*
+*.kate-swp

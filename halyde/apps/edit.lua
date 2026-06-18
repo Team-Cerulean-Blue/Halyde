@@ -16,8 +16,7 @@ local tab = "  "
 --local ocelot = component.ocelot
 
 local function rawset(x, y, text)
-  terminal.setCursorPos(x,y)
-  terminal.write(text, false)
+  terminal.write("\x1b[".. tostring(y) .. ";" .. tostring(x) .. "H" .. text)
 end
 
 local filestring, filepath, handle, data, tmpdata
@@ -261,7 +260,7 @@ local function save()
   gpu.setBackground(0xFFFFFF)
   gpu.setForeground(0)
   gpu.set(1, height - 1, string.rep(" ", width))
-  terminal.setCursorPos(1, height - 1)
+  rawset(1, height - 1)
   local savepath = terminal.read({prefix = "\27[107m\27[30mSave location: ", defaultText = filepath})
   gpu.setBackground(0xFFFFFF)
   gpu.setForeground(0)
@@ -300,7 +299,7 @@ while true do
     renderFlag, cursorRenderFlag, specialKey = processEvent(args)
     if specialKey == "x" then
       if changesMade then
-        terminal.setCursorPos(1, height - 1)
+        rawset(1, height - 1)
         local response = terminal.read({prefix = "\27[107m\27[30mWould you like to save changes? [Y/n] "})
         if response:lower() ~= "n" then
           save()

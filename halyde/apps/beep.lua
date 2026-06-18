@@ -9,7 +9,7 @@ cliparse.config({
 })
 local parsed, err = cliparse.parse(...)
 if not parsed then
-  return print("\x1b[91m" .. err)
+  return print("\x1b[91m" .. err .. "\x1b[0m")
 end
 
 local freq =

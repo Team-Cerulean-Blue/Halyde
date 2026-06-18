@@ -1,5 +1,0 @@
-Usage: fetch
-Displays system information including OS version, Lua version, memory, etc.
-
-Examples:
-  fetch   Displays system information.

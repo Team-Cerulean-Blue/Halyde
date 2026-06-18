@@ -34,25 +34,25 @@ if type(args[1])=="string" then
   local compID,err = getComponentID(args[1])
   if not compID then
     print("\x1b[91mCould not get component ID from '"..args[1].."'.")
-    if type(err)=="string" then print("\x1b[91m"..err) end
+    if type(err)=="string" then print("\x1b[91m"..err.."\x1b[0m") end
     return
   end
   if not force then
     if component.virtual.check(compID) then
-      return print("\x1b[91mThis component is virtual and cannot be booted from directly.\nID: "..compID)
+      return print("\x1b[91mThis component is virtual and cannot be booted from directly.\nID: "..compID.."\x1b[0m")
     end
     local type = component.type(compID)
     if type~="filesystem" and type~="drive" then
-      return print("\x1b[91mThis component is not a storage medium.\nID: "..compID)
+      return print("\x1b[91mThis component is not a storage medium.\nID: "..compID.."\x1b[0m")
     end
     if type=="filesystem" and not fileExists(compID,"/init.lua") then
-      return print("\x1b[91mThis storage medium doesn't have an \"init.lua\" file.\nID: "..compID)
+      return print("\x1b[91mThis storage medium doesn't have an \"init.lua\" file.\nID: "..compID.."\x1b[0m")
     end
   end
 
   computer.setBootAddress(compID)
   if computer.getBootAddress()~=compID then
-    return print("\x1b[91mFailed to set the boot address.")
+    return print("\x1b[91mFailed to set the boot address.\x1b[0m")
   end
   computer.shutdown(true)
 else

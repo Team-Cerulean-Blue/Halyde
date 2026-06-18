@@ -1,0 +1,4 @@
+COMMAND reboot
+DESCRIPTION Reboots the computer.
+EXAMPLE1 reboot
+EXAMPLE1DESCRIPTION Reboots the computer.

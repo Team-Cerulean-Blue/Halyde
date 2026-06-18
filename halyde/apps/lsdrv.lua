@@ -77,7 +77,7 @@ elseif outArgIdx then
       if headers[word] then
         addHeader(word)
       else
-        print("\x1b[93mCategory \""..word.."\" doesn't exist\x1b[39m")
+        print("\x1b[93mCategory \""..word.."\" doesn't exist\x1b[0m")
       end
     end
   end
@@ -190,7 +190,7 @@ local function handleComponent(id,type)
 
   if proxy.getLabel then
     local clabel = proxy.getLabel()
-    label=clabel and serialize.string(clabel) or "None"
+    label=clabel and serialize(clabel) or "None"
   else
     label="Unsupported"
   end
@@ -266,7 +266,7 @@ if not showAll then
     if func then
       filter(comps,func)
     else
-      return print("\x1b[91mInvalid component filter:\n\n"..tostring(err).."\x1b[39m")
+      return print("\x1b[91mInvalid component filter:\n\n"..tostring(err).."\x1b[0m")
     end
   else
     filter(comps,function(comp)
@@ -286,7 +286,7 @@ if sortArgIdx then
       return (boolToNum(func(a)) or 0)<(boolToNum(func(b)) or 0)
     end)
   else
-    return print("\x1b[91mInvalid sort expression:\n\n"..tostring(err).."\x1b[39m")
+    return print("\x1b[91mInvalid sort expression:\n\n"..tostring(err).."\x1b[0m")
   end
 else
   table.sort(comps,function(a,b)

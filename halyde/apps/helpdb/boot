@@ -1,0 +1,23 @@
+COMMAND boot
+USAGE [ADDRESS] [FLAGS]
+DESCRIPTION Restarts and automatically boots into any storage medium. Meant to be used for systems using a Lua BIOS EEPROM.
+ARG1 ADDRESS
+ARG1SUB1 hdd1
+ARG1SUB2 hdd2
+ARG1SUB3 floppy
+ARG1SUB4
+ARG2 FLAGS
+ARG2SUB1 -f, --force
+ARG1DESCRIPTION The storage medium to boot to.
+ARG1SUB1DESCRIPTION The first hard drive inserted in the computer.
+ARG1SUB2DESCRIPTION The second hard drive inserted in the computer.
+ARG1SUB3DESCRIPTION The floppy disk that is inserted in the computer.
+ARG1SUB4DESCRIPTION The ID of the component, abbreviated. Must have three or more characters.
+ARG2DESCRIPTION Specifies extra options when executing the command.
+ARG2SUB1DESCRIPTION Forces booting into the storage medium.
+EXAMPLE1 boot hdd1
+EXAMPLE2 boot hdd2
+EXAMPLE3 boot floppy
+EXAMPLE1DESCRIPTION Boot into the first hard drive inserted in the computer.
+EXAMPLE2DESCRIPTION Boot into the second hard drive inserted in the computer.
+EXAMPLE3DESCRIPTION Boot into the floppy disk inserted in the comuter.

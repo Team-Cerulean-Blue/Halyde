@@ -1,0 +1,19 @@
+COMMAND log
+USAGE [OPERATION] [ARGS]
+DESCRIPTION Tool to manage system logs.
+ARG1 OPERATION
+ARG1SUB1 view [LOG]
+ARG1SUB2 list
+ARG1SUB3 clear [LOG]
+ARG1SUB4 info/warn/error [LOG] [TEXT]
+ARG2 ARGS
+ARG1DESCRIPTION Operation to do with the system logs.
+ARG1SUB1DESCRIPTION View a log file.
+ARG1SUB2DESCRIPTION List all logs.
+ARG1SUB3DESCRIPTION Clear a log file, or all if none specified.
+ARG1SUB4DESCRIPTION Create a log entry for the specified log at the specified log level.
+ARG2DESCRIPTION Arguments (specified under OPERATION)
+EXAMPLE1 log view example
+EXAMPLE2 log list
+EXAMPLE3 log clear example
+EXAMPLE4 log info example This is an example.

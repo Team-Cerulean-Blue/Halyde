@@ -1,0 +1,9 @@
+COMMAND echo
+USAGE [TEXT]...
+DESCRIPTION Concatenates and prints text to the terminal.
+ARG1 TEXT
+ARG1DESCRIPTION Text to print.
+EXAMPLE1 echo test
+EXAMPLE2 echo Hello World!
+EXAMPLE1DESCRIPTION Prints "test" to the terminal.
+EXAMPLE2DESCRIPTION Prints "Hello World!" to the terminal.

@@ -1,0 +1,4 @@
+COMMAND fetch
+DESCRIPTION Displays system information including OS version, Lua version, memory, etc.
+EXAMPLE1 fetch
+EXAMPLE1DESCRIPTION Displays system information.

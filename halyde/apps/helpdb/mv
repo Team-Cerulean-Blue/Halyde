@@ -1,0 +1,11 @@
+COMMAND mv
+USAGE [SOURCE].. [DESTINATION]
+DESCRIPTION Moves/renames a file.
+ARG1 SOURCE
+ARG2 DESTINATION
+ARG1DESCRIPTION Specifies the files and directories to be moved.
+ARG2DESCRIPTION Specifies the path or a directory to copy to.
+EXAMPLE1 mv /home/a.txt /b.txt
+EXAMPLE2 mv ../c.lua /halyde/apps .
+EXAMPLE1DESCRIPTION Moves the file at /home/a.txt to /b.txt.
+EXAMPLE2DESCRIPTION Moves c.lua from a subdirectory and /halyde/apps to the shell working directory.

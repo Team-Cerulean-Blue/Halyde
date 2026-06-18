@@ -1,0 +1,11 @@
+COMMAND ls
+USAGE [PATH]...
+DESCRIPTION Lists all files and directories in the specified path, or in the shell working directory if the path isn't specified. Directories are shown in [93myellow[0m, executable files are shown in [92mgreen[0m, and other files are shown in white.
+ARG1 PATH
+ARG1DESCRIPTION Path to the directories to list files and subdirectories from.
+EXAMPLE1 ls
+EXAMPLE2 ls /halyde
+EXAMPLE3 ls apps
+EXAMPLE1DESCRIPTION Lists all files and directories from the current shell working directory.
+EXAMPLE2DESCRIPTION Lists all files and directories from /halyde.
+EXAMPLE3DESCRIPTION Lists all files and directories from the apps directory in the shell working directory.

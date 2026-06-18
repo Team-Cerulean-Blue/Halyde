@@ -1,21 +1,25 @@
-local files = { ... }
-local shell = require("shell")
 local fs = require("filesystem")
-if not files or not files[1] then
-  shell.run("help cat")
-  return
+local shell = require("shell")
+
+local args = {...}
+
+if not args[1] then
+  return shell.run("help cat")
 end
-for _, file in ipairs(files) do
-  if file:sub(1, 1) ~= "/" then
-    file = fs.concat(shell.getWorkingDirectory(), file)
-  end
-  if not fs.exists(file) then
-    print("\27[91mFile does not exist.")
-  end
+
+for _, file in pairs(args) do
+  file = shell.resolvePath(file)
+
   local handle = fs.open(file, "r")
-  local data
-  repeat
-    data = handle:read(math.huge or math.maxinteger)
+  if handle == nil then
+    terminal.write("\27[91mCan't open " .. file .. "\27[0m\n")
+    goto continue
+  end
+  while true do
+    local data = handle:read(math.huge or math.maxinteger)
+    if data == nil then break end
     terminal.write(data)
-  until not data
+  end
+  handle:close()
+  ::continue::
 end

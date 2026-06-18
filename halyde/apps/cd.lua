@@ -1,15 +1,26 @@
-local directory = ...
+local args = {...}
+
+if args[2] then
+  terminal.write("\27[91mToo many arguments.\27[0m")
+end
+
+if not args[1] then
+  return
+end
+
 local fs = require("filesystem")
 local shell = require("shell")
 
-if not directory then
+local directory = shell.resolvePath(args[1])
+
+if not fs.exists(directory) then
+  terminal.write("\27[91mError: " .. directory .. ": No such file or directory\27[0m\n")
   return
 end
-if directory:sub(1, 1) ~= "/" then
-  directory = fs.concat(shell.getWorkingDirectory(), directory)
+
+if not fs.isDirectory(directory) then
+  terminal.write("\27[91mError: " .. directory .. ": Not a directory\27[0m\n")
+  return
 end
-if fs.exists(directory) and fs.isDirectory(directory) then
-  shell.setWorkingDirectory(fs.canonical(directory))
-else
-  print("\27[91mNo such directory.")
-end
+
+shell.setWorkingDirectory(fs.canonical(directory))

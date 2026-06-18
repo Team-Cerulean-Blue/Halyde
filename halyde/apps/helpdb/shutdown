@@ -1,0 +1,4 @@
+COMMAND shutdown
+DESCRIPTION Shuts down the computer.
+EXAMPLE1 shutdown
+EXAMPLE1DESCRIPTION Shuts down the computer.

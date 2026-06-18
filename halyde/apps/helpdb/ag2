@@ -1,0 +1,47 @@
+COMMAND ag2
+USAGE [COMMAND] [PACKAGES] [FLAGS]
+DESCRIPTION Uses the Argentum 2 package manager.
+ARG1 COMMAND
+ARG1SUB1 install
+ARG1SUB2 remove
+ARG1SUB3 update
+ARG1SUB4 list
+ARG1SUB5 repo-list
+ARG1SUB6 repo-add
+ARG1SUB7 repo-remove
+ARG1SUB8 info
+ARG2 PACKAGES
+ARG3 FLAGS
+ARG3SUB1 -x, --exclude-deps
+ARG3SUB2 -u, --update-repos
+ARG3SUB3 -f, --force
+ARG3SUB4 -c, --clean
+ARG3SUB5 -s, --source [URL]
+ARG3SUB6 -C, --cascade
+ARG1DESCRIPTION Specifies the operation for Argentum 2 to do.
+ARG1SUB1DESCRIPTION Installs packages.
+ARG1SUB2DESCRIPTION Removes packages.
+ARG1SUB3DESCRIPTION Updates packages.
+ARG1SUB4DESCRIPTION Lists all available packages.
+ARG1SUB5DESCRIPTION Lists all installed repositories.
+ARG1SUB6DESCRIPTION Adds a custom repository.
+ARG1SUB7DESCRIPTION Removes a repository.
+ARG1SUB8DESCRIPTION Shows a packages version, description and other relevant information.
+ARG2DESCRIPTION Packages to apply operations to.
+ARG3DESCRIPTION These flags are available and can be inserted anywhere
+ARG3SUB1DESCRIPTION Ignore dependencies. WARNING: Using this can and will leave you with broken packages. Use it at your own risk and only when truly necessary.
+ARG3SUB2DESCRIPTION Update the list of repositories.
+ARG3SUB3DESCRIPTION Force the operation, even if there are conflicts or unresolvable dependencies. WARNING: Using this can and will leave you with broken packages. Use it at your own risk and only when truly necessary.
+ARG3SUB4DESCRIPTION Clean up now-unnecessary packages (previous dependencies).
+ARG3SUB5DESCRIPTION Use a custom source for the operation.
+ARG3SUB6DESCRIPTION When removing a package that other packages depend on, remove those packages too instead of aborting.
+EXAMPLE1 ag2 install halyde
+EXAMPLE2 ag2 list
+EXAMPLE3 ag2 info halyde
+EXAMPLE4 ag2 remove -x edit
+EXAMPLE5 ag2 remove -c hal-draw
+EXAMPLE1DESCRIPTION Installs the halyde package.
+EXAMPLE2DESCRIPTION Lists all packages.
+EXAMPLE3DESCRIPTION Shows information about the halyde package.
+EXAMPLE4DESCRIPTION Removes edit, but does not remove any packages that depend on it.
+EXAMPLE5DESCRIPTION Removes hal-draw and any dependencies that are no longer needed.

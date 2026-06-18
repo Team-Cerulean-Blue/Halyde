@@ -1,0 +1,29 @@
+COMMAND argentum
+USAGE [COMMAND] [PACKAGES]
+DESCRIPTION Uses the Argentum package manager.
+ARG1 COMMAND
+ARG1SUB1 install
+ARG1SUB2 remove
+ARG1SUB3 update
+ARG1SUB4 list
+ARG1SUB5 search
+ARG1SUB6 info
+ARG2 PACKAGES
+ARG1DESCRIPTION Specifies the operation for Ag to do.
+ARG1SUB1DESCRIPTION Installs packages.
+ARG1SUB2DESCRIPTION Removes packages.
+ARG1SUB3DESCRIPTION Updates packages.
+ARG1SUB4DESCRIPTION Lists all available packages.
+ARG1SUB5DESCRIPTION Searches all available packages.
+ARG1SUB6DESCRIPTION Shows information on a specific package.
+ARG2DESCRIPTION Packages to apply operations to.
+EXAMPLE1 ag install hal-draw
+EXAMPLE2 ag list
+EXAMPLE3 ag info hal-draw
+EXAMPLE4 ag update hal-draw
+EXAMPLE5 ag update hal-draw
+EXAMPLE1DESCRIPTION Installs the hal-draw package.
+EXAMPLE2DESCRIPTION Lists all packages.
+EXAMPLE3DESCRIPTION Shows information about hal-draw.
+EXAMPLE4DESCRIPTION Updates the hal-draw package if it's not at the newest version.
+EXAMPLE5DESCRIPTION Updates all packages.

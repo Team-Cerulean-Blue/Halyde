@@ -1,5 +1,0 @@
-Usage: shutdown
-Shuts down the computer.
-
-Examples:
-  shutdown   Shuts down the computer.

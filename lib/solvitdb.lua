@@ -1,0 +1,312 @@
+local solvitdb = {}
+
+local fs = require("filesystem")
+
+local function checkValidityAndOpen(path)
+  local handle = assert(fs.open(path))
+  local data = assert(handle:read(8))
+  if data:sub(5, 8) == "RTFM" then
+    local patLength = string.unpack("<I4", data:sub(1, 4))
+    return handle, patLength
+  else
+    error("missing magic")
+  end
+end
+
+local function readPat(handle, patLength)
+  -- This needs the handle to be at byte 4
+  local data, tmpdata = ""
+  repeat
+    tmpdata = handle:read(patLength - #data)
+    data = data .. (tmpdata or "")
+  until not tmpdata
+  local packages = {}
+  for packageData in data:gmatch("(.-%.....);") do
+    packages[packageData:sub(1, -6)] = string.unpack("<I4", packageData:sub(-4, -1))
+  end
+  return packages
+end
+
+local function insert(filePath, location, bytes)
+  local chunkLength = 512
+  local readHandle = assert(fs.open(filePath, "r"))
+  local tmpFilePath = filePath .. ".tmp"
+  local writeHandle = assert(fs.open(tmpFilePath, "w"))
+  local i = 0
+  while true do
+    local readAmount = chunkLength
+    if readAmount > location - i then
+      readAmount = location - i
+    end
+    if readAmount == 0 then
+      break
+    end
+    local data = readHandle:read(readAmount)
+    i = i + readAmount
+    assert(writeHandle:write(data))
+  end
+  assert(writeHandle:write(bytes))
+  while true do
+    local data = readHandle:read(chunkLength)
+    if not data then
+      break
+    end
+    assert(writeHandle:write(data))
+  end
+  readHandle:close()
+  writeHandle:close()
+  fs.rename(tmpFilePath, filePath)
+end
+
+local function remove(filePath, location, length)
+  local chunkLength = 512
+  if length > 512 then
+    chunkLength = length
+  end
+  -- The file has to get shortened, so I have no choice but to do these shenanigans
+  local readHandle = assert(fs.open(filePath, "r"))
+  local tmpFilePath = filePath .. ".tmp"
+  local writeHandle = assert(fs.open(tmpFilePath, "w"))
+  local i = 0
+  while true do
+    local readAmount = chunkLength
+    if readAmount > location - i then
+      readAmount = location - i
+    end
+    if readAmount == 0 then
+      break
+    end
+    local data = readHandle:read(readAmount)
+    i = i + readAmount
+    assert(writeHandle:write(data))
+  end
+  readHandle:seek(length)
+  while true do
+    local data = readHandle:read(chunkLength)
+    if not data then
+      break
+    end
+    assert(writeHandle:write(data))
+  end
+  readHandle:close()
+  writeHandle:close()
+  fs.rename(tmpFilePath, filePath)
+end
+
+local function adjustPatLocationsAfterPackage(filePath, packageName, offset)
+  local readHandle, patLength = checkValidityAndOpen(filePath)
+  local pat = readPat(readHandle, patLength)
+  readHandle:close()
+  local modifiedLocation = pat[packageName]
+  local toAdjust = {}
+  for name, location in pairs(pat) do
+    if location > modifiedLocation then
+      table.insert(toAdjust, { name = name, location = location })
+    end
+  end
+
+  if #toAdjust == 0 then
+    return
+  end
+
+  local readHandle = assert(fs.open(filePath, "r"))
+  readHandle:seek(8)  -- Skip header
+  local patBytes = assert(readHandle:read(patLength))
+  readHandle:close()
+
+  local patFieldPositions = {}
+  for _, entry in ipairs(toAdjust) do
+    local needle = entry.name .. "."
+    local startPos = patBytes:find(needle, 1, true)
+    patFieldPositions[entry.name] = 8 + startPos + #needle - 1
+  end
+
+  local writeHandle = assert(fs.open(filePath, "a"))
+  for _, entry in ipairs(toAdjust) do
+    local newLocation = entry.location + offset
+    writeHandle:seek("set", patFieldPositions[entry.name])
+    writeHandle:write(string.pack("<I4", newLocation))
+  end
+  writeHandle:close()
+end
+
+function solvitdb.create(path)
+  checkArg(1, path, "string")
+  local handle = assert(fs.open(path, "w"))
+  assert(handle:write("\0\0\0\0RTFM"))
+  handle:close()
+end
+
+function solvitdb.set(path, name, data)
+  checkArg(1, path, "string")
+  checkArg(2, name, "string")
+  checkArg(3, data, "table")
+
+  local function sanitize(tab)
+    for _, item in pairs(tab) do
+      if type(item) == "string" then
+        item = item:lower():gsub("[;|]", "-")
+      elseif type(item) == "table" then
+        sanitize(item)
+      end
+    end
+  end
+
+  sanitize(data)
+
+  local readHandle, patLength = checkValidityAndOpen(path)
+  local pat = readPat(readHandle, patLength)
+  local writeHandle = assert(fs.open(path, "a"))
+
+  local encodedString = ""
+  if data.type == "package" then
+    encodedString = "P"
+  elseif data.type == "group" then
+    encodedString = "G"
+  elseif data.type == "virtual-package" then
+    encodedString = "V"
+  end
+  if data.dependencies then
+    encodedString = encodedString .. "d" .. table.concat(data.dependencies, ";") .. "|"
+  end
+  if data.reverseDependencies then
+    encodedString = encodedString .. "D" .. table.concat(data.reverseDependencies, ";") .. "|"
+  end
+  if data.conflicts then
+    encodedString = encodedString .. "c" .. table.concat(data.conflicts, ";") .. "|"
+  end
+  if data.packages then
+    encodedString = encodedString .. "p" .. table.concat(data.packages, ";") .. "|"
+  end
+  if data.version then
+    encodedString = encodedString .. "v" .. data.version .. "|"
+  end
+
+  if pat[name] then
+    readHandle:seek(pat[name])
+    local oldData, tmpdata = ""
+    repeat
+      tmpdata = readHandle:read(math.huge)
+      oldData = oldData .. (tmpdata or "")
+    until oldData:find("\n", 1, true) or not tmpdata
+    readHandle:close()
+    if not oldData:find("\n", 1, true) and not tmpdata then
+      error("hit unexpected EOF")
+    end
+    oldData = oldData:match("^[^\n]+")
+    local difference = #encodedString - #oldData
+    writeHandle:seek("set", pat[name] + patLength + 8)
+    if difference == 0 then
+      readHandle:close()
+      writeHandle:write(encodedString)
+      writeHandle:close()
+    elseif difference < 0 then
+      writeHandle:write(encodedString)
+      local currentSeek = writeHandle:seek()
+      writeHandle:close()
+      remove(path, currentSeek, -difference)
+      adjustPatLocationsAfterPackage(path, name, difference)
+    elseif difference > 0 then
+      writeHandle:write(encodedString:sub(1, #encodedString - difference))
+      local currentSeek = writeHandle:seek()
+      writeHandle:close()
+      insert(path, currentSeek + 1, encodedString:sub(#data - difference, -1))
+      adjustPatLocationsAfterPackage(path, name, difference)
+    end
+  else
+    readHandle:close()
+    writeHandle:seek("end")
+    local newPackageLocation = writeHandle:seek() - patLength - 8
+    writeHandle:write(encodedString .. "\n")
+    writeHandle:close()
+    local patData = ("%s.%s;"):format(name, string.pack("<I4", newPackageLocation))
+    insert(path, patLength + 8, patData)
+    local newPatLength = patLength + #patData
+    local writeHandle = assert(fs.open(path, "a")) -- If this works, that means handles must be reopened after insert() or remove()
+    writeHandle:seek("set", 0)
+    assert(writeHandle:write(string.pack("<I4", newPatLength)))
+    writeHandle:close()
+  end
+end
+
+function solvitdb.get(path, name)
+  checkArg(1, path, "string")
+  checkArg(2, name, "string")
+  local handle, patLength = checkValidityAndOpen(path)
+  local pat = readPat(handle, patLength)
+  if not pat[name] then
+    return nil
+  end
+  handle:seek(pat[name])
+  local data, tmpdata = ""
+  repeat
+    tmpdata = handle:read(math.huge)
+    data = data .. (tmpdata or "")
+  until data:find("\n", 1, true) or not tmpdata
+  handle:close()
+  if not data:find("\n", 1, true) and not tmpdata then
+    error("hit unexpected EOF")
+  end
+  data = data:match("^[^\n]+")
+  local output = {}
+  if data:sub(1, 1) == "P" then
+    output.type = "package"
+  elseif data:sub(1, 1) == "G" then
+    output.type = "group"
+  elseif data:sub(1, 1) == "V" then
+    output.type = "virtual-package"
+  else
+    error("unknown package type")
+  end
+  data = "." .. data:sub(2, -1)
+  for series in data:gmatch("%.([dDcp][^.]*)") do
+    local seriesOutput
+    if series:sub(1, 1) == "d" then
+      output.dependencies = {}
+      seriesOutput = output.dependencies
+    elseif series:sub(1, 1) == "D" then
+      output.reverseDependencies = {}
+      seriesOutput = output.reverseDependencies
+    elseif series:sub(1, 1) == "c" then
+      output.conflicts = {}
+      seriesOutput = output.conflicts
+    elseif series:sub(1, 1) == "p" then
+      output.packages = {}
+      seriesOutput = output.packages
+    elseif series:sub(1, 1) == "v" then
+      output.version = series:sub(2, -1)
+      goto SkipSeries
+    end
+    -- Finally a case where Lua's weird table linking shenanigans are actually useful
+    series = series:sub(2, -1)
+    for seriesItem in series:gmatch("[^;]+") do
+      table.insert(seriesOutput, seriesItem)
+    end
+    ::SkipSeries::
+  end
+  return output
+end
+
+function solvitdb.list(path)
+  checkArg(1, path, "string")
+  local handle, patLength = checkValidityAndOpen(path)
+  local pat = readPat(handle, patLength)
+  handle:close()
+  local list = {}
+  for index, _ in pairs(pat) do
+    table.insert(list, index)
+  end
+  setmetatable(list, {
+    __call = function(self)
+    i, value = next(self, i)
+    return i, value
+    end,
+  })
+  return list
+end
+
+function solvitdb.remove()
+
+end
+
+return solvitdb

@@ -88,4 +88,4 @@ end
 end ]]
 
 raster.free()
-terminal.setCursorPos(1,1)
+terminal.clear()

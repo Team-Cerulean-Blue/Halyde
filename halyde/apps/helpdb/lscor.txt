@@ -1,5 +1,0 @@
-Usage: lscor
-Lists every active coroutine by ID and name.
-
-Examples:
-  lscor   Lists every active coroutine by ID and name.

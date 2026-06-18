@@ -1,0 +1,4 @@
+COMMAND clear
+DESCRIPTION Clears the screen.
+EXAMPLE1 clear
+EXAMPLE1DESCRIPTION Clears the screen.

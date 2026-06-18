@@ -1,0 +1,9 @@
+COMMAND edit
+USAGE [PATH]
+DESCRIPTION Opens a file with the text editor, or a new blank file if not specified.
+ARG1 PATH
+ARG1DESCRIPTION Specifies the file to be opened.
+EXAMPLE1 edit
+EXAMPLE2 edit /LICENSE
+EXAMPLE1DESCRIPTION Opens a new blank file in the text editor.
+EXAMPLE2DESCRIPTION Opens /LICENSE in the text editor.

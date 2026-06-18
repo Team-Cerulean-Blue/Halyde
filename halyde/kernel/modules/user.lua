@@ -42,7 +42,7 @@ function module.init()
     if type(tsched.currentTask) == "table" and type(tsched.currentTask.id) == "number" then
       taskInfo.parent = tsched.currentTask.id
     else
-      log.kernel.info("debug: tsched.currentTask is " .. require("serialize").table(tsched.currentTask))
+      log.kernel.info("debug: tsched.currentTask is " .. require("serialize")(tsched.currentTask))
     end
     table.insert(tsched.tasks, taskInfo)
     if taskInfo.parent then

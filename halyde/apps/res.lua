@@ -9,7 +9,7 @@ local curX, curY = gpu.getResolution()
 
 local function setRes()
     if not(args[1] == "-x" or args[1] == "-y") then
-        print("\x1b[91mUnknown argument. \x1b[39mTry running \x1b[92m\"help res\"")
+        print("\x1b[91mUnknown argument. \x1b[0mTry running \x1b[92m\"help res\"\x1b[0m")
         return
     end
 
@@ -21,7 +21,7 @@ local function setRes()
                 x = tonumber(args[i + 1])
                 lastarg = "x"
             else
-                print("\x1b[91mValue \"x\" was set more than once. \x1b[39mTry running \x1b[92m\"help res\"")
+                print("\x1b[91mValue \"x\" was set more than once. \x1b[0mTry running \x1b[92m\"help res\"\x1b[0m")
                 return
             end
         elseif args[i] == "-y" then
@@ -29,7 +29,7 @@ local function setRes()
                 y = tonumber(args[i + 1])
                 lastarg = "y"
             else
-                print("\x1b[91mValue \"y\" was set more than once. \x1b[39mTry running \x1b[92m\"help res\"")
+                print("\x1b[91mValue \"y\" was set more than once. \x1b[0mTry running \x1b[92m\"help res\"\x1b[0m")
                 return
             end
         end
@@ -37,42 +37,42 @@ local function setRes()
 
     if x then
         if x > maxX then
-            print("\x1b[91mGPU does not support x higher than " .. maxX)
+            print("\x1b[91mGPU does not support x higher than " .. maxX .. "\x1b[0m.")
             return
         end
     end
     if y then
         if y > maxY then
-            print("\x1b[91mGPU does not support y higher than " .. maxY)
+            print("\x1b[91mGPU does not support y higher than " .. maxY .. "\x1b[0m.")
             return
         end
     end
 
     if x and not(y) then
         gpu.setResolution(x, curY)
-        print("Successfully set X resolution from \x1b[93m" .. curX .. "\x1b[39m to \x1b[92m" .. x .. "\x1b[39m.")
+        print("Successfully set X resolution from \x1b[93m" .. curX .. "\x1b[0m to \x1b[92m" .. x .. "\x1b[0m.")
         return
     elseif not(x) and y then
         gpu.setResolution(curX, y)
-        print("Successfully set Y resolution from \x1b[93m" .. curY .. "\x1b[39m to \x1b[92m" .. y .. "\x1b[39m.")
+        print("Successfully set Y resolution from \x1b[93m" .. curY .. "\x1b[0m to \x1b[92m" .. y .. "\x1b[0m.")
         return
     else
         gpu.setResolution(x, y)
-        print("Successfully set resolution from \x1b[93m" .. curX .. "x" .. curY .. "\x1b[39m to \x1b[92m" .. x .. "x" .. y .. "\x1b[39m.")
+        print("Successfully set resolution from \x1b[93m" .. curX .. "x" .. curY .. "\x1b[0m to \x1b[92m" .. x .. "x" .. y .. "\x1b[0m.")
         return
     end
 end
 
 local function getRes(val)
     if val == "x" then
-        print("Current X resolution: \x1b[93m" .. curX)
-        print("Maximum supported X resolution: \x1b[92m" .. maxX)
+        print("Current X resolution: \x1b[93m" .. curX .. "\x1b[0m")
+        print("Maximum supported X resolution: \x1b[92m" .. maxX .. "\x1b[0m")
     elseif val == "y" then
-        print("Current Y resolution: \x1b[93m" .. curY)
-        print("Maximum supported Y resolution: \x1b[92m" .. maxY)
+        print("Current Y resolution: \x1b[93m" .. curY .. "\x1b[0m")
+        print("Maximum supported Y resolution: \x1b[92m" .. maxY .. "\x1b[0m")
     else
-        print("Current resolution: \x1b[93m" .. curX .. "x" .. curY)
-        print("Maximum supported resolution: \x1b[92m" .. maxX .. "x" .. maxY)
+        print("Current resolution: \x1b[93m" .. curX .. "x" .. curY .. "\x1b[0m")
+        print("Maximum supported resolution: \x1b[92m" .. maxX .. "x" .. maxY .. "\x1b[0m")
     end
 end
 
@@ -92,5 +92,5 @@ if axis == "-x" then
 elseif axis == "-y" then
     getRes("y")
 else
-    print("\x1b[91mUnknown argument. \x1b[39mTry running \x1b[92m\"help res\"")
+    print("\x1b[91mUnknown argument. \x1b[0mTry running \x1b[92m\"help res\"\x1b[0m")
 end

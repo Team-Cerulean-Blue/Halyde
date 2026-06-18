@@ -27,9 +27,9 @@ local function viewlog(logname)
                 entry = string.sub(entry, 1, -1)
             end
             if entry:sub(1, 4) == "WARN" then
-                print("\x1b[93m" .. entry)
+                print("\x1b[93m" .. entry .. "\x1b[0m")
             elseif entry:sub(1, 5) == "ERROR" then
-                print("\x1b[91m" .. entry)
+                print("\x1b[91m" .. entry .. "\x1b[0m")
             else
                 print(entry)
             end
@@ -58,9 +58,9 @@ local function listlogs2()
     print("Found \x1b[93m" .. #logs .. "\x1b[0m logs.")
     for i in ipairs(logs) do
         if i == #logs then
-            print("\x1b[93m└ \x1b[0m" .. logs[i] .. "\x1b[90m.log")
+            print("\x1b[93m└ \x1b[0m" .. logs[i] .. "\x1b[90m.log\x1b[0m")
         else
-            print("\x1b[93m├ \x1b[0m" .. logs[i] .. "\x1b[90m.log")
+            print("\x1b[93m├ \x1b[0m" .. logs[i] .. "\x1b[90m.log\x1b[0m")
         end
     end
 end

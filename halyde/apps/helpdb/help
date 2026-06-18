@@ -1,0 +1,9 @@
+COMMAND help
+USAGE [COMMAND]
+DESCRIPTION Displays info on the command specified, or a list of commands if one is not specified.
+ARG1 COMMAND
+ARG1DESCRIPTION Command to display information on.
+EXAMPLE1 help
+EXAMPLE2 help cp
+EXAMPLE1DESCRIPTION Displays a list of all default commands available.
+EXAMPLE2DESCRIPTION Displays information about the cp command.

@@ -1,0 +1,8 @@
+COMMAND beep
+USAGE [FLAGS]
+DESCRIPTION Make the computer beep.
+ARG1 FLAGS
+ARG1SUB1 -f, --frequency
+ARG1SUB2 -t, --time
+ARG1SUB1DESCRIPTION Specifies the frequency, in Hz. Defaults to 440Hz.
+ARG1SUB2DESCRIPTION Specifies how long, in seconds, the computer should beep. Defaults to 0.1s.

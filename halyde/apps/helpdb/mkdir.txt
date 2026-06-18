@@ -1,7 +1,0 @@
-Usage: mkdir [PATH]
-Makes a directory.
-
-  PATH   Specifies the path to create the directory in.
-
-Examples:
-  mkdir a   Creates a directory named a in the current shell working directory.

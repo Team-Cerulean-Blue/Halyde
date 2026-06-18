@@ -1,0 +1,4 @@
+COMMAND lscor
+DESCRIPTION Lists every active coroutine by ID and name.
+EXAMPLE1 lscor
+EXAMPLE1DESCRIPTION Lists every active coroutine by ID and name.

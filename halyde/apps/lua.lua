@@ -12,15 +12,18 @@ for _, lib in pairs(libList) do
       local name = lib:match("(.+)%.lua")
       _G[name] = require(name)
     end
-  end, debug.traceback)
+  end, function(errMsg)
+    return errMsg .. "\n\n" .. debug.traceback()
+  end)
   if not status then
+    local firstLine = tostring(err):match("^[^\n]*")
     print(
       string.format(
-        "\x1b[91mLibrary %s has failed loading:\n │ %s",
-        lib:match("(.+)%.lua"),
-        tostring(err or "unknown error"):match("^(.-)\n")
+        "\x1b[91mLibrary %s has failed loading:\n │ %s\x1b[0m",
+        lib:match("(.+)%.lua") or lib,
+        firstLine or "unknown error"
       )
-    ) -- TODO: only show first line of error
+    )
     log.lua.error(
       string.format(
         'The library located at "%s" has failed loading:\n%s',
@@ -35,7 +38,7 @@ end
 if failed then
   print(
     string.format(
-      '\x1b[93mOne or more libraries failed to load. For more information, check the log entries located at "%s".',
+      '\x1b[93mOne or more libraries failed to load. For more information, check the log entries located at "%s".\x1b[0m',
       tostring(log.lua.logpath or "[unknown]")
     )
   )
@@ -59,7 +62,7 @@ while true do
         returns = false
       end
       if not func then
-        return print("\x1b[91msyntax error: " .. (err or "unknown error"))
+        return print("\x1b[91msyntax error: " .. (err or "unknown error") .. "\x1b[0m")
       end
       local res = { func() }
       if returns then
@@ -74,7 +77,7 @@ while true do
       return errMsg .. "\n\n" .. debug.traceback()
     end)
     if not result then
-      print("\27[91m" .. reason)
+      print("\27[91m" .. reason .. "\27[0m")
     end
   end
 end
