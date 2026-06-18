@@ -101,7 +101,7 @@ function module.init()
           [4] = 0x004980, -- dark blue
           [5] = 0x9949c0, -- dark purple
           [6] = 0x33b6c0, -- dark cyan
-          [7] = 0xffcccc  -- dark white
+          [7] = 0xc3c3c3  -- dark white
         },
         ["bright"] = {
           [0] = 0x666d80, -- brighter black
