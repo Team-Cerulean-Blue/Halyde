@@ -1,4 +1,6 @@
 # Halyde
+### If you are viewing on GitHub: Halyde has moved to [Gitea](https://git.sting.lt/Cerulean-Blue/Halyde). This repository is now a read-only mirror. Contributions, issues and pull requests will not be processed here. Please go to [the Gitea instance](https://git.sting.lt/Cerulean-Blue/Halyde) for that.
+
 A universal, customizable and feature-packed operating system for OpenComputers.
 
 <p align="center">
