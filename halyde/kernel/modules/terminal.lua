@@ -168,9 +168,6 @@ function module.init()
 
   local ANSIColorPalette = getColorPalette(gpu.maxDepth())
 
-  local expecting_unicode_bytes = 0
-  local unicode_bytes_left = 0
-  local unicode_codepoint = 0
   local cursor = { x = 1, y = 1, X = nil, Y = nil } -- X and Y are managed by ESC s and ESC u
   local printState = 0 -- 0:none 1:in ESC 2:in CSI
   local color = {
