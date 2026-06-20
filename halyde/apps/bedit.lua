@@ -188,99 +188,99 @@ while true do
         if keyboard.keys[eventArgs[4]] == "s" then
           save()
         end
-      end
-
-      if keyboard.keys[eventArgs[4]] == "up" and cursorY > 1 then
-        if cursorY - scrollY <= 1 then
-          renderBufferFlag = true
-          scrollY = scrollY - 1
-        else
-          if not previousCursorX and not previousCursorY then
-            previousCursorX = cursorX
-            previousCursorY = cursorY
+      else
+        if keyboard.keys[eventArgs[4]] == "up" and cursorY > 1 then
+          if cursorY - scrollY <= 1 then
+            renderBufferFlag = true
+            scrollY = scrollY - 1
+          else
+            if not previousCursorX and not previousCursorY then
+              previousCursorX = cursorX
+              previousCursorY = cursorY
+            end
+          end
+          cursorY = cursorY - 1
+          -- The cursor absolute position still has to be moved, even if on-screen it won't move
+          if cursorX > string.len(lines[cursorY]) + 1 then -- cursor snapping, +1 to be 1 char in front of end of line
+              cursorX = string.len(lines[cursorY]) + 1
           end
         end
-        cursorY = cursorY - 1
-        -- The cursor absolute position still has to be moved, even if on-screen it won't move
-        if cursorX > string.len(lines[cursorY]) + 1 then -- cursor snapping, +1 to be 1 char in front of end of line
-            cursorX = string.len(lines[cursorY]) + 1
-        end
-      end
-      if keyboard.keys[eventArgs[4]] == "down" then
-        if cursorY - scrollY >= resY - 1 then
-          renderBufferFlag = true
-          scrollY = scrollY + 1
-        else
-          if not previousCursorX and not previousCursorY then
-            previousCursorX = cursorX
-            previousCursorY = cursorY
+        if keyboard.keys[eventArgs[4]] == "down" then
+          if cursorY - scrollY >= resY - 1 then
+            renderBufferFlag = true
+            scrollY = scrollY + 1
+          else
+            if not previousCursorX and not previousCursorY then
+              previousCursorX = cursorX
+              previousCursorY = cursorY
+            end
+          end
+          cursorY = cursorY + 1
+          if cursorX > string.len(lines[cursorY]) + 1 then
+              cursorX = string.len(lines[cursorY]) + 1
           end
         end
-        cursorY = cursorY + 1
-        if cursorX > string.len(lines[cursorY]) + 1 then
-            cursorX = string.len(lines[cursorY]) + 1
-        end
-      end
-      if keyboard.keys[eventArgs[4]] == "left" and cursorX > 1 then
-        if cursorX - scrollX <= 1 then
-          renderBufferFlag = true
-          scrollX = scrollX - 1
-        else
-          if not previousCursorX and not previousCursorY then
-            previousCursorX = cursorX
-            previousCursorY = cursorY
+        if keyboard.keys[eventArgs[4]] == "left" and cursorX > 1 then
+          if cursorX - scrollX <= 1 then
+            renderBufferFlag = true
+            scrollX = scrollX - 1
+          else
+            if not previousCursorX and not previousCursorY then
+              previousCursorX = cursorX
+              previousCursorY = cursorY
+            end
           end
-        end
-        cursorX = cursorX - 1
-      end
-      if keyboard.keys[eventArgs[4]] == "right" and cursorX < string.len(lines[cursorY]) + 1 then
-        if cursorX - scrollX >= resX then
-          renderBufferFlag = true
-          scrollX = scrollX + 1
-        else
-          if not previousCursorX and not previousCursorY then
-            previousCursorX = cursorX
-            previousCursorY = cursorY
-          end
-        end
-        cursorX = cursorX + 1
-      end
-      if not keyboard.keys.special[eventArgs[4]] then
-        local line = lines[cursorY] or ""
-        line = string.sub(line, 1, cursorX - 1) .. string.char(eventArgs[3]) .. string.sub(line, cursorX, -1)
-        lines[cursorY] = line
-        cursorX = cursorX + 1
-        renderBufferFlag = true
-      end
-      if keyboard.keys[eventArgs[4]] == "back" then
-        local line = lines[cursorY]
-        local prevline = lines[cursorY - 1]
-        if cursorX > 1 then
-          line = string.sub(line, 1, cursorX - 2) .. string.sub(line, cursorX, -1) -- remove 1 char
-        elseif prevline then
-          prevline = prevline .. line -- copy line up to the next before removing it
-          ocelot.log(prevline)
-          line = nil
-        end
-        if line then
-          lines[cursorY] = line
-        else
-          removeLine(cursorY)
-        end
-        lines[cursorY - 1] = prevline
-        if not line then
-          cursorY = cursorY - 1 -- this can only trigger if the line is not the first
-        end
-        if cursorX > 1 then
           cursorX = cursorX - 1
         end
-        renderBufferFlag = true
-      end
-      if keyboard.keys[eventArgs[4]] == "enter" then
-        addLine(cursorY + 1)
-        cursorY = cursorY + 1
-        cursorX = 1
-        renderBufferFlag = true
+        if keyboard.keys[eventArgs[4]] == "right" and cursorX < string.len(lines[cursorY]) + 1 then
+          if cursorX - scrollX >= resX then
+            renderBufferFlag = true
+            scrollX = scrollX + 1
+          else
+            if not previousCursorX and not previousCursorY then
+              previousCursorX = cursorX
+              previousCursorY = cursorY
+            end
+          end
+          cursorX = cursorX + 1
+        end
+        if not keyboard.keys.special[eventArgs[4]] then
+          local line = lines[cursorY] or ""
+          line = string.sub(line, 1, cursorX - 1) .. string.char(eventArgs[3]) .. string.sub(line, cursorX, -1)
+          lines[cursorY] = line
+          cursorX = cursorX + 1
+          renderBufferFlag = true
+        end
+        if keyboard.keys[eventArgs[4]] == "back" then
+          local line = lines[cursorY]
+          local prevline = lines[cursorY - 1]
+          if cursorX > 1 then
+            line = string.sub(line, 1, cursorX - 2) .. string.sub(line, cursorX, -1) -- remove 1 char
+          elseif prevline then
+            prevline = prevline .. line -- copy line up to the next before removing it
+            ocelot.log(prevline)
+            line = nil
+          end
+          if line then
+            lines[cursorY] = line
+          else
+            removeLine(cursorY)
+          end
+          lines[cursorY - 1] = prevline
+          if not line then
+            cursorY = cursorY - 1 -- this can only trigger if the line is not the first
+          end
+          if cursorX > 1 then
+            cursorX = cursorX - 1
+          end
+          renderBufferFlag = true
+        end
+        if keyboard.keys[eventArgs[4]] == "enter" then
+          addLine(cursorY + 1)
+          cursorY = cursorY + 1
+          cursorX = 1
+          renderBufferFlag = true
+        end
       end
     end
   until next(eventArgs) == nil
