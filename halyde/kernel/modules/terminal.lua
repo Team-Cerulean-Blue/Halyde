@@ -18,7 +18,7 @@ function module.init()
 
   local component = require("component")
   local gpu = component.gpu
-  _G._PUBLIC.io = {}
+  _G._PUBLIC.terminal = {}
 
   local readHistory = {}
   function _PUBLIC.terminal.getHistory(id)
@@ -811,7 +811,7 @@ function module.init()
 end
 
 function module.exit()
-  _G._PUBLIC.io = nil
+  _G._PUBLIC.terminal = nil
 end
 
 return module

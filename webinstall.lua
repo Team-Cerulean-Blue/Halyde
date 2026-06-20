@@ -1,4 +1,4 @@
-local io = require("terminal")
+local io = require("io")
 local component = require("component")
 if not component.isAvailable("internet") then
   io.stderr.write("This program requires an internet card to run.")
