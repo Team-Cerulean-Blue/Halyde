@@ -15,6 +15,8 @@ function module.init()
   local serialize = require("serialize")
   local unicode = require("unicode")
   local event = require("event")
+  local fs = require("filesystem")
+  local json = require("json")
 
   local component = require("component")
   local gpu = component.gpu
@@ -38,6 +40,19 @@ function module.init()
     checkArg(2, hist, "string")
     table.insert(readHistory[id], hist)
   end
+
+  if not fs.exists("/halyde/config/terminal.json") then
+    fs.copy("/halyde/config/generate/terminal.json", "/halyde/config/terminal.json")
+  end
+  local config = ""
+  local tmpdata
+  local handle = fs.open("/halyde/config/terminal.json")
+  repeat
+    tmpdata = handle:read(math.huge)
+    config = config .. (tmpdata or "")
+  until not tmpdata
+  config = json.decode(config)
+  require("log").terminal.info("Loaded config file: " .. serialize(config, " "))
 
   local function getColorPalette(depth)
     if depth == 1 then
@@ -91,7 +106,16 @@ function module.init()
       }
     end
     if depth == 8 then
-      return {
+      local palette = {["dark"] = {}, ["bright"] = {}}
+      for i = 0, 7 do
+        palette["dark"][i] = tonumber(config.palette.dark[tostring(i)], 16)
+      end
+      for i = 0, 7 do
+        palette["bright"][i] = tonumber(config.palette.bright[tostring(i)], 16)
+      end
+      require("log").terminal.info("Set color palette: " .. serialize(palette))
+      return palette
+      --[[ return {
         ["dark"] = {
           [0] = 0x0f0f0f, -- black
           [1] = 0xcc2424, -- dark red
@@ -112,7 +136,7 @@ function module.init()
           [6] = 0x33dbc0, -- cyan
           [7] = 0xffffff  -- white
         }
-      }
+      } ]]
     end
     --[[ Original color palette:
     {
@@ -146,8 +170,9 @@ function module.init()
 
   local cursor = { x = 1, y = 1, X = nil, Y = nil } -- X and Y are managed by ESC s and ESC u
   local printState = 0 -- 0:none 1:in ESC 2:in CSI
-  local DEFAULT_FG = ANSIColorPalette["bright"][7] -- TODO make configurable
+  local DEFAULT_FG = ANSIColorPalette["bright"][7]
   local DEFAULT_BG = ANSIColorPalette["dark"][0]
+  require("log").terminal.info("FG and BG: " .. DEFAULT_FG .. " " .. DEFAULT_BG)
   local fg = DEFAULT_FG
   local bg = DEFAULT_BG
   local gpuFg = nil
