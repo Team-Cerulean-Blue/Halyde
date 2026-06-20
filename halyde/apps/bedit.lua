@@ -69,6 +69,73 @@ local function removeLine(pos)
   lines[length] = nil
 end
 
+local function save()
+  gpu.setForeground(0xFFFFFF)
+  gpu.setBackground(0x000000)
+  gpu.set(1, resY, "Enter a location to save:")
+
+  local savepath = file or ""
+  local saveCursorX = 27 + #savepath
+  local ready = false
+  local eventArgs = {}
+
+  gpu.fill(27, resY, resX - 27, 1, " ")
+  gpu.set(27, resY, savepath)
+  gpu.setForeground(0x000000)
+  gpu.setBackground(0xFFFFFF)
+  gpu.set(saveCursorX, resY, " ")
+  gpu.setForeground(0xFFFFFF)
+  gpu.setBackground(0x000000)
+
+  repeat
+    local shouldRender = false
+    coroutine.yield()
+
+    eventArgs = {event.pull("key_down", 0)}
+    if keyboard.keys[eventArgs[4]] == "enter" then
+      ready = true
+    end
+    if keyboard.keys[eventArgs[4]] == "back" then
+      savepath = string.sub(savepath, 1, #savepath - 1)
+      if saveCursorX > 27 then
+        saveCursorX = saveCursorX - 1
+      end
+      shouldRender = true
+    end
+    if not keyboard.keys.special[eventArgs[4]] and keyboard.keys[eventArgs[4]] then
+      savepath = savepath .. (string.char(eventArgs[3]) or "")
+      saveCursorX = saveCursorX + 1
+      shouldRender = true
+    end
+
+    if shouldRender then
+      gpu.fill(27, resY, resX - 27, 1, " ")
+      gpu.set(27, resY, savepath)
+      gpu.setForeground(0x000000)
+      gpu.setBackground(0xFFFFFF)
+      gpu.set(saveCursorX, resY, " ")
+      gpu.setForeground(0xFFFFFF)
+      gpu.setBackground(0x000000)
+    end
+  until ready
+
+  gpu.fill(1, resY, resX, 1, " ")
+  gpu.setForeground(0x000000)
+  gpu.setBackground(0xFFFFFF)
+  gpu.set(1, resY, "^X")
+  gpu.set(10, resY, "^S")
+  gpu.setForeground(0xFFFFFF)
+  gpu.setBackground(0x000000)
+  gpu.set(4, resY, "Exit")
+  gpu.set(13, resY, "Save")
+
+  local text = table.concat(lines, "\n")
+  local handle = fs.open(savepath, "w")
+  handle:write(text)
+  handle:close()
+  file = savepath
+end
+
 -- Initialize screen
 renderText(0, 0)
 gpu.setForeground(0x000000)
@@ -117,6 +184,9 @@ while true do
         -- Special commands
         if keyboard.keys[eventArgs[4]] == "x" then
           goto exit
+        end
+        if keyboard.keys[eventArgs[4]] == "s" then
+          save()
         end
       end
 
