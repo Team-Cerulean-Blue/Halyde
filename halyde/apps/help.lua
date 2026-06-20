@@ -128,7 +128,7 @@ handle:close()
 
 --print(require("serialize")(data, "\t"))
 
--- Halyde terminal doesn't support bold (CSI 1 m) but who cares
+-- Halyde io doesn't support bold (CSI 1 m) but who cares
 
 if data.command then
   terminal.write("\27[1mUsage: \27[0m\n")

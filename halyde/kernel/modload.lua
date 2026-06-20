@@ -19,8 +19,10 @@ local moduleTypes = {}
 local modulesLoaded = {}
 
 local function loadModule(modName)
+  local stop = profiler.start("loadModule(" .. tostring(modName) .. ")")
   if table.find(modulesLoaded, modName) then
     log.kernel.warn(string.format("[modload: %s] Module was already loaded - skipping", modName))
+    stop()
     return true
   end
 
@@ -28,6 +30,7 @@ local function loadModule(modName)
   if not moduleData then
     log.kernel.warn(string.format("[modload: %s] Could not find module data.", modName))
     table.remove(moduleList, table.find(moduleList, modName))
+    stop()
     return true
   end
   local ready = false
@@ -42,6 +45,7 @@ local function loadModule(modName)
   end
   if not ready then
     log.kernel.info(string.format("[modload: %s] Module not ready - skipping", modName))
+    stop()
     return false
   end
   if type(moduleData.dependencies) == "table" then
@@ -74,16 +78,19 @@ local function loadModule(modName)
           tostring(err or "unknown error")
         )
       )
+      stop()
       return false
     else
       table.insert(modulesLoaded, modName)
       table.remove(moduleList, table.find(moduleList, modName))
     end
   end
+  stop()
   return true
 end
 
 for _, modName in pairs(moduleList) do -- Get all the module types
+  local stop = profiler.start("getting module " .. modName .. ")")
   log.kernel.info(string.format("[modload: %s] Getting data from module", modName))
   local moduleData
   local status, err = pcall(function()
@@ -123,6 +130,7 @@ for _, modName in pairs(moduleList) do -- Get all the module types
     moduleTypes[modName] = moduleData.type -- Not the other way around because there can be multiple modules of the same type, but there can't be multiple entries with the same key
   end
   ::continue::
+  stop()
 end
 
 local function loadAllModules() -- attempt at loading all modules, unless if they're not ready

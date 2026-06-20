@@ -1,6 +1,6 @@
 local module = {}
 
-module.dependencies = { "terminal" }
+module.dependencies = { "io" }
 
 function module.check()
   return true -- This module should always be loaded

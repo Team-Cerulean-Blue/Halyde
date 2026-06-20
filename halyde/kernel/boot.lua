@@ -11,6 +11,7 @@ gpu.bind(screenAddress)
 gpu.setResolution(gpu.maxResolution())
 
 local log = assert(loadfile("/lib/log.lua")(loadfile))
+_G.profiler = assert(loadfile("/lib/profiler.lua")())
 
 log.kernel.info("Bound GPU to screen " .. tostring(screenAddress))
 
@@ -67,10 +68,10 @@ require("/halyde/kernel/datatools.lua") -- If this is not imported BEFORE modloa
 log.kernel.info("Loading modules")
 require("/halyde/kernel/modload.lua")
 
-package.preload("component")
-package.preload("computer")
-package.preload("log")
-package.preload("event")
+local toPreload = { "component", "computer", "log", "event" }
+for _, p in pairs(toPreload) do
+  profiler.profile("pre-loading " .. p, package.preload, p)
+end
 
 local computer = require("computer")
 function wait(seconds)

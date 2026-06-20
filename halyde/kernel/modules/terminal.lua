@@ -17,9 +17,8 @@ function module.init()
   local event = require("event")
 
   local component = require("component")
-  local computer = require("computer")
   local gpu = component.gpu
-  _G._PUBLIC.terminal = {}
+  _G._PUBLIC.io = {}
 
   local readHistory = {}
   function _PUBLIC.terminal.getHistory(id)
@@ -145,9 +144,6 @@ function module.init()
 
   local ANSIColorPalette = getColorPalette(gpu.maxDepth())
 
-  local expecting_unicode_bytes = 0
-  local unicode_bytes_left = 0
-  local unicode_codepoint = 0
   local cursor = { x = 1, y = 1, X = nil, Y = nil } -- X and Y are managed by ESC s and ESC u
   local printState = 0 -- 0:none 1:in ESC 2:in CSI
   local color = {
@@ -566,7 +562,7 @@ function module.init()
     local args = {...}
     local stringArgs = {}
     for _, arg in pairs(args) do
-      if type(arg)=="table" then
+      if type(arg) == "table" then
         table.insert(stringArgs, serialize(arg))
       elseif tostring(arg) then
         table.insert(stringArgs, tostring(arg))
@@ -815,7 +811,7 @@ function module.init()
 end
 
 function module.exit()
-  _G._PUBLIC.terminal = nil
+  _G._PUBLIC.io = nil
 end
 
 return module
