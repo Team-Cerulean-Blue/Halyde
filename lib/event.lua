@@ -47,15 +47,13 @@ function event.pull(...)
       end
     end
 
-    -- Check if we've timed out
-    if timeout and computer.uptime() >= startTime + timeout then
-      return nil -- Timed out, return nil
+    if timeout ~= nil and computer.uptime() >= startTime + timeout then
+      return nil
     end
 
-    -- Yield to allow other processes to run and more events to be added
-    if timeout and timeout > 0 then
+    if timeout == nil then
       coroutine.yield()
-    elseif not timeout then
+    elseif timeout > 0 then
       coroutine.yield()
     end
   end
