@@ -113,7 +113,7 @@ function module.init()
       for i = 0, 7 do
         palette["bright"][i] = tonumber(config.palette.bright[tostring(i)], 16)
       end
-      require("log").terminal.info("Set colour palette: " .. serialize(palette, " "))
+      require("log").terminal.info("Set color palette: " .. serialize(palette))
       return palette
       --[[ return {
         ["dark"] = {
@@ -170,15 +170,9 @@ function module.init()
 
   local cursor = { x = 1, y = 1, X = nil, Y = nil } -- X and Y are managed by ESC s and ESC u
   local printState = 0 -- 0:none 1:in ESC 2:in CSI
-  local color = {
-    FG = ANSIColorPalette["bright"][7], BG = ANSIColorPalette["dark"][0],
-    fg = nil, bg = nil, reverse = false
-  }
-  require("log").terminal.info("FG and BG: " .. color.FG .. " " .. color.BG)
-  color.fg = color.FG
-  color.bg = color.BG
-  local DEFAULT_FG = ANSIColorPalette["bright"][7] -- TODO make configurable
+  local DEFAULT_FG = ANSIColorPalette["bright"][7]
   local DEFAULT_BG = ANSIColorPalette["dark"][0]
+  require("log").terminal.info("FG and BG: " .. DEFAULT_FG .. " " .. DEFAULT_BG)
   local fg = DEFAULT_FG
   local bg = DEFAULT_BG
   local gpuFg = nil
