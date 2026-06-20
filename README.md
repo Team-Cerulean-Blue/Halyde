@@ -20,4 +20,4 @@ If for some reason that doesn't work, try:
 `wget -f https://raw.githubusercontent.com/Team-Cerulean-Blue/Halyde/refs/heads/main/webinstall.lua /tmp/webinstall.lua && /tmp/webinstall.lua`
 
 ## Docs
-Halyde is [documented on GitBook](https://cerulean-blue.gitbook.io/halyde-docs).
+Halyde is [documented on DokuWiki](https://wiki.sting.lt/), however there is an alternative documentation on [GitBook](https://cerulean-blue.gitbook.io/halyde-docs/).
