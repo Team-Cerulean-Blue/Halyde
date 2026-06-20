@@ -39,7 +39,7 @@ function raster.init(width, height, bgcolor)
   raster.charHeight = height
 
   width, height = raster.units.charToBraille(width, height)
-  
+
   bgcolor = bgcolor or raster.defaultBackgroundColor
   if bgcolor~=0 then
     for i=1,width*height do
@@ -204,29 +204,29 @@ end
 
 function raster.drawLine(x1, y1, x2, y2, color)
   x1, y1, x2, y2 = math.floor(x1), math.floor(y1), math.floor(x2), math.floor(y2)
-  
+
   local dx = math.abs(x2 - x1)
   local dy = math.abs(y2 - y1)
-  
+
   local sx = x1 < x2 and 1 or -1
   local sy = y1 < y2 and 1 or -1
-  
+
   local err = dx - dy
-  
+
   while true do
     raster.set(x1, y1, color)
-    
+
     if x1 == x2 and y1 == y2 then
       break
     end
-    
+
     local e2 = 2 * err
-    
+
     if e2 > -dy then
       err = err - dy
       x1 = x1 + sx
     end
-    
+
     if e2 < dx then
       err = err + dx
       y1 = y1 + sy
@@ -266,7 +266,7 @@ function raster.drawCircle(xc, yc, radius, color)
   local x = 0
   local y = radius
   local d = 3 - 2 * radius
-  
+
   while y >= x do
     -- Draw 8 symmetric points
     raster.set(xc + x, yc + y, color)
@@ -277,7 +277,7 @@ function raster.drawCircle(xc, yc, radius, color)
     raster.set(xc - y, yc + x, color)
     raster.set(xc + y, yc - x, color)
     raster.set(xc - y, yc - x, color)
-    
+
     if d < 0 then
       d = d + 4 * x + 6
     else
@@ -291,22 +291,22 @@ end
 function raster.drawEllipse(x1, y1, x2, y2, color)
   if x1 > x2 then x1, x2 = x2, x1 end
   if y1 > y2 then y1, y2 = y2, y1 end
-  
+
   local xc = math.floor((x1 + x2) / 2)
   local yc = math.floor((y1 + y2) / 2)
-  
+
   local a = math.floor((x2 - x1) / 2)
   local b = math.floor((y2 - y1) / 2)
-  
+
   if a <= 0 or b <= 0 then
     return
   end
-  
+
   if a == b then
     raster.drawCircle(xc, yc, a, color)
     return
   end
-  
+
   if a <= 1 and b <= 1 then
     raster.set(xc, yc, color)
     return
@@ -321,21 +321,21 @@ function raster.drawEllipse(x1, y1, x2, y2, color)
     end
     return
   end
-  
+
   local x = 0
   local y = b
   local a2 = a * a
   local b2 = b * b
-  
+
   local d1 = b2 - (a2 * b) + (0.25 * a2)
   local dx = 2 * b2 * x
   local dy = 2 * a2 * y
-  
+
   while dx < dy do
     raster.set(xc + x, yc + y, color)
     raster.set(xc - x, yc + y, color)
     raster.set(xc + x, yc - y, color)
-    
+
     if d1 < 0 then
       x = x + 1
       dx = dx + (2 * b2)
@@ -348,15 +348,15 @@ function raster.drawEllipse(x1, y1, x2, y2, color)
       d1 = d1 + dx - dy + b2
     end
   end
-  
+
   local d2 = b2 * (x + 0.5) * (x + 0.5) + a2 * (y - 1) * (y - 1) - a2 * b2
-  
+
   while y >= 0 do
     raster.set(xc + x, yc + y, color)
     raster.set(xc - x, yc + y, color)
     raster.set(xc + x, yc - y, color)
     raster.set(xc - x, yc - y, color)
-    
+
     if d2 > 0 then
       y = y - 1
       dy = dy - (2 * a2)
@@ -374,17 +374,17 @@ end
 function raster.fillCircle(x, y, r, color)
   x, y = math.floor(x + 0.5), math.floor(y + 0.5)
   r = math.floor(r + 0.5)
-  
+
   if r <= 0 then return end
-  
+
   local minX, maxX = x - r, x + r
   local minY, maxY = y - r, y + r
-  
+
   for py = minY, maxY do
     for px = minX, maxX do
       local dx, dy = px - x, py - y
       local distSquared = dx*dx + dy*dy
-      
+
       if distSquared <= r*r then
         raster.set(px, py, color)
       end
@@ -395,33 +395,33 @@ end
 function raster.fillEllipse(x1, y1, x2, y2, color)
   local centerX = (x1 + x2) / 2
   local centerY = (y1 + y2) / 2
-  
+
   local a = math.abs(x2 - x1) / 2
   local b = math.abs(y2 - y1) / 2
-  
+
   centerX = math.floor(centerX + 0.5)
   centerY = math.floor(centerY + 0.5)
   a = math.floor(a + 0.5)
   b = math.floor(b + 0.5)
-  
+
   if a <= 0 or b <= 0 then return end
-  
+
   if a == b then
     raster.fillCircle(centerX, centerY, a, color)
     return
   end
-  
+
   local minX = centerX - a
   local maxX = centerX + a
   local minY = centerY - b
   local maxY = centerY + b
-  
+
   for y = minY, maxY do
     for x = minX, maxX do
       local dx = x - centerX
       local dy = y - centerY
       local value = (dx*dx)/(a*a) + (dy*dy)/(b*b)
-      
+
       if value <= 1 then
         raster.set(x, y, color)
       end
