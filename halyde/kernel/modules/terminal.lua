@@ -508,7 +508,7 @@ function module.init()
       if cursor.x > width then
         _PUBLIC.terminal.flush()
       end
-    check_wrap_and_scroll()
+      check_wrap_and_scroll()
     elseif byte >= 0xC2 and byte <= 0xDF then
       current_codepoint = (byte & 0x1F)
       bytes_remaining = 1
@@ -589,8 +589,6 @@ function module.init()
 
     local text = options.defaultText or ""
 
-    _G._PUBLIC.terminal.flush()
-
     local historyIdx
     if options.readHistoryType then
       if not readHistory[options.readHistoryType] then
@@ -609,6 +607,7 @@ function module.init()
 
     local cur = unicode.len(text)+1
     if options.prefix then _PUBLIC.terminal.write(options.prefix) end
+    _G._PUBLIC.terminal.flush()
     local startX, startY = cursor.x, cursor.y
     local fg, bg = gpu.getForeground(), gpu.getBackground()
     local cursorBlink = true
