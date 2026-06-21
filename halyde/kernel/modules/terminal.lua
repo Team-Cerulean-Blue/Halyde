@@ -505,10 +505,10 @@ function module.init()
     if byte >= 0x20 and byte <= 0x7F then
       table.insert(writeBuf, string.char(byte))
       cursor.x = cursor.x + 1
-      check_wrap_and_scroll()
-      if cursor.y ~= writeBufY or #writeBuf >= 32 then
+      if cursor.x > width then
         _PUBLIC.terminal.flush()
       end
+    check_wrap_and_scroll()
     elseif byte >= 0xC2 and byte <= 0xDF then
       current_codepoint = (byte & 0x1F)
       bytes_remaining = 1
@@ -524,10 +524,10 @@ function module.init()
       if bytes_remaining == 0 then
         table.insert(writeBuf, utf8.char(current_codepoint))
         cursor.x = cursor.x + 1
-        check_wrap_and_scroll()
-        if cursor.y ~= writeBufY or #writeBuf >= 32 then
+        if cursor.x > width then
           _PUBLIC.terminal.flush()
         end
+        check_wrap_and_scroll()
         current_codepoint = 0
       end
     else
