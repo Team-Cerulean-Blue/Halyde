@@ -52,7 +52,7 @@ function module.init()
     config = config .. (tmpdata or "")
   until not tmpdata
   config = json.decode(config)
-  require("log").terminal.info("Loaded config file: " .. serialize(config, " "))
+  require("log").terminal.info("Loaded config file: " .. serialize(config))
 
   local function getColorPalette(depth)
     if depth == 1 then
@@ -108,12 +108,12 @@ function module.init()
     if depth == 8 then
       local palette = {["dark"] = {}, ["bright"] = {}}
       for i = 0, 7 do
-        palette["dark"][i] = tonumber(config.palette.dark[tostring(i)], 16)
+        palette["dark"][i] = tonumber(config.palette.dark[tostring(i)])
       end
       for i = 0, 7 do
-        palette["bright"][i] = tonumber(config.palette.bright[tostring(i)], 16)
+        palette["bright"][i] = tonumber(config.palette.bright[tostring(i)])
       end
-      require("log").terminal.info("Set color palette: " .. serialize(palette))
+      require("log").terminal.info("Set color palette: " .. serialize(palette, nil))
       return palette
       --[[ return {
         ["dark"] = {
